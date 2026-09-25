@@ -107,8 +107,8 @@ s.check("TC-D02", () => {
 s.check("TC-D04", () => {
   const source = JSON.parse(readFileSync("src/catalog.json", "utf8"));
   const oracle = JSON.parse(readFileSync("tests/fixtures/catalog.json", "utf8"));
-  assert.deepEqual(K.CATALOG, source);
-  assert.deepEqual(K.CATALOG, oracle);
+  assert.equal(JSON.stringify(K.CATALOG), JSON.stringify(source));
+  assert.equal(JSON.stringify(K.CATALOG), JSON.stringify(oracle));
   assert.equal(K.CATALOG.length, 101);
 });
 s.check("TC-D05", () => {
