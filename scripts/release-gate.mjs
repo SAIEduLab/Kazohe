@@ -71,3 +71,18 @@ export function validateEvidence(reports, hash, manifest, expected = expectedExe
     throw Error("Base/candidate image evidence missing or invalid");
   return true;
 }
+
+export function validManualProvenance(review, hash, execution, matchingHtmlCommit) {
+  if (!review || review.htmlSha256 !== hash ||
+      review.targetRepository !== "SAIEduLab/Kazohe" ||
+      (execution.repository && review.targetRepository !== execution.repository) ||
+      !/^[0-9a-f]{40}$/.test(review.targetCommit || "") ||
+      !/^[0-9]+$/.test(String(review.reviewedRunId)) ||
+      typeof matchingHtmlCommit !== "function")
+    return false;
+  try {
+    return matchingHtmlCommit(review.targetCommit, hash) === true;
+  } catch {
+    return false;
+  }
+}

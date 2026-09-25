@@ -7,7 +7,7 @@ import { html } from "./load-inline-core.mjs";
 import { suite, hash } from "./report.mjs";
 import { manifest, tcIds } from "./manifest.mjs";
 import { K } from "./load-inline-core.mjs";
-import { validateEvidence } from "./release-gate.mjs";
+import { validateEvidence, validManualProvenance } from "./release-gate.mjs";
 const s = suite("lint");
 s.check("html-js-syntax", () => {
   const errors = [];
@@ -189,6 +189,18 @@ s.check("TC-D06", () => {
       "G4-C12", "G5-N08", "G6-C05"].map(id =>
       ({ id, width, changedPixels: 0 })));
   assert(validateEvidence(sample, hash, manifest, fixture));
+  const reviewed = { htmlSha256: hash, targetRepository: "SAIEduLab/Kazohe",
+    targetCommit: "c".repeat(40), reviewedRunId: "123" };
+  const hasHtml = () => true;
+  assert(validManualProvenance(reviewed, hash, fixture, hasHtml));
+  for (const invalid of [
+    { ...reviewed, targetRepository: "other/repo" },
+    { ...reviewed, targetCommit: "d".repeat(40) },
+    { ...reviewed, reviewedRunId: null },
+    { ...reviewed, htmlSha256: "other" },
+  ]) assert(!validManualProvenance(invalid, hash, fixture,
+    commit => commit === reviewed.targetCommit));
+  assert(!validManualProvenance(reviewed, hash, fixture, () => false));
   for (const mutate of [
     r => { delete r.unit; },
     r => { r.unit.htmlSha256 = "different HTML"; },

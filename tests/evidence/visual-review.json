@@ -101,5 +101,7 @@
       "status": "NOT_RUN",
       "actual": "物理端末での操作検証は未実施。"
     }
-  ]
+  ],
+  "targetCommit": null,
+  "reviewedRunId": null
 }
