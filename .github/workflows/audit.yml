@@ -1,0 +1,181 @@
+name: Kazohe v0.2 audit
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deep:
+        description: Run 10000 deterministic samples per challenge
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: kazohe-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  APP_HTML: Kazohe.html
+  APP_VERSION: "0.2"
+  CI: "true"
+  AUDIT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  DEEP_AUDIT: ${{ github.event_name == 'workflow_dispatch' && inputs.deep && '1' || '0' }}
+
+jobs:
+  math:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify tested checkout and PR head HTML
+        run: |
+          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Check final HTML, catalog, mathematics and learning explanations
+        run: |
+          npm run build:check
+          npm run lint
+          npm run audit:catalog
+          npm run audit:single-html
+          npm run test:unit
+          npm run test:property
+          npm run test:pedagogy
+      - name: Preserve mathematics evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: kazohe-math-${{ github.sha }}
+          path: |
+            reports/
+            coverage/
+          if-no-files-found: error
+          retention-days: 14
+
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify tested checkout and PR head HTML
+        run: |
+          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run build:check
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Offline interaction, all skills and four-width geometry
+        run: npm run test:e2e -- --project=${{ matrix.engine }}
+        env:
+          E2E_REPORT_NAME: e2e-${{ matrix.engine }}
+      - name: Build all-skill contact sheets for review
+        if: ${{ matrix.engine == 'chromium' }}
+        run: node scripts/review-gallery.mjs
+      - name: Preserve browser evidence even when assertions fail
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: kazohe-browser-${{ matrix.engine }}-${{ github.sha }}
+          path: |
+            reports/
+            playwright-report/
+            test-results/
+          if-no-files-found: error
+          retention-days: 14
+
+  visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify tested checkout and PR head HTML
+        run: |
+          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run build:check
+      - run: npx playwright install --with-deps chromium
+      - name: Compare base and candidate in the same browser
+        run: npm run audit:visual-diff
+        env:
+          VISUAL_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      - name: Preserve comparison images for visual review
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: kazohe-visual-${{ github.sha }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 14
+
+  aggregate:
+    needs: [math, browser, visual]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify tested checkout and PR head HTML
+        run: |
+          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          pattern: kazohe-*-${{ github.sha }}
+          path: .artifacts
+      - name: Require matching HTML, all cases and all three browser shards
+        run: |
+          node scripts/aggregate-evidence.mjs
+          npm run audit:release -- --machine-only
+      - name: Upload aggregate evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: kazohe-v0.2-aggregate-${{ github.sha }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload automatically checked candidate (not a release)
+        if: ${{ success() }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: kazohe-v0.2-checked-candidate-${{ github.sha }}
+          path: Kazohe.html
+          if-no-files-found: error

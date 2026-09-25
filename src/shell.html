@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2。ネットにつながずに使えます。"
+    />
+    <meta name="color-scheme" content="light" />
+    <title>かぞへ v0.2</title>
+    <style>
+      /* STYLE */
+    </style>
+  </head>
+  <body>
+    <header class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <span>＋</span><span>−</span><span>×</span><span>÷</span>
+      </div>
+      <div>
+        <h1 data-testid="app-title">かぞへ <small>v0.2</small></h1>
+        <p>ひとつずつ、わかるをふやそう。</p>
+      </div>
+    </header>
+    <p id="storage-warning" class="warning" role="status" hidden></p>
+    <main id="app" tabindex="-1"></main>
+    <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+    <dialog id="dialog" aria-labelledby="dialog-title">
+      <h2 id="dialog-title"></h2>
+      <div id="dialog-body"></div>
+      <div id="dialog-actions" class="actions"></div>
+    </dialog>
+    <footer>かぞへ v0.2 · じぶんのペースで、なんどでも。</footer>
+    <script id="kazohe-core">
+      /* CORE */
+    </script>
+    <script id="kazohe-app">
+      /* APP */
+    </script>
+  </body>
+</html>

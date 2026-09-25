@@ -1,0 +1,107 @@
+{
+  "date": "2026-09-26",
+  "targetRepository": "SAIEduLab/Kazohe",
+  "htmlSha256": "5a1a1e6578990e8111e70b3b462c54c3403405949d34354bbcd398e16a63d3c3",
+  "scope": "新Publicの画像について未確認。画像生成と座標検査は目視確認や物理端末試験の代わりにしない。",
+  "childTeacherStudy": "NOT_RUN",
+  "cases": [
+    {
+      "id": "TC-B04",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B05",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B06",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B07",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B12",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B14",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-D05",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U01",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U03",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U04",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U05",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U06",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U07",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U08",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-U11",
+      "method": "visual",
+      "status": "NOT_RUN",
+      "actual": "新Publicで生成した実画像の確認は未実施。"
+    },
+    {
+      "id": "TC-B15",
+      "method": "device",
+      "status": "NOT_RUN",
+      "actual": "物理端末での操作検証は未実施。"
+    }
+  ],
+  "targetCommit": null,
+  "reviewedRunId": null
+}
