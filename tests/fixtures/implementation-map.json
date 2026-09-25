@@ -12,17 +12,6 @@
     ]
   },
   {
-    "id": "KZ-002",
-    "file": "tests/fixtures/input-receipt.json",
-    "symbols": [
-      "referenceSha256"
-    ],
-    "tests": [
-      "TC-D03",
-      "TC-D04"
-    ]
-  },
-  {
     "id": "KZ-010",
     "file": "src/core.js",
     "symbols": [

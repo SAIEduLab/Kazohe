@@ -45,9 +45,9 @@ npm run audit:release -- --machine-only
 
 `src/` の教材・数値処理・画面・スタイルを結合して、`Kazohe.html` を生成します。テストは生成後のHTML内の実コードを読み、別の整数・有理数オラクルと固定例で検証します。標準の生成検証は101,000問、教材説明検証は別に4,040問。ブラウザ検証は3エンジンで `file://` と外部通信遮断を使用し、全技能・生成分岐・4画面幅・全9入力形式を確認します。HTMLだけを一時フォルダへ移した動作も検査します。
 
-画像比較は `origin/main` のHTMLと候補を同じブラウザで撮影します。別の基点は環境変数 `VISUAL_BASE_REF` にコミットを指定できます。差分画像の生成成功は、見やすさの合格を意味しません。
+画像比較は新Public内の別commitにあるHTMLと候補を同じブラウザで撮影します。PRではbase、pushでは更新前のcommitを基点にします。別の基点は環境変数 `VISUAL_BASE_REF` にcommitを指定できます。基点が取得できなければ失敗します。差分画像の生成成功は、見やすさの合格を意味しません。
 
-結果は `reports/`、スクリーンショットは `reports/screens/`、画像比較は `reports/visual-diff/index.html` に生成します。レポートには対象HTMLのSHA-256が付きます。検証の対応と制限は [検証ガイド](docs/verification.md)、実測結果は [ローカル検証記録](docs/local-verification.md) を参照してください。以前の視覚監査の訂正は [v0.1検証記録](docs/v0.1-verification.md) に明記しています。
+結果は `reports/`、スクリーンショットは `reports/screens/`、画像比較は `reports/visual-diff/index.html` に生成します。レポートには対象HTMLのSHA-256が付きます。検証の対応と制限は [検証ガイド](docs/verification.md) を参照してください。旧環境の目視結果は新しい検証の合格として引き継ぎません。
 
 通常の `npm run audit:release` は目視・実機の証跡も要求します。`--machine-only` の成功は自動検証済み候補であり、正式リリースの判定ではありません。GitHub Actionsはpush・pull_request・手動実行で起動し、数学・教材、3ブラウザの並列検査、画像比較、同じHTMLの証跡集約を行います。公開やマージは行いません。
 

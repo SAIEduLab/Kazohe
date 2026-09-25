@@ -6,18 +6,29 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
+import assert from "node:assert/strict";
 import { K, htmlPath } from "./load-inline-core.mjs";
 import { report, hash } from "./report.mjs";
 import { representatives } from "../tests/fixtures/representatives.mjs";
-const base = process.env.VISUAL_BASE_REF || "origin/main";
+const requestedBase = process.env.VISUAL_BASE_REF;
 const git = (args) =>
   execFileSync(
     "git",
     ["-c", `safe.directory=${process.cwd().replaceAll("\\", "/")}`, ...args],
     { encoding: "utf8", maxBuffer: 20 * 1024 * 1024 },
   );
-const baseCommit = git(["rev-parse", base + "^{commit}"]).trim(),
-  baseHTML = git(["show", baseCommit + ":Kazohe.html"]);
+const candidateCommit = git(["rev-parse", "HEAD^{commit}"]).trim();
+const requested = requestedBase && !/^0+$/.test(requestedBase)
+  ? requestedBase
+  : null;
+const fallback = () => {
+  const common = git(["merge-base", "HEAD", "origin/main"]).trim();
+  return common === candidateCommit ? "HEAD^" : common;
+};
+const baseCommit = git(["rev-parse", (requested || fallback()) + "^{commit}"]).trim();
+assert.notEqual(baseCommit, candidateCommit, "Visual base must be a different commit");
+git(["merge-base", "--is-ancestor", baseCommit, candidateCommit]);
+const baseHTML = git(["show", baseCommit + ":Kazohe.html"]);
 const dir = mkdtempSync(join(tmpdir(), "kazohe-visual-")),
   output = "reports/visual-diff";
 mkdirSync(output, { recursive: true });

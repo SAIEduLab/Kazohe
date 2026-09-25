@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
-import { hash, report } from "./report.mjs";
+import { hash, report, expectedExecution } from "./report.mjs";
 import { manifest } from "./manifest.mjs";
 import { validateEvidence } from "./release-gate.mjs";
 const machineOnly = process.argv.includes("--machine-only"),
@@ -19,7 +19,7 @@ for (const s of [
   if (existsSync(`reports/${s}.json`))
     reports[s] = JSON.parse(readFileSync(`reports/${s}.json`, "utf8"));
 try {
-  validateEvidence(reports, hash, manifest);
+  validateEvidence(reports, hash, manifest, expectedExecution());
   cases.push({ id: "automatic-evidence", method: "aggregate", status: "PASS" });
 } catch (e) {
   cases.push({

@@ -8,6 +8,7 @@ export default class Reporter {
     for (const id of ids)
       this.cases.push({
         id,
+        title: test.titlePath().join(" / "),
         method: "browser",
         browser: test.parent.project().name,
         status:
