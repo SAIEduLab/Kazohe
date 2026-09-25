@@ -1,0 +1,9 @@
+node_modules/
+.tools/
+reports/
+test-results/
+playwright-report/
+coverage/
+.work/
+.artifacts/
+debug.log

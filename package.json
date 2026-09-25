@@ -1,0 +1,31 @@
+{
+  "name": "kazohe",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "lint": "node scripts/lint.mjs",
+    "audit:catalog": "node scripts/audit-catalog.mjs",
+    "test:unit": "node scripts/run-unit.mjs",
+    "test:property": "node tests/property/generators.mjs",
+    "audit:single-html": "node scripts/audit-single-html.mjs",
+    "test:e2e": "playwright test",
+    "audit:release": "node scripts/audit-release.mjs",
+    "build": "node scripts/build.mjs",
+    "build:check": "node scripts/build.mjs --check",
+    "test:pedagogy": "node tests/unit/pedagogy.mjs",
+    "audit:visual-diff": "node scripts/visual-diff.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "acorn": "8.15.0",
+    "axe-core": "4.10.3",
+    "css-tree": "3.1.0",
+    "parse5": "7.3.0",
+    "prettier": "3.6.2"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,202 @@
+{
+  "date": "2026-09-25",
+  "htmlSha256": "5a1a1e6578990e8111e70b3b462c54c3403405949d34354bbcd398e16a63d3c3",
+  "scope": "Codexによる実画像の確認。教員・児童の試用や実機認定を意味しない。新画像の無条件承認はしない。",
+  "priorDecision": {
+    "htmlSha256": "51bd57f69315af955a604e59ec90765d360ef3278c4f07656aac634a7945f04e",
+    "status": "RETRACTED",
+    "reason": "v0.1の視覚PASSは日本の表記・位・入力・児童向けUIの不適合を見落とした。"
+  },
+  "reviewedSupport": {
+    "initiallyReviewedHTML": "fcbda6930f054a66eefa06ea1f1f310114a0063e25805b30fc0d706c4194a960",
+    "finalIdenticalImages": 101
+  },
+  "childTeacherStudy": "NOT_RUN",
+  "cases": [
+    {
+      "id": "TC-B04",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "320/390/1366pxの筆算・入力・メニューの画像で欠けと間隔を確認。",
+      "evidence": [
+        "reports/screens/contact/index.json",
+        "reports/screens/final-states/menu.png"
+      ]
+    },
+    {
+      "id": "TC-B05",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "全101技能の支援画像を17枚の一覧で表示して確認。最終画像は確認済み画像と全101枚一致。",
+      "evidence": [
+        "reports/screens/contact/index.json"
+      ]
+    },
+    {
+      "id": "TC-B06",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "全30筆算技能の位、小数点、借り越し、部分積、商の0と曲線、説明の分離を確認。",
+      "evidence": [
+        "reports/screens/contact/index.json"
+      ]
+    },
+    {
+      "id": "TC-B07",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "キーボード操作検査のフォーカス画像で入力先の輪郭が見えることを確認。",
+      "evidence": [
+        "reports/screens/keyboard-focus.png"
+      ]
+    },
+    {
+      "id": "TC-B12",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "文字200%拡大の結果画面を表示して、折返し・操作の欠けを確認。",
+      "evidence": [
+        "reports/screens/large-result-200.png"
+      ]
+    },
+    {
+      "id": "TC-B14",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "最大整数・帯分数・大きな得点・30文字名の画像を表示して確認。",
+      "evidence": [
+        "reports/screens/maximum-G4-N01.png",
+        "reports/screens/maximum-G5-C08.png",
+        "reports/screens/large-result-200.png"
+      ]
+    },
+    {
+      "id": "TC-D05",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "101技能のカタログと根拠コードは無変更。点数・区分・おすすめは独自設計とREADMEに明記。",
+      "evidence": [
+        "src/catalog.json",
+        "README.md"
+      ]
+    },
+    {
+      "id": "TC-U01",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "例題付きカード、学年・分野、選択内容と開始ボタンを画像で確認。",
+      "evidence": [
+        "reports/screens/final-states/menu.png"
+      ]
+    },
+    {
+      "id": "TC-U03",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "支援の冒頭、問題との対応、停止表示、つぎへを確認。",
+      "evidence": [
+        "reports/screens/G4-C07-320.png",
+        "reports/screens/final-states/division-help.png"
+      ]
+    },
+    {
+      "id": "TC-U04",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "上下分数、帯分数、右へふくらむ除法記号を問題と支援で確認。",
+      "evidence": [
+        "reports/screens/contact/index.json",
+        "reports/screens/final-states/division-question.png",
+        "reports/screens/final-states/common-fields.png"
+      ]
+    },
+    {
+      "id": "TC-U05",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "全30筆算の数字行が説明で伸びず、数字に合う線・縦ガイド・別欄の説明であることを確認。",
+      "evidence": [
+        "reports/screens/contact/index.json"
+      ]
+    },
+    {
+      "id": "TC-U06",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "7÷4、整数/小数除法、借り越し、部分積を確認。",
+      "evidence": [
+        "reports/screens/contact/index.json",
+        "reports/screens/final-states/division-help.png",
+        "reports/screens/G3-C02-320.png"
+      ]
+    },
+    {
+      "id": "TC-U07",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "低学年共通文言・結果表示を確認。誤答の内部JSON除去は同IDの操作テストでも検証。",
+      "evidence": [
+        "reports/screens/contact/index.json",
+        "reports/screens/final-states/result.png"
+      ]
+    },
+    {
+      "id": "TC-U08",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "位取り4欄の最終画像で横一列の位順、通分の元の分数と入力先の対応を確認。",
+      "evidence": [
+        "reports/screens/final-states/blocks-G1-N02.png",
+        "reports/screens/final-states/blocks-G2-N02.png",
+        "reports/screens/final-states/common-fields.png"
+      ]
+    },
+    {
+      "id": "TC-U11",
+      "method": "visual",
+      "status": "PASS",
+      "reviewer": "Codex (rendered-image inspection)",
+      "environment": "Windows / Chromium 140.0.7339.186 / file://",
+      "actual": "3/8連続の節目、進み具合、実際の正解数を示す結果画像を確認。",
+      "evidence": [
+        "reports/screens/final-states/success-3.png",
+        "reports/screens/final-states/success-8.png",
+        "reports/screens/final-states/result.png"
+      ]
+    },
+    {
+      "id": "TC-B15",
+      "method": "device",
+      "status": "NOT_RUN",
+      "actual": "物理端末での操作検証は実施していない。"
+    }
+  ]
+}

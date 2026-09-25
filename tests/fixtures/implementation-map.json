@@ -1,0 +1,540 @@
+[
+  {
+    "id": "KZ-001",
+    "file": "scripts/audit-single-html.mjs",
+    "symbols": [
+      "Kazohe.html"
+    ],
+    "tests": [
+      "TC-B01",
+      "TC-B16",
+      "TC-B18"
+    ]
+  },
+  {
+    "id": "KZ-002",
+    "file": "tests/fixtures/input-receipt.json",
+    "symbols": [
+      "referenceSha256"
+    ],
+    "tests": [
+      "TC-D03",
+      "TC-D04"
+    ]
+  },
+  {
+    "id": "KZ-010",
+    "file": "src/core.js",
+    "symbols": [
+      "CATALOG",
+      "domains"
+    ],
+    "tests": [
+      "TC-G",
+      "TC-D05"
+    ]
+  },
+  {
+    "id": "KZ-011",
+    "file": "src/app.js",
+    "symbols": [
+      "menu",
+      "setConfig"
+    ],
+    "tests": [
+      "TC-G",
+      "TC-B03"
+    ]
+  },
+  {
+    "id": "KZ-012",
+    "file": "src/core.js",
+    "symbols": [
+      "normalizeConfig",
+      "createRun"
+    ],
+    "tests": [
+      "TC-T"
+    ]
+  },
+  {
+    "id": "KZ-020",
+    "file": "src/app.js",
+    "symbols": [
+      "welcome",
+      "menu",
+      "play",
+      "results",
+      "settings"
+    ],
+    "tests": [
+      "TC-B01",
+      "TC-B11"
+    ]
+  },
+  {
+    "id": "KZ-021",
+    "file": "src/app.js",
+    "symbols": [
+      "modal",
+      "focusFirst",
+      "announcer"
+    ],
+    "tests": [
+      "TC-B04",
+      "TC-B07",
+      "TC-B09",
+      "TC-B11",
+      "TC-B12"
+    ]
+  },
+  {
+    "id": "KZ-022",
+    "file": "src/app.js",
+    "symbols": [
+      "answerFields"
+    ],
+    "tests": [
+      "TC-M",
+      "TC-B05",
+      "TC-B08"
+    ]
+  },
+  {
+    "id": "KZ-030",
+    "file": "src/core.js",
+    "symbols": [
+      "arithmetic",
+      "complete",
+      "createRun",
+      "reduceRun",
+      "storageAdapter"
+    ],
+    "tests": [
+      "TC-M",
+      "TC-S",
+      "TC-F",
+      "TC-T",
+      "TC-P"
+    ]
+  },
+  {
+    "id": "KZ-031",
+    "file": "src/core.js",
+    "symbols": [
+      "generate",
+      "validateQuestion",
+      "normalizeInput",
+      "judge",
+      "scoreCorrect",
+      "evaluateFallback",
+      "buildHint",
+      "buildSolution"
+    ],
+    "tests": [
+      "TC-M",
+      "TC-G",
+      "TC-S",
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-040",
+    "file": "src/core.js",
+    "symbols": [
+      "rat",
+      "calc",
+      "evaluate",
+      "roundExact"
+    ],
+    "tests": [
+      "TC-M"
+    ]
+  },
+  {
+    "id": "KZ-041",
+    "file": "src/core.js",
+    "symbols": [
+      "normalizeInput",
+      "judge"
+    ],
+    "tests": [
+      "TC-M"
+    ]
+  },
+  {
+    "id": "KZ-042",
+    "file": "src/core.js",
+    "symbols": [
+      "writtenTrace",
+      "buildHint",
+      "buildSolution"
+    ],
+    "tests": [
+      "TC-M",
+      "TC-G",
+      "TC-B06"
+    ]
+  },
+  {
+    "id": "KZ-050",
+    "file": "src/core.js",
+    "symbols": [
+      "domains",
+      "atRank",
+      "generate"
+    ],
+    "tests": [
+      "TC-G"
+    ]
+  },
+  {
+    "id": "KZ-051",
+    "file": "src/core.js",
+    "symbols": [
+      "schedule",
+      "present"
+    ],
+    "tests": [
+      "TC-G"
+    ]
+  },
+  {
+    "id": "KZ-060",
+    "file": "src/core.js",
+    "symbols": [
+      "reduceRun",
+      "deriveMetrics"
+    ],
+    "tests": [
+      "TC-S",
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-061",
+    "file": "src/core.js",
+    "symbols": [
+      "scoreCorrect",
+      "reduceRun"
+    ],
+    "tests": [
+      "TC-S"
+    ]
+  },
+  {
+    "id": "KZ-062",
+    "file": "src/core.js",
+    "symbols": [
+      "deriveMetrics",
+      "runMetrics"
+    ],
+    "tests": [
+      "TC-S",
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-070",
+    "file": "src/core.js",
+    "symbols": [
+      "reduceRun",
+      "phase",
+      "pauseReasons"
+    ],
+    "tests": [
+      "TC-T",
+      "TC-B03"
+    ]
+  },
+  {
+    "id": "KZ-071",
+    "file": "src/core.js",
+    "symbols": [
+      "reduceRun",
+      "pauseReasons",
+      "activeTimeRemainingMs"
+    ],
+    "tests": [
+      "TC-T"
+    ]
+  },
+  {
+    "id": "KZ-072",
+    "file": "src/core.js",
+    "symbols": [
+      "finish",
+      "deriveMetrics"
+    ],
+    "tests": [
+      "TC-T",
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-080",
+    "file": "src/core.js",
+    "symbols": [
+      "deriveMetrics",
+      "runMetrics"
+    ],
+    "tests": [
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-081",
+    "file": "src/core.js",
+    "symbols": [
+      "eligibility"
+    ],
+    "tests": [
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-082",
+    "file": "src/core.js",
+    "symbols": [
+      "evaluateFallback"
+    ],
+    "tests": [
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-083",
+    "file": "src/core.js",
+    "symbols": [
+      "evaluateFallback",
+      "conditionCount",
+      "severity"
+    ],
+    "tests": [
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-084",
+    "file": "src/core.js",
+    "symbols": [
+      "applyResult",
+      "recommendConfig",
+      "returnStack"
+    ],
+    "tests": [
+      "TC-F",
+      "TC-P"
+    ]
+  },
+  {
+    "id": "KZ-090",
+    "file": "src/core.js",
+    "symbols": [
+      "bestKey",
+      "applyResult"
+    ],
+    "tests": [
+      "TC-P",
+      "TC-S"
+    ]
+  },
+  {
+    "id": "KZ-091",
+    "file": "src/app.js",
+    "symbols": [
+      "results",
+      "runMetrics",
+      "solution"
+    ],
+    "tests": [
+      "TC-B12",
+      "TC-S",
+      "TC-F"
+    ]
+  },
+  {
+    "id": "KZ-100",
+    "file": "src/core.js",
+    "symbols": [
+      "STORAGE_KEY",
+      "storageAdapter"
+    ],
+    "tests": [
+      "TC-P"
+    ]
+  },
+  {
+    "id": "KZ-101",
+    "file": "src/core.js",
+    "symbols": [
+      "checkpoint",
+      "validateBackup"
+    ],
+    "tests": [
+      "TC-P"
+    ]
+  },
+  {
+    "id": "KZ-102",
+    "file": "src/core.js",
+    "symbols": [
+      "clearScores",
+      "removeItem"
+    ],
+    "tests": [
+      "TC-P"
+    ]
+  },
+  {
+    "id": "KZ-103",
+    "file": "src/core.js",
+    "symbols": [
+      "validateBackup"
+    ],
+    "tests": [
+      "TC-P",
+      "TC-B13"
+    ]
+  },
+  {
+    "id": "KZ-110",
+    "file": "scripts/load-inline-core.mjs",
+    "symbols": [
+      "Kazohe.html",
+      "coreSource"
+    ],
+    "tests": [
+      "TC-D04",
+      "TC-B18"
+    ]
+  },
+  {
+    "id": "KZ-200",
+    "file": "src/app.js",
+    "symbols": [
+      "menu",
+      "start-dock"
+    ],
+    "tests": [
+      "TC-U01",
+      "TC-U02"
+    ]
+  },
+  {
+    "id": "KZ-201",
+    "file": "src/style.css",
+    "symbols": [
+      "brand-mark",
+      "challenge"
+    ],
+    "tests": [
+      "TC-U03",
+      "TC-U11"
+    ]
+  },
+  {
+    "id": "KZ-202",
+    "file": "src/view.js",
+    "symbols": [
+      "math-fraction",
+      "divisionHook"
+    ],
+    "tests": [
+      "TC-U04"
+    ]
+  },
+  {
+    "id": "KZ-203",
+    "file": "src/view.js",
+    "symbols": [
+      "written",
+      "written-notes"
+    ],
+    "tests": [
+      "TC-U05",
+      "TC-U06"
+    ]
+  },
+  {
+    "id": "KZ-204",
+    "file": "src/core.js",
+    "symbols": [
+      "buildHint",
+      "buildSolution"
+    ],
+    "tests": [
+      "TC-E"
+    ]
+  },
+  {
+    "id": "KZ-205",
+    "file": "src/view.js",
+    "symbols": [
+      "readable",
+      "answer"
+    ],
+    "tests": [
+      "TC-U07",
+      "TC-U08"
+    ]
+  },
+  {
+    "id": "KZ-206",
+    "file": "src/app.js",
+    "symbols": [
+      "setRangeText",
+      "next-field"
+    ],
+    "tests": [
+      "TC-U09"
+    ]
+  },
+  {
+    "id": "KZ-207",
+    "file": "src/core.js",
+    "symbols": [
+      "set-value",
+      "normalizeInput"
+    ],
+    "tests": [
+      "TC-U10",
+      "TC-E08"
+    ]
+  },
+  {
+    "id": "KZ-208",
+    "file": "src/app.js",
+    "symbols": [
+      "support-panel",
+      "focusFirst"
+    ],
+    "tests": [
+      "TC-U03"
+    ]
+  },
+  {
+    "id": "KZ-209",
+    "file": "src/app.js",
+    "symbols": [
+      "success-feedback",
+      "achievement-ribbon"
+    ],
+    "tests": [
+      "TC-U11",
+      "TC-U12"
+    ]
+  },
+  {
+    "id": "KZ-210",
+    "file": ".github/workflows/audit.yml",
+    "symbols": [
+      "matrix",
+      "aggregate"
+    ],
+    "tests": [
+      "TC-D06",
+      "TC-D07"
+    ]
+  }
+]
