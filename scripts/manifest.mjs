@@ -24,6 +24,7 @@ export const manifest = tcIds.flatMap((id) => {
   if (/^TC-G/.test(id)) return [{ id, method: "property" }];
   if (id === "TC-B15") return [{ id, method: "device" }];
   if (["TC-B16", "TC-B18"].includes(id)) return [{ id, method: "single-html" }];
+  if (id === "TC-D08") return [{ id, method: "browser" }];
   if (/^TC-B/.test(id))
     return [
       { id, method: "browser" },

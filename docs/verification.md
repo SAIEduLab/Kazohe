@@ -13,11 +13,11 @@
 | `npm run test:property` | 101技能×1,000問、独立オラクル、途中式、有限集合の一巡、seed、配分、範囲境界 |
 | `npm run test:pedagogy` | 101技能×40問、ヒントの逆演算・学年・単位、図の値、筆算途中値、未確定の約数、旧版JSON拒否 |
 | `npm run audit:single-html` | HTML/CSS/JSの構造解析、実行時参照、ファイル名・版 |
-| `npm run test:e2e` | Chromium/Firefox/WebKitのfile://操作、全101入力と解答、9入力形式、104例×4画面幅の問題/支援、数字列・線・行高、キーボード、保存、axe |
+| `npm run test:e2e` | Chromium/Firefox/WebKitのfile://操作、全101入力と解答、9入力形式、104例×4画面幅の問題/支援、数字列・線・行高、キーボード、保存、axe。GitHub Pages用 `index.html` も3画面幅、主要導線、キーボード、axe、外部通信なしを確認 |
 | `npm run audit:visual-diff` | 新Publicの別commitにある基点と候補を同一ブラウザで16組撮影し、比較画像を出力。視覚合否は付けない |
 | `npm run audit:release -- --machine-only` | 必須自動検証をHTML、版、checkout commit、PR head、repository、run IDとattemptで照合 |
 
-TCと担当方法は `scripts/manifest.mjs`、現行仕様の実装所有先とテスト群は `tests/fixtures/implementation-map.json` で管理します。TC-D03と旧KZ-002は一回限りの参考原型の固定ハッシュ契約だったため廃止しました。TC-D01は公開文書とリンク、TC-D04は現行カタログの整合を検査します。TC-D02は独立したID範囲を基準に、欠落・重複・参照切れを検出します。
+TCと担当方法は `scripts/manifest.mjs`、現行仕様の実装所有先とテスト群は `tests/fixtures/implementation-map.json` で管理します。TC-D03と旧KZ-002は一回限りの参考原型の固定ハッシュ契約だったため廃止しました。TC-D01は公開文書・GitHub Pages用紹介ページの必須内容とリンク、TC-D04は現行カタログの整合を検査します。TC-D08は紹介ページのレスポンシブ表示、主要導線、キーボード操作、アクセシビリティ、外部通信なしを3ブラウザで検査します。TC-D02は独立したID範囲を基準に、欠落・重複・参照切れを検出します。
 
 未出力、重複、不一致、失敗、別commit・別runのレポートは集約できません。PRの合成マージSHAを検証のcheckout commitとして記録し、PR head SHAは別に保持します。Playwrightの再試行は0です。生成検証は `DEEP_AUDIT=1` で各技能10,000問に増やせます。
 
