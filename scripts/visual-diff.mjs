@@ -40,6 +40,7 @@ const browser = await chromium.launch(),
 try {
   for (const width of [390, 1366])
     for (const id of [
+      "welcome",
       "menu",
       "G1-C03",
       "G2-C02",
@@ -72,7 +73,7 @@ try {
           },
           {
             seed: 20260925,
-            ...(id === "menu"
+            ...(id === "menu" || id === "welcome"
               ? {}
               : {
                   initialConfig: {
@@ -85,8 +86,8 @@ try {
           },
         );
         await page.goto(pathToFileURL(path).href);
-        await page.getByTestId("skip").click();
-        if (id !== "menu") {
+        if (id !== "welcome") await page.getByTestId("skip").click();
+        if (id !== "menu" && id !== "welcome") {
           await page.getByTestId("start").click();
           await page.getByTestId("help").click();
         }
