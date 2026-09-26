@@ -222,7 +222,7 @@ s.check("TC-D06", () => {
   sample["visual-diff"].candidateHtmlSha256 = hash;
   sample["visual-diff"].visualApproval = "NOT_RUN";
   sample["visual-diff"].comparisons = [390, 1366].flatMap(width =>
-    ["menu", "G1-C03", "G2-C02", "G3-C02", "G3-C07",
+    ["welcome", "menu", "G1-C03", "G2-C02", "G3-C02", "G3-C07",
       "G4-C12", "G5-N08", "G6-C05"].map(id =>
       ({ id, width, changedPixels: 0 })));
   assert(validateEvidence(sample, hash, manifest, fixture));

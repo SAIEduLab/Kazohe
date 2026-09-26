@@ -217,6 +217,12 @@ footer {
   font-size: 0.85rem;
   font-weight: 700;
 }
+.welcome .field {
+  gap: 12px;
+}
+.welcome .actions {
+  margin-top: 16px;
+}
 .options {
   display: flex;
   gap: 16px;
@@ -1198,6 +1204,9 @@ dialog h2 {
 }
 dialog .field {
   margin-bottom: 16px;
+}
+dialog .field:has(input:not([type="checkbox"])) {
+  gap: 12px;
 }
 dialog .actions {
   margin-top: 18px;

@@ -61,10 +61,10 @@ export function validateEvidence(reports, hash, manifest, expected = expectedExe
       !/^[0-9a-f]{64}$/.test(visual.baseHtmlSha256) ||
       visual.candidateHtmlSha256 !== hash ||
       visual.visualApproval !== "NOT_RUN" ||
-      visual.comparisons?.length !== 16 ||
-      new Set(visual.comparisons.map(c => `${c.id}/${c.width}`)).size !== 16 ||
+      visual.comparisons?.length !== 18 ||
+      new Set(visual.comparisons.map(c => `${c.id}/${c.width}`)).size !== 18 ||
       visual.comparisons.some(c =>
-        !["menu", "G1-C03", "G2-C02", "G3-C02", "G3-C07",
+        !["welcome", "menu", "G1-C03", "G2-C02", "G3-C02", "G3-C07",
           "G4-C12", "G5-N08", "G6-C05"].includes(c.id) ||
         ![390, 1366].includes(c.width) ||
         !Number.isFinite(c.changedPixels) || c.changedPixels < 0))
