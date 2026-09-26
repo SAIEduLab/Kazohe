@@ -57,7 +57,31 @@ test("TC-U01 simple menu selection and visible start at four widths", async ({
 }) => {
   for (const width of [320, 390, 768, 1366]) {
     await page.setViewportSize({ width, height: width === 320 ? 568 : 844 });
+    await page.goto(url + "?welcome=" + width);
+    const label = await page.locator(".welcome .field > span").boundingBox();
+    const input = await page.locator(".welcome .field input").boundingBox();
+    const actions = await page.locator(".welcome .actions").boundingBox();
+    expect(input.y - (label.y + label.height)).toBeGreaterThanOrEqual(12);
+    expect(actions.y - (input.y + input.height)).toBeGreaterThanOrEqual(16);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
     await open(page);
+    await page.getByTestId("settings").click();
+    const settingsLabel = await page
+      .locator("#dialog-body .field > span")
+      .first()
+      .boundingBox();
+    const settingsInput = await page
+      .locator("#dialog-body .field input")
+      .first()
+      .boundingBox();
+    expect(
+      settingsInput.y - (settingsLabel.y + settingsLabel.height),
+    ).toBeGreaterThanOrEqual(12);
+    await page.keyboard.press("Escape");
     await expect(page.getByTestId("start")).toBeInViewport({ ratio: 1 });
     await expect(page.locator('[data-testid="mode"]')).toBeHidden();
     await page.locator('[data-category="計算"]').click();
