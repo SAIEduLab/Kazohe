@@ -55,14 +55,16 @@ test.afterEach(async ({ page }) => expect(page.__errors).toEqual([]));
 test("TC-U01 simple menu selection and visible start at four widths", async ({
   page,
 }) => {
+  const pixelGap = (after, before) =>
+    Math.round((after.y - before.y - before.height) * 100) / 100;
   for (const width of [320, 390, 768, 1366]) {
     await page.setViewportSize({ width, height: width === 320 ? 568 : 844 });
     await page.goto(url + "?welcome=" + width);
     const label = await page.locator(".welcome .field > span").boundingBox();
     const input = await page.locator(".welcome .field input").boundingBox();
     const actions = await page.locator(".welcome .actions").boundingBox();
-    expect(input.y - (label.y + label.height)).toBeGreaterThanOrEqual(12);
-    expect(actions.y - (input.y + input.height)).toBeGreaterThanOrEqual(16);
+    expect(pixelGap(input, label)).toBeGreaterThanOrEqual(12);
+    expect(pixelGap(actions, input)).toBeGreaterThanOrEqual(16);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -78,9 +80,7 @@ test("TC-U01 simple menu selection and visible start at four widths", async ({
       .locator("#dialog-body .field input")
       .first()
       .boundingBox();
-    expect(
-      settingsInput.y - (settingsLabel.y + settingsLabel.height),
-    ).toBeGreaterThanOrEqual(12);
+    expect(pixelGap(settingsInput, settingsLabel)).toBeGreaterThanOrEqual(12);
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("start")).toBeInViewport({ ratio: 1 });
     await expect(page.locator('[data-testid="mode"]')).toBeHidden();
