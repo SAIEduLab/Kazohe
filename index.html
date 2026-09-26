@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="小学1〜6年の「数と計算」を中心に、自分のペースで練習できる学習アプリ「かぞへ」の紹介ページです。">
+  <meta name="theme-color" content="#17624f">
+  <title>かぞへ｜できた！を積み重ねる計算練習</title>
+  <style>
+    :root {
+      --ink: #183153;
+      --muted: #566b7a;
+      --paper: #fffaf2;
+      --surface: #ffffff;
+      --green: #17624f;
+      --green-dark: #0f493b;
+      --coral: #b94f46;
+      --yellow: #f4c84e;
+      --sky: #dcecf8;
+      --mint: #dff1e8;
+      --line: #d8e1e7;
+      --shadow: 0 18px 50px rgba(24, 49, 83, 0.12);
+      --radius-lg: 30px;
+      --radius-md: 20px;
+      --max: 1120px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(244, 200, 78, 0.24), transparent 26rem),
+        radial-gradient(circle at 88% 18%, rgba(220, 236, 248, 0.8), transparent 30rem),
+        var(--paper);
+      font-family: ui-rounded, "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      line-height: 1.75;
+    }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+      outline: 4px solid #1f6fb2;
+      outline-offset: 4px;
+      border-radius: 8px;
+    }
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .wrap { width: min(calc(100% - 36px), var(--max)); margin: 0 auto; }
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 250, 242, 0.94);
+      border-bottom: 1px solid rgba(24, 49, 83, 0.08);
+    }
+    .header-inner {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--green);
+      color: white;
+      font-size: 1rem;
+      box-shadow: 0 8px 18px rgba(23, 98, 79, 0.25);
+    }
+    .nav { display: flex; align-items: center; gap: 8px; }
+    .nav a {
+      padding: 8px 12px;
+      text-decoration: none;
+      font-weight: 750;
+      border-radius: 999px;
+    }
+    .nav a:hover { background: rgba(23, 98, 79, 0.08); }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      align-items: center;
+      gap: 56px;
+      padding: 78px 0 72px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 7px 12px;
+      border: 1px solid #b9d9cb;
+      border-radius: 999px;
+      background: #f0faf5;
+      color: var(--green-dark);
+      font-weight: 850;
+      font-size: 0.92rem;
+    }
+    h1, h2, h3 { line-height: 1.28; }
+    h1 {
+      max-width: 13ch;
+      margin: 0;
+      font-size: clamp(2.55rem, 7vw, 5rem);
+      letter-spacing: -0.035em;
+    }
+    .hero-accent { color: var(--coral); }
+    .lead {
+      max-width: 42rem;
+      margin: 24px 0 0;
+      color: #425b6b;
+      font-size: clamp(1.05rem, 2.3vw, 1.28rem);
+      font-weight: 650;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 26px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .badges li {
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      font-weight: 800;
+      font-size: 0.92rem;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 12px 20px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 900;
+      box-shadow: 0 8px 20px rgba(24, 49, 83, 0.1);
+    }
+    .button-primary { background: var(--green); color: white; }
+    .button-primary:hover { background: var(--green-dark); }
+    .button-secondary { background: var(--surface); border-color: #b7c6d0; }
+    .button-secondary:hover { border-color: var(--ink); }
+    .status-note { margin: 14px 0 0; color: var(--muted); font-size: 0.92rem; }
+    .hero-visual {
+      position: relative;
+      min-height: 470px;
+      padding: 36px;
+      overflow: hidden;
+      border: 1px solid rgba(24, 49, 83, 0.1);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.74)),
+        var(--sky);
+      box-shadow: var(--shadow);
+    }
+    .hero-visual::before,
+    .hero-visual::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.8;
+    }
+    .hero-visual::before {
+      width: 180px;
+      height: 180px;
+      right: -58px;
+      top: -52px;
+      background: var(--yellow);
+    }
+    .hero-visual::after {
+      width: 130px;
+      height: 130px;
+      left: -44px;
+      bottom: -38px;
+      background: var(--mint);
+    }
+    .practice-card {
+      position: relative;
+      z-index: 2;
+      padding: 24px;
+      border-radius: 22px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 30px rgba(24, 49, 83, 0.11);
+    }
+    .practice-card + .practice-card { margin-top: 18px; }
+    .practice-label { color: var(--muted); font-size: 0.85rem; font-weight: 800; }
+    .equation { margin-top: 6px; font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 950; letter-spacing: 0.03em; }
+    .answer-line {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      margin-top: 14px;
+    }
+    .fake-input {
+      min-height: 46px;
+      border: 3px solid #7ab49e;
+      border-radius: 12px;
+      background: #fbfffd;
+    }
+    .ok-chip {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--mint);
+      color: var(--green-dark);
+      font-weight: 900;
+    }
+    .mini-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .mini-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: #fff8d9;
+      border: 1px solid #ead68f;
+      font-weight: 900;
+    }
+    .mini-card:nth-child(2) { background: #eef7ff; border-color: #bdd6e8; }
+    .section { padding: 78px 0; }
+    .section-soft {
+      background: rgba(255,255,255,0.62);
+      border-top: 1px solid rgba(24,49,83,0.07);
+      border-bottom: 1px solid rgba(24,49,83,0.07);
+    }
+    .section-head { max-width: 680px; margin-bottom: 34px; }
+    .section-kicker {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 0.88rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h2 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.025em; }
+    .section-copy { margin: 12px 0 0; color: var(--muted); font-size: 1.04rem; }
+    .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .info-card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      box-shadow: 0 10px 26px rgba(24, 49, 83, 0.06);
+    }
+    .card-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      margin-bottom: 16px;
+      border-radius: 14px;
+      background: var(--mint);
+      color: var(--green-dark);
+      font-weight: 950;
+    }
+    .info-card:nth-child(3n+2) .card-icon { background: #fff1d0; color: #765200; }
+    .info-card:nth-child(3n) .card-icon { background: #e7f1fa; color: #244f71; }
+    h3 { margin: 0 0 8px; font-size: 1.2rem; }
+    .info-card p, .step p { margin: 0; color: var(--muted); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+    .step {
+      position: relative;
+      padding: 28px 24px 24px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      counter-increment: step;
+    }
+    .step::before {
+      content: counter(step);
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 18px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-weight: 950;
+    }
+    .detail-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+      gap: 28px;
+      align-items: center;
+      padding: 34px;
+      border-radius: var(--radius-lg);
+      background: var(--ink);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    .detail-panel p { color: #dbe7ef; }
+    .detail-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .detail-list li {
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.07);
+      font-weight: 800;
+    }
+    .license-box {
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      background: #fff8db;
+      border: 1px solid #ead68f;
+    }
+    .license-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+    .text-link { font-weight: 900; text-underline-offset: 4px; }
+    .final-cta {
+      padding: 38px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, #dff1e8, #eef7ff);
+      border: 1px solid #c8ddd4;
+      text-align: center;
+    }
+    .final-cta p { max-width: 650px; margin: 12px auto 0; color: var(--muted); }
+    .final-cta .actions { justify-content: center; }
+    .site-footer { padding: 34px 0 46px; color: var(--muted); font-size: 0.92rem; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .footer-inner p { margin: 0; }
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; gap: 34px; padding-top: 54px; }
+      .hero-visual { min-height: 0; }
+      .card-grid, .steps { grid-template-columns: 1fr 1fr; }
+      .detail-panel { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 650px) {
+      .wrap { width: min(calc(100% - 24px), var(--max)); }
+      .site-header { position: static; }
+      .header-inner { min-height: auto; padding: 14px 0; align-items: flex-start; }
+      .nav { display: none; }
+      .hero { padding: 38px 0 48px; }
+      h1 { max-width: none; }
+      .hero-visual { padding: 22px; }
+      .card-grid, .steps { grid-template-columns: 1fr; }
+      .detail-panel, .license-box, .final-cta { padding: 24px; }
+      .actions .button { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand" aria-label="かぞへ">
+        <span class="brand-mark" aria-hidden="true">＋</span>
+        <span>かぞへ</span>
+      </div>
+      <nav class="nav" aria-label="ページ内">
+        <a href="#features">特徴</a>
+        <a href="#howto">使い方</a>
+        <a href="#license">ライセンス</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="wrap hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">小学1〜6年・数と計算</p>
+        <h1 id="hero-title">できた！を<br><span class="hero-accent">積み重ねる</span>、<br>計算練習。</h1>
+        <p class="lead">「かぞへ」は、学年や分野を選び、自分のペースでくり返し練習できる計算学習アプリです。タッチでもキーボードでも、迷いにくく続けやすい学び方を目指しています。</p>
+        <ul class="badges" aria-label="主な特徴">
+          <li>全101チャレンジ</li>
+          <li>タッチ・キーボード対応</li>
+          <li>1ファイルで動作</li>
+        </ul>
+        <div class="actions">
+          <a class="button button-primary" href="./Kazohe.html">かぞへをはじめる</a>
+          <a class="button button-secondary" href="https://github.com/SAIEduLab/Kazohe">GitHubを見る</a>
+        </div>
+        <p class="status-note">v0.2 開発版 · 正式リリース前</p>
+      </div>
+
+      <div class="hero-visual" aria-label="かぞへの学習画面をイメージした装飾">
+        <div class="practice-card" aria-hidden="true">
+          <div class="practice-label">れんしゅう</div>
+          <div class="equation">36 ÷ 4 = ?</div>
+          <div class="answer-line">
+            <div class="fake-input"></div>
+            <div class="ok-chip">できた！</div>
+          </div>
+        </div>
+        <div class="mini-grid" aria-hidden="true">
+          <div class="mini-card">3/4 + 1/4 = 1</div>
+          <div class="mini-card">0.7 × 8 = 5.6</div>
+        </div>
+        <div class="practice-card" aria-hidden="true">
+          <div class="practice-label">こまったときは</div>
+          <strong>ヒントや完成解答を確認できます。</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-soft" aria-labelledby="for-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="section-kicker">For learners</p>
+          <h2 id="for-title">こんな学び方に。</h2>
+          <p class="section-copy">速さだけを競うのではなく、選ぶ・考える・確かめるを自分のペースで進められるようにしています。</p>
+        </div>
+        <div class="card-grid">
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">1</div>
+            <h3>学年と分野から選びたい</h3>
+            <p>小学1〜6年の「数と計算」を中心に、学年・分野・例題を見ながら練習内容を選べます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">2</div>
+            <h3>つまずいたら支えてほしい</h3>
+            <p>誤答が続いたときのヒントや「こまったら助けて」で、次の一手や完成解答を確認できます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">3</div>
+            <h3>あとから続きをやりたい</h3>
+            <p>練習途中の再開、自己ベスト、JSONバックアップなど、続けるための記録機能を備えています。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="section-kicker">Features</p>
+          <h2 id="features-title">学ぶための機能を、まっすぐに。</h2>
+          <p class="section-copy">練習・入力・支援・記録まで、児童が使う流れを一つのHTMLにまとめています。</p>
+        </div>
+        <div class="card-grid">
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">101</div>
+            <h3>101チャレンジ</h3>
+            <p>整数、小数、分数、商と余り、通分、約数など、学年に応じた内容を選んで練習できます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">10</div>
+            <h3>練習量を選べる</h3>
+            <p>10・20・30問、無制限の練習に加え、チャレンジに応じたタイムアタックも用意しています。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">?</div>
+            <h3>ヒントと学習支援</h3>
+            <p>2回の誤答で次の一手を示し、必要なら完成解答や筆算も確認できます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">Aa</div>
+            <h3>入力をわかりやすく</h3>
+            <p>分数、商と余り、複数欄の入力など、内容に合わせた入力欄と画面キーを使えます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">↺</div>
+            <h3>記録・再開・バックアップ</h3>
+            <p>Scoreや自己ベスト、途中再開に対応。設定からJSONを書き出して記録を保管できます。</p>
+          </article>
+          <article class="info-card">
+            <div class="card-icon" aria-hidden="true">⌨</div>
+            <h3>いろいろな端末で</h3>
+            <p>スマートフォン、タブレット、Chromebook/PCを想定し、タッチとキーボードの両方に対応しています。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-soft" id="howto" aria-labelledby="howto-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="section-kicker">How to use</p>
+          <h2 id="howto-title">使い方は、3ステップ。</h2>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <h3>練習したい内容を選ぶ</h3>
+            <p>学年・分野・例題を見て1つ選ぶか、複数のチャレンジを組み合わせます。</p>
+          </article>
+          <article class="step">
+            <h3>自分のペースで解く</h3>
+            <p>キーボードや画面キーで答えを入力。困ったときはヒントや支援を使えます。</p>
+          </article>
+          <article class="step">
+            <h3>結果を見て続ける</h3>
+            <p>Scoreや詳細を確認し、必要ならおすすめを選んだり、あとで続きを再開したりできます。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="standalone-title">
+      <div class="wrap detail-panel">
+        <div>
+          <p class="section-kicker" style="color:#9bd2be">Single HTML</p>
+          <h2 id="standalone-title">アプリ本体は、Kazohe.html ひとつ。</h2>
+          <p>「かぞへ」本体はCSS・JavaScript・問題生成・効果音・保存処理を1ファイルに含み、実行時にCDN、外部フォント、外部画像、外部APIを必要としません。ファイルとして保存し、ブラウザで直接開くこともできます。</p>
+        </div>
+        <ul class="detail-list">
+          <li>外部ライブラリ不要</li>
+          <li>サーバー必須ではない</li>
+          <li>タッチ / キーボード対応</li>
+          <li>動き軽減にも配慮</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-soft" id="license" aria-labelledby="license-title">
+      <div class="wrap">
+        <div class="license-box">
+          <p class="section-kicker">Open source</p>
+          <h2 id="license-title">MIT License で公開しています。</h2>
+          <p>ソースコードと公開資料はGitHubで確認できます。「かぞへ」は学習指導要領の内容を参考にしていますが、チャレンジへの分割、点数、出題範囲、おすすめの判定は本アプリ独自の設計で、能力を診断する検査ではありません。</p>
+          <div class="license-links">
+            <a class="text-link" href="./LICENSE">MIT License を読む</a>
+            <a class="text-link" href="https://github.com/SAIEduLab/Kazohe">GitHub リポジトリを見る</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="start-title">
+      <div class="wrap final-cta">
+        <p class="section-kicker">Start</p>
+        <h2 id="start-title">今日の「できた！」を、ひとつ。</h2>
+        <p>まずは学年と練習したい内容を選んでみてください。記録を残したい場合は、同じブラウザ・同じ端末での利用をおすすめします。</p>
+        <div class="actions">
+          <a class="button button-primary" href="./Kazohe.html">かぞへを開く</a>
+          <a class="button button-secondary" href="./README.md">詳しい説明を見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p><strong>かぞへ v0.2</strong> · 開発版</p>
+      <p>MIT License · Copyright © 2026 SAIEduLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -29,7 +29,7 @@ s.check("html-js-syntax", () => {
   visit(tree);
 });
 s.check("TC-D01", () => {
-  for (const path of ["README.md", "CHANGELOG.md", "LICENSE"])
+  for (const path of ["README.md", "CHANGELOG.md", "LICENSE", "index.html"])
     assert(existsSync(path));
   for (const path of ["README.md", "CHANGELOG.md"]) {
     const text = readFileSync(path, "utf8");
@@ -38,6 +38,43 @@ s.check("TC-D01", () => {
       if (!/^(https?:|#)/.test(m[1]))
         assert(existsSync(m[1].split("#")[0]), m[1]);
   }
+  const site = readFileSync("index.html", "utf8");
+  const errors = [];
+  const tree = parse(site, { onParseError: (e) => errors.push(e) });
+  assert.deepEqual(errors, []);
+  const nodes = [];
+  (function visit(node) {
+    nodes.push(node);
+    (node.childNodes || []).forEach(visit);
+  })(tree);
+  const attr = (node, name) =>
+    (node.attrs || []).find((a) => a.name === name)?.value;
+  const text = (node) =>
+    (node.childNodes || []).map((child) =>
+      child.nodeName === "#text" ? child.value : text(child)).join("");
+  const htmlNode = nodes.find((node) => node.tagName === "html");
+  assert.equal(attr(htmlNode, "lang"), "ja");
+  assert(nodes.some((node) =>
+    node.tagName === "meta" && attr(node, "name") === "viewport"));
+  assert(nodes.some((node) =>
+    node.tagName === "title" && text(node).includes("かぞへ")));
+  assert.equal(nodes.filter((node) => node.tagName === "script").length, 0);
+  const ids = new Set(nodes.map((node) => attr(node, "id")).filter(Boolean));
+  for (const id of ["main", "features", "howto", "license"]) assert(ids.has(id));
+  const links = nodes.filter((node) => node.tagName === "a");
+  const hrefs = new Set(links.map((node) => attr(node, "href")));
+  for (const href of [
+    "./Kazohe.html", "./LICENSE", "./README.md",
+    "https://github.com/SAIEduLab/Kazohe",
+  ]) assert(hrefs.has(href), `index.html: missing link ${href}`);
+  for (const href of hrefs)
+    if (href && !/^(https?:|#)/.test(href))
+      assert(existsSync(href.split("#")[0].replace(/^\.\//, "")), href);
+  const siteText = text(htmlNode).replace(/\s+/g, " ");
+  for (const required of [
+    "小学1〜6年", "101チャレンジ", "使い方", "MIT License",
+    "正式リリース前",
+  ]) assert(siteText.includes(required), `index.html: missing ${required}`);
 });
 s.check("TC-D02", () => {
   const expected = [
@@ -46,7 +83,7 @@ s.check("TC-D02", () => {
       .flatMap(([group, count]) =>
         Array.from({ length: count }, (_, i) =>
           `TC-${group}${String(i + 1).padStart(2, "0")}`)),
-    ...["01", "02", "04", "05", "06", "07"].map(n => `TC-D${n}`),
+    ...["01", "02", "04", "05", "06", "07", "08"].map(n => `TC-D${n}`),
   ];
   assert.deepEqual([...tcIds].sort(), expected.sort());
   assert.equal(new Set(tcIds).size, expected.length);
@@ -230,12 +267,13 @@ s.check("TC-D07", () => {
   for (const engine of ["chromium", "firefox", "webkit"])
     assert(cfg.includes(engine));
   assert(cfg.includes("retries:0") || cfg.includes("retries: 0"));
-  assert(!/\.skip\s*\(/.test(readFileSync("tests/e2e/app.spec.mjs", "utf8")));
+  for (const path of ["tests/e2e/app.spec.mjs", "tests/e2e/site.spec.mjs"])
+    assert(!/\.skip\s*\(/.test(readFileSync(path, "utf8")));
 });
 s.check("public-boundary-and-secrets", () => {
   const allowed = new Set([
     ".gitattributes", ".gitignore", ".github/workflows/audit.yml",
-    "CHANGELOG.md", "Kazohe.html", "LICENSE", "README.md",
+    "CHANGELOG.md", "Kazohe.html", "LICENSE", "README.md", "index.html",
     "docs/verification.md", "package.json", "package-lock.json",
     "playwright.config.mjs",
     ...["app.js", "catalog.json", "core.js", "shell.html", "style.css", "view.js"]
@@ -245,7 +283,7 @@ s.check("public-boundary-and-secrets", () => {
       "lint", "load-inline-core", "manifest", "release-gate", "report",
       "review-gallery", "run-unit", "test-reporter", "visual-diff"]
       .map(name => `scripts/${name}.mjs`),
-    ...["e2e/app.spec.mjs", "e2e/usability.spec.mjs",
+    ...["e2e/app.spec.mjs", "e2e/site.spec.mjs", "e2e/usability.spec.mjs",
       "evidence/visual-review.json", "fixtures/catalog.json",
       "fixtures/implementation-map.json", "fixtures/representatives.mjs",
       "fixtures/tc-ids.json", "property/domain-contracts.mjs",
