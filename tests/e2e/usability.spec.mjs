@@ -573,8 +573,10 @@ test("TC-U10 input error focus, visible duplicates and pending last divisor", as
 test("TC-U11 correct feedback, 3 5 8 streaks, progress and achievement result", async ({
   page,
 }) => {
-  await page.clock.install();
+  const initialTime = new Date("2026-10-02T00:00:00Z");
+  await page.clock.install({ time: initialTime });
   await open(page, "G1-C03");
+  await page.clock.pauseAt(new Date(initialTime.getTime() + 60_000));
   for (let i = 1; i <= 10; i++) {
     const q = (await snap(page)).run.currentQuestion;
     await page.getByTestId("answer-value").fill(String(rawAnswer(q).value));
@@ -589,6 +591,11 @@ test("TC-U11 correct feedback, 3 5 8 streaks, progress and achievement result", 
       String(i),
     );
     await page.clock.runFor(800);
+    if (i < 10) {
+      const next = (await snap(page)).run;
+      expect(next.phase).toBe("QUESTION");
+      expect(next.currentQuestion.questionId).not.toBe(q.questionId);
+    }
   }
   await expect(page.locator(".achievement-ribbon")).toContainText(
     "10もん できた",

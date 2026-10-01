@@ -65,6 +65,17 @@ test("TC-D08 public landing page content, responsive layout, keyboard and access
     }
   }
 
+  await page.setViewportSize({ width: 320, height: 568 });
+  const enlarged = await page.addStyleTag({
+    content: "html { font-size: 20px; }",
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await enlarged.evaluate((element) => element.remove());
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);
   await page.keyboard.press("Tab");
