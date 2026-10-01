@@ -1,3 +1,4 @@
+import { htmlName, appVersion } from "./artifact.mjs";
 import assert from "node:assert/strict";
 import { parse } from "parse5";
 import * as css from "css-tree";
@@ -90,8 +91,8 @@ export function assertSingle(document) {
 }
 s.check("TC-B16", () => assertSingle(html));
 s.check("TC-B18", () => {
-  assert(htmlPath.endsWith("Kazohe.html"));
-  assert(html.includes("かぞへ v0.2"));
+  assert(htmlPath.endsWith(htmlName));
+  assert(html.includes(`かぞへ v${appVersion}`));
   assert(!html.includes("かぞへ.html"));
   assert(!/\/\* (?:STYLE|CORE|APP|CATALOG) \*\//.test(html));
 });

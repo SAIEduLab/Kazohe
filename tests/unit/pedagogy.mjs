@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { K } from "../../scripts/load-inline-core.mjs";
+import { K, Teaching } from "../../scripts/load-inline-core.mjs";
 import { suite } from "../../scripts/report.mjs";
 import {
   eq,
@@ -210,5 +210,90 @@ s.check("TC-E08", () => {
     JSON.stringify(K.validateBackup(JSON.stringify(current))),
     JSON.stringify(current),
   );
+});
+s.check("TC-E09", () => {
+  let states = 0;
+  const display = (row) => {
+    if (!Array.isArray(row.digits)) return row.digits;
+    return row.digits
+      .map((digit, i) => digit + (row.points?.includes(i) ? "." : ""))
+      .join("");
+  };
+  for (const qs of Object.values(samples))
+    for (const q of qs) {
+      const frames = Teaching.steps(q),
+        before = JSON.stringify(frames);
+      assert(frames.length > 0 && frames.at(-1).text.startsWith("こたえ："));
+      for (const frame of frames) {
+        assert(!/undefined|NaN/.test(frame.text));
+        if (frame.check)
+          assert(
+            eq(
+              operation(frame.check.op, frame.check.a, frame.check.b),
+              frame.check.result,
+            ),
+          );
+        if (frame.board) {
+          assert(
+            frame.board.rows.every(
+              (row) => !["borrow", "annotation"].includes(row.kind),
+            ),
+          );
+          for (const row of frame.board.rows)
+            for (const [column, note] of Object.entries(
+              row.annotations || {},
+            )) {
+              assert(Number(column) >= 0 && Number(column) < frame.board.cols);
+              assert(/^\d{1,2}$/.test(note.value));
+            }
+        }
+        states++;
+      }
+      if (q.written) {
+        const board = frames.at(-1).board,
+          op = q.expressionAST.op;
+        if (["+", "-"].includes(op)) {
+          assert(frames.every((frame) => frame.board.rows.length === 3));
+          assert(eq(display(board.rows.at(-1)), q.expectedExactValue));
+          assert(frames[0].board.rows.at(-1).digits.every((d) => d === ""));
+        } else if (op === "*")
+          assert(eq(display(board.rows.at(-1)), q.expectedExactValue));
+        else {
+          const quotient = display(board.rows.find((row) => row.quotient));
+          assert(
+            eq(
+              quotient,
+              q.answerSpec.type === "quotient"
+                ? q.expectedExactValue.quotient
+                : q.expectedExactValue,
+            ),
+          );
+          assert(frames[0].board.rows[0].digits.every((d) => d === ""));
+        }
+      }
+      assert.equal(JSON.stringify(Teaching.steps(q)), before);
+    }
+  const subtract = (a, b) =>
+    K.complete(
+      K.arithmetic(
+        "G3-C02",
+        K.op("-", K.lit(a), K.lit(b)),
+        { type: "integer" },
+        { written: true },
+      ),
+    );
+  for (const [a, b, expected] of [
+    [324, 166, 158],
+    [9910, 9541, 369],
+    [1000, 1, 999],
+  ]) {
+    const frames = Teaching.steps(subtract(a, b));
+    assert.equal(Number(display(frames.at(-1).board.rows.at(-1))), expected);
+    assert(frames.every((f) => f.board.rows.length === 3));
+    const earliest = JSON.stringify(frames[0]);
+    frames.at(-1).board.rows[0].annotations = {};
+    assert.equal(JSON.stringify(frames[0]), earliest);
+  }
+  return { states, questions: 4040, allChallengeIds: Object.keys(samples) };
 });
 s.done({ seed, generatorCoverage: coverage });

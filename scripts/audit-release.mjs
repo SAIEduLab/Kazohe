@@ -1,3 +1,4 @@
+import { artifactAt } from "./artifact.mjs";
 import { readFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -34,9 +35,7 @@ try {
 function matchingHtmlCommit(commit, currentHash) {
   try {
     execFileSync("git", ["merge-base", "--is-ancestor", commit, "HEAD"]);
-    const html = execFileSync("git", ["show", `${commit}:Kazohe.html`], {
-      maxBuffer: 20 * 1024 * 1024,
-    });
+    const html = artifactAt(commit).html;
     return createHash("sha256").update(html).digest("hex") === currentHash;
   } catch {
     return false;
@@ -48,7 +47,10 @@ if (!machineOnly) {
   const file = "tests/evidence/visual-review.json",
     review = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : null;
   const provenance = validManualProvenance(
-    review, hash, expectedExecution(), matchingHtmlCommit,
+    review,
+    hash,
+    expectedExecution(),
+    matchingHtmlCommit,
   );
   manualEvidenceProvenance = provenance ? "PASS" : "NOT_RUN";
   for (const c of manifest.filter((c) =>

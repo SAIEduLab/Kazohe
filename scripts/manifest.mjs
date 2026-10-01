@@ -16,6 +16,8 @@ export const manifest = tcIds.flatMap((id) => {
         "TC-U07",
         "TC-U08",
         "TC-U11",
+        "TC-U13",
+        "TC-U14",
       ].includes(id)
         ? [{ id, method: "visual" }]
         : []),

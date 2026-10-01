@@ -17,8 +17,8 @@ await import("../tests/unit/core.mjs");
 const { result } = await post("Profiler.takePreciseCoverage");
 await post("Profiler.stopPreciseCoverage");
 session.disconnect();
-const { coreSource } = await import("./load-inline-core.mjs");
-const script = result.find((s) => s.url.endsWith("Kazohe.html"));
+const { coreSource, htmlPath } = await import("./load-inline-core.mjs");
+const script = result.find((s) => s.url === htmlPath);
 if (!script) throw Error("Distribution core coverage missing");
 // The gate covers all numerical, grading, scoring, metrics, clock and save code.
 const names = [

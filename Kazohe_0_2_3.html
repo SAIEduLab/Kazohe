@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
-      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.1。ネットにつながずに使えます。"
+      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.3。ネットにつながずに使えます。"
     />
     <meta name="color-scheme" content="light" />
-    <title>かぞへ v0.2.1</title>
+    <title>かぞへ v0.2.3</title>
     <style>
       :root {
   font-family: "BIZ UDPGothic", "Yu Gothic", Meiryo, system-ui, sans-serif;
@@ -994,8 +994,16 @@ body[data-screen="menu"] {
   border-bottom: 1px solid #b8844a;
 }
 .regrouped .written-digit {
-  text-decoration: line-through;
-  text-decoration-color: #995113;
+  position: relative;
+}
+.regrouped .written-digit::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  top: 48%;
+  width: 125%;
+  border-top: 2px solid #b0442b;
+  transform: rotate(-35deg);
 }
 .decimal-mark {
   position: absolute;
@@ -1754,6 +1762,78 @@ body[data-effects="false"] .spark {
   }
 }
 
+/* A single annotation band belongs to its digit row; history never adds rows above it. */
+.annotated-equation {
+  height: calc(var(--row) + 1rem);
+}
+.annotated-row {
+  min-height: calc(var(--row) + 1rem);
+}
+.annotated-row .written-cell {
+  padding-top: 1rem;
+}
+.written-annotation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1rem;
+  font-weight: 700;
+  color: #a13c28;
+}
+.teaching-written {
+  padding: 18px 12px;
+}
+.support > .written-notes {
+  border-left: 0;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: #fff3d7;
+}
+.solution-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.solution-navigation button {
+  min-width: 100px;
+}
+.solution-navigation span {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.start-dock {
+  left: var(--dock-center, 50%);
+  width: calc(var(--dock-width, 100vw) - 16px);
+  bottom: calc(var(--dock-inset, 16px) + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
+}
+body[data-screen="menu"] {
+  padding-bottom: calc(var(--dock-height, 100px) + 24px);
+}
+.dock-compact .start-selection {
+  display: none;
+}
+.dock-compact .start-button {
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 350px) {
+  .solution-navigation {
+    gap: 8px;
+  }
+  .solution-navigation button {
+    min-width: 0;
+    flex: 1;
+    padding: 10px;
+  }
+}
+
     </style>
   </head>
   <body>
@@ -1762,24 +1842,29 @@ body[data-effects="false"] .spark {
         <span>＋</span><span>−</span><span>×</span><span>÷</span>
       </div>
       <div>
-        <h1 data-testid="app-title">かぞへ <small>v0.2.1</small></h1>
+        <h1 data-testid="app-title">
+          かぞへ <small>v0.2.3</small>
+        </h1>
         <p>ひとつずつ、わかるをふやそう。</p>
       </div>
     </header>
     <p id="storage-warning" class="warning" role="status" hidden></p>
     <main id="app" tabindex="-1"></main>
+    <div id="start-dock-root"></div>
     <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
     <dialog id="dialog" aria-labelledby="dialog-title">
       <h2 id="dialog-title"></h2>
       <div id="dialog-body"></div>
       <div id="dialog-actions" class="actions"></div>
     </dialog>
-    <footer>かぞへ v0.2.1 · じぶんのペースで、なんどでも。</footer>
+    <footer>かぞへ v0.2.3 · じぶんのペースで、なんどでも。</footer>
     <script id="kazohe-core">
       /* KZ-030: exact numbers, curriculum, judging, run reducer, persistence.
-   This source is embedded in Kazohe.html; tests load that final inline code. */
+   This source is embedded in the versioned product HTML; tests load that final inline code. */
 const KZ = (() => {
   "use strict";
+  const APP_VERSION = "0.2.3";
+  // Compatibility of saved learning records is independent of the product release.
   const VERSION = "0.2";
   const STORAGE_KEY = "kazohe:v0.2:state";
   const CATALOG = [
@@ -6329,6 +6414,7 @@ const KZ = (() => {
   }
   return Object.freeze({
     VERSION,
+    APP_VERSION,
     STORAGE_KEY,
     CATALOG,
     BY_ID,
@@ -6384,6 +6470,332 @@ const KZ = (() => {
     validateBackup,
     storageAdapter,
   });
+})();
+
+/* Chronological teaching states. Each state is complete, so going back restores every mark. */
+const KZTeaching = (() => {
+  const clone = KZ.clone;
+  const places = (value) =>
+    (KZ.format(value, "decimal").split(".")[1] || "").length;
+  const coefficient = (value, scale) =>
+    (BigInt(value.n) * 10n ** BigInt(scale)) / BigInt(value.d);
+  const decimal = (value, scale) => {
+    const s = String(value).padStart(scale + 1, "0");
+    return scale ? s.slice(0, -scale) + "." + s.slice(-scale) : s;
+  };
+  const place = (column, scale = 0) =>
+    column < scale
+      ? `小数第${scale - column}位`
+      : `${["一", "十", "百", "千", "万"][column - scale] || 10 ** (column - scale)}の位`;
+  function steps(q) {
+    if (!q.written)
+      return q.solutionTrace
+        .filter((t) => !["digits", "borrow"].includes(t.kind))
+        .map(clone);
+    const ast = q.expressionAST;
+    const av = KZ.evaluate(ast.args[0]),
+      bv = KZ.evaluate(ast.args[1]);
+    const sa = places(av),
+      sb = places(bv);
+    const result = [],
+      board = { op: ast.op, cols: 2, rows: [] };
+    const push = (text, check) =>
+      result.push({
+        text,
+        kind: "text",
+        board: clone(board),
+        ...(check ? { check } : {}),
+      });
+    const blank = () => Array(board.cols).fill("");
+    const mark = (row, column, value, crossed = false) => {
+      row.annotations ||= {};
+      row.annotations[column] = { value: String(value), crossed };
+    };
+    if (["+", "-"].includes(ast.op)) {
+      const scale = Math.max(sa, sb),
+        a = coefficient(av, scale),
+        b = coefficient(bv, scale);
+      const size = Math.max(String(a).length, String(b).length, scale + 1);
+      const aa = String(a).padStart(size, "0").split("").map(Number);
+      const bb = String(b).padStart(size, "0").split("").map(Number);
+      board.cols =
+        size + (ast.op === "+" && String(a + b).length > size ? 1 : 0);
+      const offset = board.cols - size;
+      const top = { digits: decimal(a, scale) },
+        answer = { digits: blank(), line: true };
+      if (scale) answer.points = [board.cols - scale - 1];
+      board.rows = [
+        top,
+        {
+          digits: decimal(b, scale),
+          sign: ast.op === "+" ? "＋" : "−",
+          underline: true,
+        },
+        answer,
+      ];
+      push(
+        scale
+          ? "小数点と同じ位をそろえる。"
+          : "同じ位をそろえ、一の位から計算する。",
+      );
+      let carry = 0;
+      for (let i = size - 1; i >= 0; i--) {
+        const col = offset + i;
+        if (ast.op === "-") {
+          if (aa[i] < bb[i]) {
+            let j = i - 1;
+            while (aa[j] === 0) j--;
+            if (j < 0) throw Error("Teaching borrow underflow");
+            // Across zeros, move one place at a time; old states never become extra rows.
+            for (let k = j; k < i; k++) {
+              aa[k]--;
+              aa[k + 1] += 10;
+              mark(top, offset + k, aa[k], true);
+              mark(top, offset + k + 1, aa[k + 1], true);
+              push(
+                `${place(size - k - 1, scale)}から1を借り、${place(size - k - 2, scale)}を${aa[k + 1]}にする。`,
+              );
+            }
+          }
+          const value = aa[i] - bb[i];
+          answer.digits[col] = String(value);
+          push(
+            `${place(size - i - 1, scale)}：${aa[i]}−${bb[i]}＝${value}。${value}を書く。`,
+            {
+              op: "-",
+              a: String(aa[i]),
+              b: String(bb[i]),
+              result: String(value),
+            },
+          );
+        } else {
+          const sum = aa[i] + bb[i] + carry,
+            previous = carry;
+          answer.digits[col] = String(sum % 10);
+          carry = Math.floor(sum / 10);
+          if (carry) mark(top, col - 1, carry);
+          push(
+            `${place(size - i - 1, scale)}：${aa[i]}＋${bb[i]}${previous ? "＋" + previous : ""}＝${sum}。${sum % 10}を書き、${carry ? "1を左の位へくり上げる。" : "次の位へ進む。"}`,
+            {
+              op: "+",
+              a: String(aa[i] + bb[i]),
+              b: String(previous),
+              result: String(sum),
+            },
+          );
+        }
+      }
+      if (carry) {
+        answer.digits[0] = String(carry);
+        push(`左の位に、くり上がった${carry}を書く。`);
+      }
+      answer.digits = decimal(ast.op === "+" ? a + b : a - b, scale);
+    } else if (ast.op === "*") {
+      const a = coefficient(av, sa),
+        b = coefficient(bv, sb),
+        product = a * b;
+      const aa = String(a).split("").reverse().map(Number),
+        bb = String(b).split("").reverse().map(Number);
+      board.cols = Math.max(
+        String(a).length,
+        String(b).length,
+        String(product).length,
+        sa + sb + 1,
+      );
+      const top = { digits: KZ.format(av, "decimal") };
+      board.rows = [
+        top,
+        { digits: KZ.format(bv, "decimal"), sign: "×", underline: true },
+      ];
+      push(
+        sa + sb
+          ? "小数点を残して位をそろえる。まず整数と同じようにかける。"
+          : "一の位から、位ごとにかける。",
+      );
+      const partials = [];
+      for (let shift = 0; shift < bb.length; shift++) {
+        top.annotations = {};
+        const row = { digits: blank(), shift, line: shift === 0 };
+        board.rows.push(row);
+        partials.push(row);
+        if (shift)
+          push(
+            `${place(shift)}の${bb[shift]}をかける。答えは${shift}けた左から書く。`,
+          );
+        let carry = 0;
+        for (let i = 0; i < aa.length; i++) {
+          const value = aa[i] * bb[shift] + carry,
+            previous = carry;
+          const col = board.cols - 1 - i - shift;
+          row.digits[col] = String(value % 10);
+          carry = Math.floor(value / 10);
+          if (carry && i + 1 < aa.length) mark(top, board.cols - 2 - i, carry);
+          if (i + 1 === aa.length && carry) row.digits[col - 1] = String(carry);
+          push(
+            `${aa[i]}×${bb[shift]}${previous ? "＋" + previous : ""}＝${value}。${value % 10}を書く。${carry ? carry + "を左の位へくり上げる。" : ""}`,
+            {
+              op: "+",
+              a: String(aa[i] * bb[shift]),
+              b: String(previous),
+              result: String(value),
+            },
+          );
+        }
+      }
+      top.annotations = {};
+      let answer;
+      if (partials.length === 1) answer = partials[0];
+      else {
+        answer = { digits: blank(), line: true };
+        board.rows.push(answer);
+        let carry = 0;
+        for (let col = board.cols - 1; col >= 0; col--) {
+          const add = partials.reduce(
+              (sum, row) => sum + Number(row.digits[col] || 0),
+              0,
+            ),
+            previous = carry,
+            sum = add + carry;
+          answer.digits[col] = String(sum % 10);
+          carry = Math.floor(sum / 10);
+          if (carry && col > 0) mark(partials[0], col - 1, carry);
+          push(
+            `${place(board.cols - col - 1)}の部分積をたす。${add}${previous ? "＋" + previous : ""}＝${sum}。${sum % 10}を書く。`,
+            {
+              op: "+",
+              a: String(add),
+              b: String(previous),
+              result: String(sum),
+            },
+          );
+        }
+      }
+      answer.digits = String(product);
+      if (sa + sb) {
+        answer.digits = decimal(product, sa + sb);
+        push(
+          `小数は合わせて${sa + sb}けた。答えの右から${sa + sb}けた目に小数点を付ける。`,
+        );
+      }
+    } else {
+      const movedA = KZ.calc("*", av, KZ.rat(10n ** BigInt(sb))),
+        divisor = coefficient(bv, sb);
+      const integerQuotient =
+        q.answerSpec.type === "quotient" || q.integerQuotient;
+      const quotientPlaces = integerQuotient
+        ? 0
+        : q.roundPlaces !== undefined
+          ? q.roundPlaces + 1
+          : KZ.decimalPlaces(KZ.evaluate(ast));
+      const parts = KZ.format(movedA, "decimal").split(".");
+      const tail = (parts[1] || "")
+        .padEnd(quotientPlaces, "0")
+        .slice(0, quotientPlaces);
+      const untouched = integerQuotient ? parts[1] || "" : "";
+      const source = parts[0] + tail;
+      const dividend =
+        parts[0] + (tail || untouched ? "." + (tail || untouched) : "");
+      board.cols = Math.max(2, source.length + untouched.length);
+      const offset = board.cols - source.length - untouched.length;
+      const quotient = { digits: blank(), quotient: true };
+      if (tail) quotient.points = [offset + parts[0].length - 1];
+      board.rows = [
+        quotient,
+        { digits: dividend, dividend, divisor: String(divisor) },
+      ];
+      push(
+        sb
+          ? `両方の小数点を${sb}けた右へ動かす。${KZ.format(av, "decimal")}÷${KZ.format(bv, "decimal")}＝${KZ.format(movedA, "decimal")}÷${divisor}。`
+          : "わる数と、わられる数を書き、左の位から計算する。",
+      );
+      let remainder = 0n,
+        started = false,
+        previousRow = null;
+      for (let i = 0; i < source.length; i++) {
+        const partial = remainder * 10n + BigInt(source[i]),
+          digit = partial / divisor,
+          product = digit * divisor,
+          rem = partial - product;
+        const trailing = source.length - i - 1 + untouched.length;
+        if (started && previousRow) {
+          previousRow.digits = String(partial);
+          previousRow.trailing = trailing;
+          push(`次の数字${source[i]}を下ろして、${partial}にする。`);
+        }
+        if (digit || started || i >= parts[0].length - 1) {
+          started = true;
+          if (divisor >= 10n && partial >= divisor) {
+            const power = 10n ** BigInt(String(divisor).length - 1),
+              leading = (divisor / power) * power;
+            let trial = partial / leading;
+            if (trial > 9n) trial = 9n;
+            while (trial > digit) {
+              quotient.digits[offset + i] = String(trial);
+              push(
+                `${divisor}×${trial}＝${divisor * trial}は${partial}より大きい。商を${trial - 1n}に直す。`,
+                {
+                  op: "*",
+                  a: String(divisor),
+                  b: String(trial),
+                  result: String(divisor * trial),
+                },
+              );
+              trial--;
+            }
+          }
+          quotient.digits[offset + i] = String(digit);
+          push(
+            `${partial}の中に${divisor}は${digit}こ入る。商の同じ位に${digit}を立てる。`,
+          );
+          board.rows.push({
+            digits: String(product),
+            trailing,
+            sign: "−",
+            underline: true,
+            stage: "product",
+          });
+          push(`${divisor}×${digit}＝${product}。位をそろえて下に書く。`, {
+            op: "*",
+            a: String(divisor),
+            b: String(digit),
+            result: String(product),
+          });
+          previousRow = { digits: String(rem), trailing, stage: "remainder" };
+          board.rows.push(previousRow);
+          push(`${partial}−${product}＝${rem}。引いた答えを書く。`, {
+            op: "-",
+            a: String(partial),
+            b: String(product),
+            result: String(rem),
+          });
+        }
+        remainder = rem;
+      }
+      if (untouched && previousRow) {
+        previousRow.digits = `${remainder}.${untouched}`;
+        previousRow.trailing = 0;
+        push(
+          `商は整数まで。小数の部分を合わせ、あまりは${previousRow.digits}。`,
+        );
+      }
+      if (q.roundPlaces !== undefined) {
+        quotient.digits = KZ.format(
+          KZ.roundExact(KZ.evaluate(ast), q.roundPlaces),
+          "decimal",
+        );
+        quotient.trailing = untouched.length;
+        push(
+          `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${quotient.digits}。`,
+        );
+      }
+      for (const t of q.solutionTrace)
+        if (t.kind === "text" && /たしかめ：|余りの小数点/.test(t.text))
+          push(t.text);
+    }
+    push(q.solutionTrace.at(-1).text);
+    return result;
+  }
+  return Object.freeze({ steps });
 })();
 
     </script>
@@ -6600,15 +7012,11 @@ const KZUI = (() => {
     svg.append(path);
     return svg;
   }
-  function written(q, complete = false, grade = 6) {
+  function written(q, complete = false, grade = 6, state = null) {
     const ast = q.expressionAST,
       division = ast.op === "/";
-    let rows;
-    if (complete)
-      rows = q.solutionTrace.filter((r) =>
-        ["digits", "borrow"].includes(r.kind),
-      );
-    else {
+    let model = state || (complete ? KZTeaching.steps(q).at(-1).board : null);
+    if (!model) {
       let a = KZ.format(KZ.evaluate(ast.args[0]), "decimal"),
         b = KZ.format(KZ.evaluate(ast.args[1]), "decimal");
       if (["+", "-"].includes(ast.op)) {
@@ -6623,96 +7031,82 @@ const KZUI = (() => {
         a = pad(a);
         b = pad(b);
       }
-      rows = division
+      const rows = division
         ? [
-            { digits: "", quotient: true, text: "" },
-            { digits: a, dividend: a, divisor: b, text: "" },
+            { digits: "", quotient: true },
+            { digits: a, dividend: a, divisor: b },
           ]
         : [
-            { digits: a, text: "" },
+            { digits: a },
             {
               digits: b,
               sign: ast.op === "+" ? "＋" : ast.op === "-" ? "−" : "×",
               underline: true,
-              text: "",
             },
           ];
+      model = {
+        rows,
+        cols: Math.max(
+          2,
+          ...rows.map((r) => splitDigits(r.digits).digits.length),
+        ),
+      };
     }
-    const finalDecimal = rows.find((r) => r.decimalResult);
-    rows = rows.filter((r) => !r.decimalResult);
-    if (
-      ast.op === "*" &&
-      rows.filter((r) => r.shift !== undefined).length === 1
-    )
-      rows = rows.filter((r) => r.shift === undefined);
-    if (division && complete)
-      rows = rows.filter(
-        (r) =>
-          !(r.stage === "partial" && r.firstStep) &&
-          !(
-            r.stage === "remainder" &&
-            (!r.finalStep || rows.some((x) => x.remainder))
-          ),
-      );
-    if (ast.op === "-" && complete)
-      rows = [
-        ...rows.filter((r) => r.kind === "borrow"),
-        ...rows.filter((r) => r.kind !== "borrow"),
-      ];
-    const cols = Math.max(
-      2,
-      ...rows.map(
-        (r) =>
-          splitDigits(r.dividend ?? r.displayDigits ?? r.digits).digits.length +
-          (r.trailing || 0),
-      ),
-    );
-    const divisor = rows.find((r) => r.divisor)?.divisor;
+    const { rows, cols } = model,
+      divisor = rows.find((r) => r.divisor)?.divisor;
     const board = node("div", {
       class: "written-board" + (division ? " division-board" : ""),
       style: `--cols:${cols};--prefix:${division ? Math.max(2.6, String(divisor).length * 0.65 + 1.15) : 1.3}em`,
       "data-testid": "written-board",
       "aria-label": readable("筆算", grade),
     });
-    const lastBorrow = rows.filter((r) => r.annotation === "borrow").at(-1);
-    let firstNumber = true;
-    for (const r of rows) {
-      const parts = splitDigits(r.dividend ?? r.displayDigits ?? r.digits),
+    for (const [rowIndex, r] of rows.entries()) {
+      const parts = splitDigits(r.digits),
         start = cols - parts.digits.length - (r.trailing || 0);
+      const annotated =
+        complete &&
+        ((!division && rowIndex === 0) ||
+          Object.keys(r.annotations || {}).length > 0);
       const numeric = node("div", {
         class:
           "written-row" +
-          (r.line ? " line" : "") +
+          (r.line && !rows[rowIndex - 1]?.underline ? " line" : "") +
           (r.underline ? " underline" : "") +
           (r.dividend ? " division-roof" : "") +
-          (r.kind === "borrow" ? " annotation" : ""),
+          (annotated ? " annotated-row" : ""),
         "data-row-kind": r.dividend
           ? "dividend"
           : r.quotient
             ? "quotient"
-            : r.kind === "borrow"
-              ? "annotation"
-              : "digits",
+            : "digits",
+        "data-stage": r.stage || "",
       });
-      const original = firstNumber && r.kind !== "borrow" && !division;
-      if (original) firstNumber = false;
-      const changed = lastBorrow ? splitDigits(lastBorrow.digits).digits : null;
       for (let i = 0; i < cols; i++) {
         const at = i - start,
-          v = parts.digits[at] ?? "";
+          value = parts.digits[at] ?? "",
+          annotation = r.annotations?.[i];
         const cell = node(
           "span",
-          { class: "written-cell", "data-column": i, "data-value": v },
-          node("span", { class: "written-digit" }, v),
+          {
+            class: "written-cell" + (annotation?.crossed ? " regrouped" : ""),
+            "data-column": i,
+            "data-value": value,
+          },
+          node("span", { class: "written-digit" }, value),
         );
-        if (
-          original &&
-          changed &&
-          v &&
-          changed[i - (cols - changed.length)] !== v
-        )
-          cell.classList.add("regrouped");
-        if (parts.points.includes(at) && r.kind !== "borrow")
+        if (annotation)
+          cell.append(
+            node(
+              "span",
+              {
+                class: "written-annotation",
+                "data-annotation-value": annotation.value,
+                "aria-label": `この位は${annotation.value}`,
+              },
+              annotation.value,
+            ),
+          );
+        if (parts.points.includes(at) || r.points?.includes(i))
           cell.append(
             node(
               "span",
@@ -6728,7 +7122,14 @@ const KZUI = (() => {
         r.divisor ? [math(r.divisor, grade), divisionHook()] : r.sign || "",
       );
       board.append(
-        node("div", { class: "written-equation" }, [prefix, numeric]),
+        node(
+          "div",
+          {
+            class:
+              "written-equation" + (annotated ? " annotated-equation" : ""),
+          },
+          [prefix, numeric],
+        ),
       );
     }
     const figure = node(
@@ -6740,50 +7141,13 @@ const KZUI = (() => {
       },
       board,
     );
-    if (!complete)
-      return node("div", { class: "written-wrap problem-written" }, figure);
-    const explanations = [];
-    if (division) {
-      for (let i = 0; i < q.solutionTrace.length; i++) {
-        const t = q.solutionTrace[i];
-        if (t.stage === "product")
-          explanations.push(`${t.text}。${q.solutionTrace[i + 1]?.text || ""}`);
-        if (t.kind === "text" && !t.text.startsWith("商："))
-          explanations.push(t.text);
-        if (t.remainder) explanations.push(t.text);
-      }
-    } else
-      for (const t of q.solutionTrace)
-        if (
-          t.kind === "borrow" ||
-          t.kind === "text" ||
-          t.sumRow ||
-          t.text.startsWith("小数点をいったん")
-        )
-          explanations.push(t.text);
-    if (finalDecimal)
-      explanations.push(
-        `${KZ.format(KZ.evaluate(ast.args[0]), "decimal")} × ${KZ.format(KZ.evaluate(ast.args[1]), "decimal")} ＝ ${finalDecimal.digits}。${finalDecimal.text}`,
-      );
-    const notes = node(
-      "aside",
-      { class: "written-notes", "aria-label": "ときかた" },
-      [
-        node("h4", {}, "ときかた"),
-        node(
-          "ol",
-          {},
-          explanations.map((t) => node("li", {}, math(t, grade))),
-        ),
-      ],
-    );
     return node(
       "div",
       {
         class:
-          "written-wrap explained-written" + (cols > 5 ? " wide-written" : ""),
+          "written-wrap " + (complete ? "teaching-written" : "problem-written"),
       },
-      [figure, notes],
+      figure,
     );
   }
   function counters(step, grade) {
@@ -6839,11 +7203,24 @@ const KZUI = (() => {
     }
     return picture;
   }
-  function solution(q, grade) {
-    const content = node("div", { class: "support" }, [
-      node("h3", {}, "いっしょに たしかめよう"),
-    ]);
-    if (q.written) content.append(written(q, true, grade));
+  function solution(q, grade, stepIndex) {
+    const steps = KZTeaching.steps(q),
+      index =
+        stepIndex === undefined
+          ? steps.length - 1
+          : Math.max(0, Math.min(stepIndex, steps.length - 1));
+    const current = steps[index],
+      complete = index === steps.length - 1;
+    const content = node(
+      "div",
+      {
+        class: "support",
+        "data-step-index": index,
+        "data-step-count": steps.length,
+      },
+      [node("h3", {}, "いっしょに たしかめよう")],
+    );
+    if (q.written) content.append(written(q, true, grade, current.board));
     for (const [n, d] of q.diagram || q.answerSpec.diagram || [])
       content.append(
         node(
@@ -6859,11 +7236,16 @@ const KZUI = (() => {
           ),
         ),
       );
-    const list = node("ol", { class: "solution-steps" });
-    for (const t of q.solutionTrace.filter((r) =>
-      q.written ? r.kind === "answer" : !["digits", "borrow"].includes(r.kind),
-    )) {
-      const li = node("li", {}, math(t.text, grade));
+    const list = node("ol", {
+      class: "solution-steps",
+      start: complete ? 1 : index + 1,
+    });
+    for (const t of complete ? steps : [current]) {
+      const li = node(
+        "li",
+        { "data-current-step": String(t === current) },
+        math(t.text, grade),
+      );
       if (t.kind === "counters") li.append(counters(t, grade));
       if (t.kind === "dots")
         li.append(
@@ -6874,7 +7256,43 @@ const KZUI = (() => {
         );
       list.append(li);
     }
-    content.append(list);
+    if (
+      !q.written &&
+      !complete &&
+      !["counters", "dots"].includes(current.kind)
+    ) {
+      const picture = steps
+        .slice(0, index + 1)
+        .findLast((t) => ["counters", "dots"].includes(t.kind));
+      if (picture)
+        content.append(
+          counters(
+            picture.kind === "dots"
+              ? {
+                  operation: "+",
+                  a: picture.count,
+                  b: 0,
+                  text: `${picture.count}こ`,
+                }
+              : picture,
+            grade,
+          ),
+        );
+    }
+    content.append(
+      node(
+        "aside",
+        {
+          class: "written-notes",
+          "aria-label": "ときかた",
+          "data-testid": "solution-explanation",
+        },
+        [
+          node("h4", {}, complete ? "ときかたの ふりかえり" : "この いって"),
+          list,
+        ],
+      ),
+    );
     return content;
   }
   function answer(raw, spec) {
@@ -6918,6 +7336,7 @@ const KZUI = (() => {
 (() => {
   "use strict";
   const app = document.getElementById("app"),
+    dockRoot = document.getElementById("start-dock-root"),
     dialog = document.getElementById("dialog"),
     announcer = document.getElementById("announcer");
   const test = window.__KAZOHE_TEST__ || null,
@@ -7007,7 +7426,9 @@ const KZUI = (() => {
     audioContext = null,
     draft = null,
     currentRead = null,
-    draftQuestionId = null;
+    draftQuestionId = null,
+    solutionQuestionId = null,
+    solutionStep = 0;
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -7823,8 +8244,8 @@ const KZUI = (() => {
   function writtenRows(q, complete = false) {
     return KZUI.written(q, complete, uiGrade());
   }
-  function solution(q) {
-    return KZUI.solution(q, uiGrade());
+  function solution(q, stepIndex) {
+    return KZUI.solution(q, uiGrade(), stepIndex);
   }
   function answerFields(q, disabled) {
     const s = q.answerSpec,
@@ -8164,6 +8585,24 @@ const KZUI = (() => {
     }
     if (support) {
       currentRead = null;
+      if (solutionQuestionId !== q.questionId) {
+        solutionQuestionId = q.questionId;
+        solutionStep = 0;
+      }
+      const teaching = KZTeaching.steps(q);
+      const moveSolution = (delta) => {
+        solutionStep = Math.max(
+          0,
+          Math.min(solutionStep + delta, teaching.length - 1),
+        );
+        render();
+        announce(
+          `${solutionStep + 1}／${teaching.length}。${teaching[solutionStep].text}`,
+        );
+        app
+          .querySelector('[data-testid="solution-explanation"]')
+          ?.scrollIntoView({ block: "nearest" });
+      };
       nodes.push(
         panel(
           [
@@ -8183,9 +8622,34 @@ const KZUI = (() => {
             }),
             run.phase === "HINT_READING"
               ? el("div", { class: "hint-card" }, math(KZ.buildHint(q)))
-              : solution(q),
+              : solution(q, solutionStep),
+            run.phase === "SOLUTION_READING"
+              ? el(
+                  "div",
+                  {
+                    class: "solution-navigation",
+                    role: "group",
+                    "aria-label": "ときかたを いってずつ",
+                  },
+                  [
+                    button("← もどる", () => moveSolution(-1), {
+                      "data-testid": "solution-back",
+                      disabled: solutionStep === 0,
+                    }),
+                    text("span", `${solutionStep + 1}／${teaching.length}`, {
+                      "data-testid": "solution-progress",
+                      "aria-live": "polite",
+                    }),
+                    button("つぎへ →", () => moveSolution(1), {
+                      "data-testid": "solution-forward",
+                      class: "primary",
+                      disabled: solutionStep === teaching.length - 1,
+                    }),
+                  ],
+                )
+              : null,
             button(
-              run.phase === "HINT_READING" ? "つづける" : "つぎへ",
+              run.phase === "HINT_READING" ? "つづける" : "つぎのもんだいへ",
               () =>
                 dispatch({
                   type:
@@ -8761,6 +9225,10 @@ const KZUI = (() => {
             ? results()
             : play();
     app.replaceChildren(...nodes.filter(Boolean));
+    // Keep viewport controls outside content containers: transforms/overflow must not trap them.
+    const dock = app.querySelector(".start-dock");
+    dockRoot.replaceChildren(...(dock ? [dock] : []));
+    positionStartDock();
     app.setAttribute("data-screen", screen);
     document.body.dataset.screen = screen;
     document.body.dataset.effects = String(saved.settings.effects);
@@ -8786,6 +9254,29 @@ const KZUI = (() => {
       }
     } else window.scrollTo({ top: 0, behavior: "instant" });
   }
+  function positionStartDock() {
+    const dock = dockRoot.querySelector(".start-dock");
+    if (!dock) return;
+    const viewport = window.visualViewport;
+    const width = viewport?.width || window.innerWidth;
+    const height = viewport?.height || window.innerHeight;
+    const left = viewport?.offsetLeft || 0,
+      top = viewport?.offsetTop || 0;
+    dock.style.setProperty("--dock-width", `${width}px`);
+    dock.style.setProperty("--dock-center", `${left + width / 2}px`);
+    dock.style.setProperty(
+      "--dock-inset",
+      `${Math.max(8, window.innerHeight - top - height + 8)}px`,
+    );
+    dock.classList.toggle("dock-compact", width < 360 || height < 240);
+    document.documentElement.style.setProperty(
+      "--dock-height",
+      `${dock.getBoundingClientRect().height}px`,
+    );
+  }
+  window.addEventListener("resize", positionStartDock);
+  window.visualViewport?.addEventListener("resize", positionStartDock);
+  window.visualViewport?.addEventListener("scroll", positionStartDock);
   document.addEventListener("visibilitychange", () => {
     if (run && !run.finishedOnce)
       dispatch({ type: document.hidden ? "HIDDEN" : "VISIBLE" });

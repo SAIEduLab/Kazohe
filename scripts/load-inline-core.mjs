@@ -1,15 +1,24 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import vm from "node:vm";
-export const htmlPath = resolve(process.env.APP_HTML || "Kazohe.html");
+import { htmlName, assertCurrentArtifact } from "./artifact.mjs";
+assertCurrentArtifact();
+export const htmlPath = resolve(process.env.APP_HTML || htmlName);
+if (htmlPath !== resolve(htmlName))
+  throw Error("APP_HTML differs from the versioned product");
 export const html = readFileSync(htmlPath, "utf8");
 export const coreSource = html.match(
   /<script id="kazohe-core">([\s\S]*?)<\/script>/,
 )?.[1];
 if (!coreSource) throw Error("Final HTML core missing");
 const context = vm.createContext({ TextEncoder });
-vm.runInContext(coreSource + ";globalThis.result=KZ;", context, {
-  filename: htmlPath,
-  timeout: 10000,
-});
+vm.runInContext(
+  coreSource + ";globalThis.result=KZ;globalThis.teaching=KZTeaching;",
+  context,
+  {
+    filename: htmlPath,
+    timeout: 10000,
+  },
+);
 export const K = context.result;
+export const Teaching = context.teaching;

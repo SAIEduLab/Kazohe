@@ -1,6 +1,7 @@
 (() => {
   "use strict";
   const app = document.getElementById("app"),
+    dockRoot = document.getElementById("start-dock-root"),
     dialog = document.getElementById("dialog"),
     announcer = document.getElementById("announcer");
   const test = window.__KAZOHE_TEST__ || null,
@@ -90,7 +91,9 @@
     audioContext = null,
     draft = null,
     currentRead = null,
-    draftQuestionId = null;
+    draftQuestionId = null,
+    solutionQuestionId = null,
+    solutionStep = 0;
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -906,8 +909,8 @@
   function writtenRows(q, complete = false) {
     return KZUI.written(q, complete, uiGrade());
   }
-  function solution(q) {
-    return KZUI.solution(q, uiGrade());
+  function solution(q, stepIndex) {
+    return KZUI.solution(q, uiGrade(), stepIndex);
   }
   function answerFields(q, disabled) {
     const s = q.answerSpec,
@@ -1247,6 +1250,24 @@
     }
     if (support) {
       currentRead = null;
+      if (solutionQuestionId !== q.questionId) {
+        solutionQuestionId = q.questionId;
+        solutionStep = 0;
+      }
+      const teaching = KZTeaching.steps(q);
+      const moveSolution = (delta) => {
+        solutionStep = Math.max(
+          0,
+          Math.min(solutionStep + delta, teaching.length - 1),
+        );
+        render();
+        announce(
+          `${solutionStep + 1}／${teaching.length}。${teaching[solutionStep].text}`,
+        );
+        app
+          .querySelector('[data-testid="solution-explanation"]')
+          ?.scrollIntoView({ block: "nearest" });
+      };
       nodes.push(
         panel(
           [
@@ -1266,9 +1287,34 @@
             }),
             run.phase === "HINT_READING"
               ? el("div", { class: "hint-card" }, math(KZ.buildHint(q)))
-              : solution(q),
+              : solution(q, solutionStep),
+            run.phase === "SOLUTION_READING"
+              ? el(
+                  "div",
+                  {
+                    class: "solution-navigation",
+                    role: "group",
+                    "aria-label": "ときかたを いってずつ",
+                  },
+                  [
+                    button("← もどる", () => moveSolution(-1), {
+                      "data-testid": "solution-back",
+                      disabled: solutionStep === 0,
+                    }),
+                    text("span", `${solutionStep + 1}／${teaching.length}`, {
+                      "data-testid": "solution-progress",
+                      "aria-live": "polite",
+                    }),
+                    button("つぎへ →", () => moveSolution(1), {
+                      "data-testid": "solution-forward",
+                      class: "primary",
+                      disabled: solutionStep === teaching.length - 1,
+                    }),
+                  ],
+                )
+              : null,
             button(
-              run.phase === "HINT_READING" ? "つづける" : "つぎへ",
+              run.phase === "HINT_READING" ? "つづける" : "つぎのもんだいへ",
               () =>
                 dispatch({
                   type:
@@ -1844,6 +1890,10 @@
             ? results()
             : play();
     app.replaceChildren(...nodes.filter(Boolean));
+    // Keep viewport controls outside content containers: transforms/overflow must not trap them.
+    const dock = app.querySelector(".start-dock");
+    dockRoot.replaceChildren(...(dock ? [dock] : []));
+    positionStartDock();
     app.setAttribute("data-screen", screen);
     document.body.dataset.screen = screen;
     document.body.dataset.effects = String(saved.settings.effects);
@@ -1869,6 +1919,29 @@
       }
     } else window.scrollTo({ top: 0, behavior: "instant" });
   }
+  function positionStartDock() {
+    const dock = dockRoot.querySelector(".start-dock");
+    if (!dock) return;
+    const viewport = window.visualViewport;
+    const width = viewport?.width || window.innerWidth;
+    const height = viewport?.height || window.innerHeight;
+    const left = viewport?.offsetLeft || 0,
+      top = viewport?.offsetTop || 0;
+    dock.style.setProperty("--dock-width", `${width}px`);
+    dock.style.setProperty("--dock-center", `${left + width / 2}px`);
+    dock.style.setProperty(
+      "--dock-inset",
+      `${Math.max(8, window.innerHeight - top - height + 8)}px`,
+    );
+    dock.classList.toggle("dock-compact", width < 360 || height < 240);
+    document.documentElement.style.setProperty(
+      "--dock-height",
+      `${dock.getBoundingClientRect().height}px`,
+    );
+  }
+  window.addEventListener("resize", positionStartDock);
+  window.visualViewport?.addEventListener("resize", positionStartDock);
+  window.visualViewport?.addEventListener("scroll", positionStartDock);
   document.addEventListener("visibilitychange", () => {
     if (run && !run.finishedOnce)
       dispatch({ type: document.hidden ? "HIDDEN" : "VISIBLE" });

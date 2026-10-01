@@ -1,7 +1,9 @@
 /* KZ-030: exact numbers, curriculum, judging, run reducer, persistence.
-   This source is embedded in Kazohe.html; tests load that final inline code. */
+   This source is embedded in the versioned product HTML; tests load that final inline code. */
 const KZ = (() => {
   "use strict";
+  const APP_VERSION = "__KAZOHE_VERSION__";
+  // Compatibility of saved learning records is independent of the product release.
   const VERSION = "0.2";
   const STORAGE_KEY = "kazohe:v0.2:state";
   const CATALOG = __KAZOHE_CATALOG__;
@@ -3438,6 +3440,7 @@ const KZ = (() => {
   }
   return Object.freeze({
     VERSION,
+    APP_VERSION,
     STORAGE_KEY,
     CATALOG,
     BY_ID,

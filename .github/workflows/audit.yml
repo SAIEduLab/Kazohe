@@ -1,4 +1,4 @@
-name: Kazohe v0.2 audit
+name: Kazohe audit
 
 on:
   push:
@@ -16,8 +16,6 @@ concurrency:
   group: kazohe-audit-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 env:
-  APP_HTML: Kazohe.html
-  APP_VERSION: "0.2"
   CI: "true"
   AUDIT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   DEEP_AUDIT: ${{ github.event_name == 'workflow_dispatch' && inputs.deep && '1' || '0' }}
@@ -31,11 +29,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve versioned product
+        run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
           git fetch --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+          test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "24"
@@ -73,11 +73,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve versioned product
+        run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
           git fetch --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+          test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "24"
@@ -116,11 +118,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve versioned product
+        run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
           git fetch --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+          test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "24"
@@ -151,11 +155,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve versioned product
+        run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
           git fetch --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git show "$AUDIT_HEAD_SHA:Kazohe.html" | sha256sum | cut -d' ' -f1)" = "$(sha256sum Kazohe.html | cut -d' ' -f1)"
+          test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "24"
@@ -173,7 +179,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
-          name: kazohe-v0.2-aggregate-${{ github.sha }}
+          name: kazohe-aggregate-${{ github.sha }}
           path: reports/
           if-no-files-found: error
           retention-days: 14
@@ -181,6 +187,6 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
-          name: kazohe-v0.2-checked-candidate-${{ github.sha }}
-          path: Kazohe.html
+          name: kazohe-checked-candidate-${{ github.sha }}
+          path: ${{ env.APP_HTML }}
           if-no-files-found: error

@@ -982,8 +982,16 @@ body[data-screen="menu"] {
   border-bottom: 1px solid #b8844a;
 }
 .regrouped .written-digit {
-  text-decoration: line-through;
-  text-decoration-color: #995113;
+  position: relative;
+}
+.regrouped .written-digit::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  top: 48%;
+  width: 125%;
+  border-top: 2px solid #b0442b;
+  transform: rotate(-35deg);
 }
 .decimal-mark {
   position: absolute;
@@ -1739,5 +1747,77 @@ body[data-effects="false"] .spark {
   }
   .wide-written .written-notes ol {
     font-size: 0.86rem;
+  }
+}
+
+/* A single annotation band belongs to its digit row; history never adds rows above it. */
+.annotated-equation {
+  height: calc(var(--row) + 1rem);
+}
+.annotated-row {
+  min-height: calc(var(--row) + 1rem);
+}
+.annotated-row .written-cell {
+  padding-top: 1rem;
+}
+.written-annotation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1rem;
+  font-weight: 700;
+  color: #a13c28;
+}
+.teaching-written {
+  padding: 18px 12px;
+}
+.support > .written-notes {
+  border-left: 0;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: #fff3d7;
+}
+.solution-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.solution-navigation button {
+  min-width: 100px;
+}
+.solution-navigation span {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.start-dock {
+  left: var(--dock-center, 50%);
+  width: calc(var(--dock-width, 100vw) - 16px);
+  bottom: calc(var(--dock-inset, 16px) + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
+}
+body[data-screen="menu"] {
+  padding-bottom: calc(var(--dock-height, 100px) + 24px);
+}
+.dock-compact .start-selection {
+  display: none;
+}
+.dock-compact .start-button {
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 350px) {
+  .solution-navigation {
+    gap: 8px;
+  }
+  .solution-navigation button {
+    min-width: 0;
+    flex: 1;
+    padding: 10px;
   }
 }
