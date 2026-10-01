@@ -291,17 +291,17 @@ test("TC-U04 TC-U05 all 101 skills, generated input variants and written coordin
               if (
                 Math.abs(
                   rect.height -
-                    parseFloat(
+                    (parseFloat(
                       getComputedStyle(board).getPropertyValue("--row"),
                     ) *
                       parseFloat(
                         getComputedStyle(document.documentElement).fontSize,
                       ) +
-                    (row.classList.contains("annotated-row")
-                      ? parseFloat(
-                          getComputedStyle(document.documentElement).fontSize,
-                        )
-                      : 0),
+                      (row.classList.contains("annotated-row")
+                        ? parseFloat(
+                            getComputedStyle(document.documentElement).fontSize,
+                          )
+                        : 0)),
                 ) > 1
               )
                 errors.push("explanation-stretches-row");

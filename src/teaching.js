@@ -157,6 +157,13 @@ const KZTeaching = (() => {
           carry = Math.floor(value / 10);
           if (carry && i + 1 < aa.length) mark(top, board.cols - 2 - i, carry);
           if (i + 1 === aa.length && carry) row.digits[col - 1] = String(carry);
+          if (i + 1 === aa.length) {
+            // Keep one zero for a zero partial product, and omit other leading zeros.
+            let first = row.digits.findIndex((v) => v !== "" && v !== "0");
+            if (first < 0) first = row.digits.findLastIndex((v) => v !== "");
+            for (let column = 0; column < first; column++)
+              row.digits[column] = "";
+          }
           push(
             `${aa[i]}×${bb[shift]}${previous ? "＋" + previous : ""}＝${value}。${value % 10}を書く。${carry ? carry + "を左の位へくり上げる。" : ""}`,
             {
@@ -309,7 +316,11 @@ const KZTeaching = (() => {
           KZ.roundExact(KZ.evaluate(ast), q.roundPlaces),
           "decimal",
         );
-        quotient.trailing = untouched.length;
+        quotient.trailing =
+          quotientPlaces -
+          (quotient.digits.split(".")[1] || "").length +
+          untouched.length;
+        delete quotient.points;
         push(
           `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${quotient.digits}。`,
         );

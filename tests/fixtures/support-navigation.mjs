@@ -5,6 +5,9 @@ export async function completeSolution(page) {
       if (!next || next.disabled) {
         document
           .querySelector("[data-support-focus]")
+          ?.focus({ preventScroll: true });
+        document
+          .querySelector("[data-support-focus]")
           ?.scrollIntoView({ block: "start" });
         return;
       }

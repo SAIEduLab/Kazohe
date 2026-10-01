@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 test("TC-U13 every challenge advances and restores each teaching state without scoring or clock changes", async ({
   page,
 }, info) => {
-  test.setTimeout(300000);
+  test.setTimeout(420000);
   await page.clock.install();
   const evidence = [];
   for (const c of K.CATALOG) {
@@ -67,6 +67,13 @@ test("TC-U13 every challenge advances and restores each teaching state without s
           if (board.querySelector(".written-row.annotation"))
             errors.push("stacked-history");
           const centers = new Map();
+          const decimalColumn = (selector) =>
+            board.querySelector(selector + " .decimal-mark")?.parentElement
+              .dataset.column;
+          const quotientPoint = decimalColumn('[data-row-kind="quotient"]');
+          const dividendPoint = decimalColumn('[data-row-kind="dividend"]');
+          if (quotientPoint !== undefined && quotientPoint !== dividendPoint)
+            errors.push("quotient-decimal-shift");
           for (const cell of board.querySelectorAll(".written-cell")) {
             const rect = cell.getBoundingClientRect(),
               x = rect.left + rect.width / 2,
@@ -136,8 +143,8 @@ test("TC-U14 textbook written calculations include integer/decimal edge cases at
     ["mul-partials", "G3-C08", "*", "306", "20"],
     ["mul-two", "G3-C08", "*", "87", "76"],
     ["div-zero", "G4-C05", "/", "824", "4"],
-    ["decimal-sub", "G4-C02", "-", "10.01", "0.99"],
-    ["decimal-add", "G4-C01", "+", "0.99", "0.01"],
+    ["decimal-sub", "G4-C09", "-", "10.01", "0.99"],
+    ["decimal-add", "G4-C08", "+", "0.99", "0.01"],
     ["decimal-mul", "G5-C01", "*", "1.25", "0.4"],
     ["decimal-div", "G5-C03", "/", "7", "4"],
     ["decimal-shift", "G5-C03", "/", "4.2", "0.24"],
@@ -179,6 +186,7 @@ test("TC-U14 textbook written calculations include integer/decimal edge cases at
           ...options,
         }),
       );
+      expect(q.written, name).toBe(true);
       await open(page, q);
       const count = Teaching.steps(q).length;
       for (let i = 0; i < count; i++) {
