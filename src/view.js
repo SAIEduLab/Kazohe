@@ -210,15 +210,11 @@ const KZUI = (() => {
     svg.append(path);
     return svg;
   }
-  function written(q, complete = false, grade = 6) {
+  function written(q, complete = false, grade = 6, state = null) {
     const ast = q.expressionAST,
       division = ast.op === "/";
-    let rows;
-    if (complete)
-      rows = q.solutionTrace.filter((r) =>
-        ["digits", "borrow"].includes(r.kind),
-      );
-    else {
+    let model = state || (complete ? KZTeaching.steps(q).at(-1).board : null);
+    if (!model) {
       let a = KZ.format(KZ.evaluate(ast.args[0]), "decimal"),
         b = KZ.format(KZ.evaluate(ast.args[1]), "decimal");
       if (["+", "-"].includes(ast.op)) {
@@ -233,96 +229,82 @@ const KZUI = (() => {
         a = pad(a);
         b = pad(b);
       }
-      rows = division
+      const rows = division
         ? [
-            { digits: "", quotient: true, text: "" },
-            { digits: a, dividend: a, divisor: b, text: "" },
+            { digits: "", quotient: true },
+            { digits: a, dividend: a, divisor: b },
           ]
         : [
-            { digits: a, text: "" },
+            { digits: a },
             {
               digits: b,
               sign: ast.op === "+" ? "＋" : ast.op === "-" ? "−" : "×",
               underline: true,
-              text: "",
             },
           ];
+      model = {
+        rows,
+        cols: Math.max(
+          2,
+          ...rows.map((r) => splitDigits(r.digits).digits.length),
+        ),
+      };
     }
-    const finalDecimal = rows.find((r) => r.decimalResult);
-    rows = rows.filter((r) => !r.decimalResult);
-    if (
-      ast.op === "*" &&
-      rows.filter((r) => r.shift !== undefined).length === 1
-    )
-      rows = rows.filter((r) => r.shift === undefined);
-    if (division && complete)
-      rows = rows.filter(
-        (r) =>
-          !(r.stage === "partial" && r.firstStep) &&
-          !(
-            r.stage === "remainder" &&
-            (!r.finalStep || rows.some((x) => x.remainder))
-          ),
-      );
-    if (ast.op === "-" && complete)
-      rows = [
-        ...rows.filter((r) => r.kind === "borrow"),
-        ...rows.filter((r) => r.kind !== "borrow"),
-      ];
-    const cols = Math.max(
-      2,
-      ...rows.map(
-        (r) =>
-          splitDigits(r.dividend ?? r.displayDigits ?? r.digits).digits.length +
-          (r.trailing || 0),
-      ),
-    );
-    const divisor = rows.find((r) => r.divisor)?.divisor;
+    const { rows, cols } = model,
+      divisor = rows.find((r) => r.divisor)?.divisor;
     const board = node("div", {
       class: "written-board" + (division ? " division-board" : ""),
       style: `--cols:${cols};--prefix:${division ? Math.max(2.6, String(divisor).length * 0.65 + 1.15) : 1.3}em`,
       "data-testid": "written-board",
       "aria-label": readable("筆算", grade),
     });
-    const lastBorrow = rows.filter((r) => r.annotation === "borrow").at(-1);
-    let firstNumber = true;
-    for (const r of rows) {
-      const parts = splitDigits(r.dividend ?? r.displayDigits ?? r.digits),
+    for (const [rowIndex, r] of rows.entries()) {
+      const parts = splitDigits(r.digits),
         start = cols - parts.digits.length - (r.trailing || 0);
+      const annotated =
+        complete &&
+        ((!division && rowIndex === 0) ||
+          Object.keys(r.annotations || {}).length > 0);
       const numeric = node("div", {
         class:
           "written-row" +
-          (r.line ? " line" : "") +
+          (r.line && !rows[rowIndex - 1]?.underline ? " line" : "") +
           (r.underline ? " underline" : "") +
           (r.dividend ? " division-roof" : "") +
-          (r.kind === "borrow" ? " annotation" : ""),
+          (annotated ? " annotated-row" : ""),
         "data-row-kind": r.dividend
           ? "dividend"
           : r.quotient
             ? "quotient"
-            : r.kind === "borrow"
-              ? "annotation"
-              : "digits",
+            : "digits",
+        "data-stage": r.stage || "",
       });
-      const original = firstNumber && r.kind !== "borrow" && !division;
-      if (original) firstNumber = false;
-      const changed = lastBorrow ? splitDigits(lastBorrow.digits).digits : null;
       for (let i = 0; i < cols; i++) {
         const at = i - start,
-          v = parts.digits[at] ?? "";
+          value = parts.digits[at] ?? "",
+          annotation = r.annotations?.[i];
         const cell = node(
           "span",
-          { class: "written-cell", "data-column": i, "data-value": v },
-          node("span", { class: "written-digit" }, v),
+          {
+            class: "written-cell" + (annotation?.crossed ? " regrouped" : ""),
+            "data-column": i,
+            "data-value": value,
+          },
+          node("span", { class: "written-digit" }, value),
         );
-        if (
-          original &&
-          changed &&
-          v &&
-          changed[i - (cols - changed.length)] !== v
-        )
-          cell.classList.add("regrouped");
-        if (parts.points.includes(at) && r.kind !== "borrow")
+        if (annotation)
+          cell.append(
+            node(
+              "span",
+              {
+                class: "written-annotation",
+                "data-annotation-value": annotation.value,
+                "aria-label": `この位は${annotation.value}`,
+              },
+              annotation.value,
+            ),
+          );
+        if (parts.points.includes(at) || r.points?.includes(i))
           cell.append(
             node(
               "span",
@@ -338,7 +320,14 @@ const KZUI = (() => {
         r.divisor ? [math(r.divisor, grade), divisionHook()] : r.sign || "",
       );
       board.append(
-        node("div", { class: "written-equation" }, [prefix, numeric]),
+        node(
+          "div",
+          {
+            class:
+              "written-equation" + (annotated ? " annotated-equation" : ""),
+          },
+          [prefix, numeric],
+        ),
       );
     }
     const figure = node(
@@ -350,50 +339,13 @@ const KZUI = (() => {
       },
       board,
     );
-    if (!complete)
-      return node("div", { class: "written-wrap problem-written" }, figure);
-    const explanations = [];
-    if (division) {
-      for (let i = 0; i < q.solutionTrace.length; i++) {
-        const t = q.solutionTrace[i];
-        if (t.stage === "product")
-          explanations.push(`${t.text}。${q.solutionTrace[i + 1]?.text || ""}`);
-        if (t.kind === "text" && !t.text.startsWith("商："))
-          explanations.push(t.text);
-        if (t.remainder) explanations.push(t.text);
-      }
-    } else
-      for (const t of q.solutionTrace)
-        if (
-          t.kind === "borrow" ||
-          t.kind === "text" ||
-          t.sumRow ||
-          t.text.startsWith("小数点をいったん")
-        )
-          explanations.push(t.text);
-    if (finalDecimal)
-      explanations.push(
-        `${KZ.format(KZ.evaluate(ast.args[0]), "decimal")} × ${KZ.format(KZ.evaluate(ast.args[1]), "decimal")} ＝ ${finalDecimal.digits}。${finalDecimal.text}`,
-      );
-    const notes = node(
-      "aside",
-      { class: "written-notes", "aria-label": "ときかた" },
-      [
-        node("h4", {}, "ときかた"),
-        node(
-          "ol",
-          {},
-          explanations.map((t) => node("li", {}, math(t, grade))),
-        ),
-      ],
-    );
     return node(
       "div",
       {
         class:
-          "written-wrap explained-written" + (cols > 5 ? " wide-written" : ""),
+          "written-wrap " + (complete ? "teaching-written" : "problem-written"),
       },
-      [figure, notes],
+      figure,
     );
   }
   function counters(step, grade) {
@@ -449,11 +401,24 @@ const KZUI = (() => {
     }
     return picture;
   }
-  function solution(q, grade) {
-    const content = node("div", { class: "support" }, [
-      node("h3", {}, "いっしょに たしかめよう"),
-    ]);
-    if (q.written) content.append(written(q, true, grade));
+  function solution(q, grade, stepIndex) {
+    const steps = KZTeaching.steps(q),
+      index =
+        stepIndex === undefined
+          ? steps.length - 1
+          : Math.max(0, Math.min(stepIndex, steps.length - 1));
+    const current = steps[index],
+      complete = index === steps.length - 1;
+    const content = node(
+      "div",
+      {
+        class: "support",
+        "data-step-index": index,
+        "data-step-count": steps.length,
+      },
+      [node("h3", {}, "いっしょに たしかめよう")],
+    );
+    if (q.written) content.append(written(q, true, grade, current.board));
     for (const [n, d] of q.diagram || q.answerSpec.diagram || [])
       content.append(
         node(
@@ -469,11 +434,16 @@ const KZUI = (() => {
           ),
         ),
       );
-    const list = node("ol", { class: "solution-steps" });
-    for (const t of q.solutionTrace.filter((r) =>
-      q.written ? r.kind === "answer" : !["digits", "borrow"].includes(r.kind),
-    )) {
-      const li = node("li", {}, math(t.text, grade));
+    const list = node("ol", {
+      class: "solution-steps",
+      start: complete ? 1 : index + 1,
+    });
+    for (const t of complete ? steps : [current]) {
+      const li = node(
+        "li",
+        { "data-current-step": String(t === current) },
+        math(t.text, grade),
+      );
       if (t.kind === "counters") li.append(counters(t, grade));
       if (t.kind === "dots")
         li.append(
@@ -484,7 +454,43 @@ const KZUI = (() => {
         );
       list.append(li);
     }
-    content.append(list);
+    if (
+      !q.written &&
+      !complete &&
+      !["counters", "dots"].includes(current.kind)
+    ) {
+      const picture = steps
+        .slice(0, index + 1)
+        .findLast((t) => ["counters", "dots"].includes(t.kind));
+      if (picture)
+        content.append(
+          counters(
+            picture.kind === "dots"
+              ? {
+                  operation: "+",
+                  a: picture.count,
+                  b: 0,
+                  text: `${picture.count}こ`,
+                }
+              : picture,
+            grade,
+          ),
+        );
+    }
+    content.append(
+      node(
+        "aside",
+        {
+          class: "written-notes",
+          "aria-label": "ときかた",
+          "data-testid": "solution-explanation",
+        },
+        [
+          node("h4", {}, complete ? "ときかたの ふりかえり" : "この いって"),
+          list,
+        ],
+      ),
+    );
     return content;
   }
   function answer(raw, spec) {

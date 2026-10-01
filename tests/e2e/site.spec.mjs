@@ -1,3 +1,4 @@
+import { htmlName } from "../../scripts/artifact.mjs";
 import { test, expect } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,7 +12,8 @@ test("TC-D08 public landing page content, responsive layout, keyboard and access
   const failures = [];
   page.on("pageerror", (error) => failures.push(error.message));
   page.on("request", (request) => {
-    if (/^https?:/.test(request.url())) failures.push("request " + request.url());
+    if (/^https?:/.test(request.url()))
+      failures.push("request " + request.url());
   });
 
   await page.goto(url);
@@ -26,19 +28,21 @@ test("TC-D08 public landing page content, responsive layout, keyboard and access
     page.getByRole("heading", { level: 1, name: /できた！を.*積み重ねる/ }),
   ).toBeVisible();
   await expect(page.getByText("全101チャレンジ")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "使い方は、3ステップ。" }))
-    .toBeVisible();
-  await expect(page.getByRole("heading", { name: "MIT License で公開しています。" }))
-    .toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "使い方は、3ステップ。" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "MIT License で公開しています。" }),
+  ).toBeVisible();
 
   const start = page.getByRole("link", { name: "かぞへをはじめる" });
-  await expect(start).toHaveAttribute("href", "./Kazohe.html");
-  await expect(page.getByRole("link", { name: "GitHubを見る" })).toHaveAttribute(
-    "href",
-    "https://github.com/SAIEduLab/Kazohe",
-  );
-  await expect(page.getByRole("link", { name: "MIT License を読む" }))
-    .toHaveAttribute("href", "./LICENSE");
+  await expect(start).toHaveAttribute("href", `./${htmlName}`);
+  await expect(
+    page.getByRole("link", { name: "GitHubを見る" }),
+  ).toHaveAttribute("href", "https://github.com/SAIEduLab/Kazohe");
+  await expect(
+    page.getByRole("link", { name: "MIT License を読む" }),
+  ).toHaveAttribute("href", "./LICENSE");
 
   for (const [width, height] of [
     [320, 568],

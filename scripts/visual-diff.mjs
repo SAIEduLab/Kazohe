@@ -1,3 +1,5 @@
+import { completeSolution } from "../tests/fixtures/support-navigation.mjs";
+import { artifactAt } from "./artifact.mjs";
 // Compare base and candidate in the same browser. A changed image is evidence, not an approval.
 import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
@@ -18,17 +20,23 @@ const git = (args) =>
     { encoding: "utf8", maxBuffer: 20 * 1024 * 1024 },
   );
 const candidateCommit = git(["rev-parse", "HEAD^{commit}"]).trim();
-const requested = requestedBase && !/^0+$/.test(requestedBase)
-  ? requestedBase
-  : null;
+const requested =
+  requestedBase && !/^0+$/.test(requestedBase) ? requestedBase : null;
 const fallback = () => {
   const common = git(["merge-base", "HEAD", "origin/main"]).trim();
   return common === candidateCommit ? "HEAD^" : common;
 };
-const baseCommit = git(["rev-parse", (requested || fallback()) + "^{commit}"]).trim();
-assert.notEqual(baseCommit, candidateCommit, "Visual base must be a different commit");
+const baseCommit = git([
+  "rev-parse",
+  (requested || fallback()) + "^{commit}",
+]).trim();
+assert.notEqual(
+  baseCommit,
+  candidateCommit,
+  "Visual base must be a different commit",
+);
 git(["merge-base", "--is-ancestor", baseCommit, candidateCommit]);
-const baseHTML = git(["show", baseCommit + ":Kazohe.html"]);
+const baseHTML = artifactAt(baseCommit).html;
 const dir = mkdtempSync(join(tmpdir(), "kazohe-visual-")),
   output = "reports/visual-diff";
 mkdirSync(output, { recursive: true });
@@ -90,6 +98,7 @@ try {
         if (id !== "menu" && id !== "welcome") {
           await page.getByTestId("start").click();
           await page.getByTestId("help").click();
+          await completeSolution(page);
         }
         if (errors.length) throw Error(errors.join("\n"));
         await page.evaluate(() => window.scrollTo(0, 0));

@@ -1,3 +1,5 @@
+import { completeSolution } from "../fixtures/support-navigation.mjs";
+import { htmlName } from "../../scripts/artifact.mjs";
 import { test, expect } from "@playwright/test";
 import {
   mkdtempSync,
@@ -15,8 +17,8 @@ import { rawAnswer } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
 const fixtures = representatives(K),
   solo = mkdtempSync(join(tmpdir(), "kazohe-audit-"));
-copyFileSync(htmlPath, join(solo, "Kazohe.html"));
-const url = pathToFileURL(join(solo, "Kazohe.html")).href;
+copyFileSync(htmlPath, join(solo, htmlName));
+const url = pathToFileURL(join(solo, htmlName)).href;
 const config = (id) => ({ selectedIds: [id], mode: "practice", quantity: 10 });
 async function open(page, options = {}) {
   await page.addInitScript(
@@ -127,6 +129,7 @@ test("TC-B01 TC-B02 TC-B03 TC-B07 TC-B11 end to end keyboard, retry, hint, help,
   await page.getByTestId("submit").click();
   await page.clock.runFor(800);
   await page.getByTestId("help").click();
+  await completeSolution(page);
   await expect(page.getByTestId("next")).toBeVisible();
   await page.getByTestId("next").press("Enter");
   await page.getByTestId("answer-value").fill("14");
@@ -178,6 +181,7 @@ test("TC-B04 TC-B06 TC-B12 TC-B14 responsive, written arithmetic, 200 percent, l
       await page.addInitScript(() => localStorage.clear());
       await start(page, id, { fixedQuestion: fixtures[id].question });
       await page.getByTestId("help").click();
+      await completeSolution(page);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -242,6 +246,7 @@ test("TC-B05 TC-B02 TC-B17 all 101 examples: real inputs, judging and complete s
         .screenshot({ path: `reports/screens/catalog/${id}-question.png` });
     }
     await page.getByTestId("help").click();
+    await completeSolution(page);
     await expect(page.getByTestId("next")).toBeVisible();
     expect(await page.locator(".support").textContent()).toContain("こたえ：");
     if (info.project.name === "chromium")
@@ -340,6 +345,7 @@ test("TC-B07 keyboard only: Tab Shift+Tab Enter digits Backspace through the ful
   }
   await activate("hint-continue");
   await activate("help");
+  await completeSolution(page);
   await activate("next");
   await activate("pause");
   await activate("resume");
@@ -482,6 +488,7 @@ test("TC-B12 TC-F17 recommendation selection and return preserve the original ch
   await start(page, "G3-C02");
   for (let i = 0; i < 10; i++) {
     await page.getByTestId("help").click();
+    await completeSolution(page);
     await page.getByTestId("next").click();
   }
   await expect(page.getByTestId("result")).toBeVisible();
@@ -596,6 +603,7 @@ test("TC-P14 TC-P15 TC-P25 TC-P26 TC-B03 persistence and rejected storage", asyn
   expect(r.records[1].wrongAttempts).toBe(0);
   expect(r.currentQuestion.canonicalKey).toBe(current.canonicalKey);
   await page.getByTestId("help").click();
+  await completeSolution(page);
   await page.reload();
   await page.getByTestId("continue-practice").click();
   r = (await snapshot(page)).run;
@@ -614,6 +622,7 @@ test("TC-P14 TC-P15 TC-P25 TC-P26 TC-B03 persistence and rejected storage", asyn
     "保存できません",
   );
   await blocked.getByTestId("help").click();
+  await completeSolution(blocked);
   await expect(blocked.getByTestId("next")).toBeVisible();
   await ctx.close();
 });

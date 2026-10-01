@@ -1,3 +1,4 @@
+import { completeSolution } from "../fixtures/support-navigation.mjs";
 import { test, expect } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -146,6 +147,7 @@ test("TC-U03 support opening, stopped clock and nearby controls", async ({
     );
     expect(gap).toBeLessThan(35);
     await page.getByTestId("help").click();
+    await completeSolution(page);
     await expect(page.locator("[data-support-focus]")).toBeInViewport();
     await expect(page.locator("[data-support-focus]")).toBeFocused();
     const time = (await snap(page)).run.activeTimeRemainingMs;
@@ -169,7 +171,12 @@ test("TC-U03 support opening, stopped clock and nearby controls", async ({
 test("TC-U04 TC-U05 all 101 skills, generated input variants and written coordinates at four widths", async ({
   page,
 }, info) => {
-  test.setTimeout(600000);
+  // Windows WebKit takes longer to traverse 104 examples at four widths on modest PCs.
+  test.setTimeout(
+    process.platform === "win32" && info.project.name === "webkit"
+      ? 900000
+      : 600000,
+  );
   const cases = Object.values(fixtures).map((f) => f.question);
   for (const id of ["G1-N02", "G2-N02"]) {
     const g = K.createGenerator(43);
@@ -226,6 +233,7 @@ test("TC-U04 TC-U05 all 101 skills, generated input variants and written coordin
         );
       expect(fractions.every(Boolean)).toBe(true);
       await page.getByTestId("help").click();
+      await completeSolution(page);
       await expect(page.locator("[data-support-focus]")).toBeInViewport();
       expect(
         await page.evaluate(
@@ -288,12 +296,17 @@ test("TC-U04 TC-U05 all 101 skills, generated input variants and written coordin
               if (
                 Math.abs(
                   rect.height -
-                    parseFloat(
+                    (parseFloat(
                       getComputedStyle(board).getPropertyValue("--row"),
                     ) *
                       parseFloat(
                         getComputedStyle(document.documentElement).fontSize,
-                      ),
+                      ) +
+                      (row.classList.contains("annotated-row")
+                        ? parseFloat(
+                            getComputedStyle(document.documentElement).fontSize,
+                          )
+                        : 0)),
                 ) > 1
               )
                 errors.push("explanation-stretches-row");
@@ -385,6 +398,7 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
   expect(hookShape.middle).toBeGreaterThan(hookShape.low + 8);
   expect(Math.abs(hookShape.low - hookShape.top)).toBeLessThan(4);
   await page.getByTestId("help").click();
+  await completeSolution(page);
   const columns = await page.locator(".written-row").evaluateAll((rows) =>
     rows.map((r) => ({
       kind: r.dataset.rowKind,
@@ -412,14 +426,16 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
   ).toBe(true);
   await open(page, "G3-C02");
   await page.getByTestId("help").click();
+  await completeSolution(page);
   const board = page.getByTestId("written-board");
   await expect(page.locator(".written-notes")).toContainText(
-    "百の位から1を借り、一の位を13",
+    "百の位から1を借り、十の位を10",
   );
   expect(
     await board.locator(".written-row").first().getAttribute("data-row-kind"),
-  ).toBe("annotation");
+  ).toBe("digits");
   expect(await board.locator(".regrouped").count()).toBe(3);
+  expect(await board.locator(".written-row.annotation").count()).toBe(0);
 });
 test("TC-U07 low grade common wording and human readable wrong-answer review", async ({
   page,
@@ -432,6 +448,7 @@ test("TC-U07 low grade common wording and human readable wrong-answer review", a
   await page.getByTestId("submit").click();
   await page.clock.runFor(400);
   await page.getByTestId("help").click();
+  await completeSolution(page);
   await page.getByTestId("next").click();
   await page.getByTestId("end").click();
   await page.getByTestId("confirm-accept").click();
