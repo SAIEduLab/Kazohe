@@ -3,7 +3,7 @@
     "id": "KZ-001",
     "file": "scripts/audit-single-html.mjs",
     "symbols": [
-      "Kazohe_0_2_3.html"
+      "htmlName"
     ],
     "tests": [
       "TC-B01",
@@ -390,7 +390,7 @@
     "id": "KZ-110",
     "file": "scripts/load-inline-core.mjs",
     "symbols": [
-      "Kazohe_0_2_3.html",
+      "htmlName",
       "coreSource"
     ],
     "tests": [

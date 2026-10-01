@@ -6,10 +6,11 @@ import { hash } from "../../scripts/report.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
 const url = pathToFileURL(htmlPath).href,
   fixtures = representatives(K);
+let navigation = 0;
 async function open(page, q) {
   await page.goto(
     url +
-      "#" +
+      `?teaching=${++navigation}#` +
       encodeURIComponent(
         JSON.stringify({
           seed: 42,
@@ -141,17 +142,42 @@ test("TC-U14 textbook written calculations include integer/decimal edge cases at
     ["decimal-div", "G5-C03", "/", "7", "4"],
     ["decimal-shift", "G5-C03", "/", "4.2", "0.24"],
     ["division-trial", "G4-C06", "/", "832", "26"],
+    ["integer-remainder", "G4-C06", "/", "832", "27", { type: "quotient" }],
+    [
+      "decimal-remainder",
+      "G5-C04",
+      "/",
+      "7.6",
+      "1.4",
+      { type: "quotient", decimalRemainder: true },
+    ],
+    ["divisor-larger", "G5-C03", "/", "1.2", "4"],
+    [
+      "rounded-quotient",
+      "G5-C05",
+      "/",
+      "2",
+      "3",
+      { type: "decimal" },
+      { roundPlaces: 2 },
+    ],
   ];
   for (const width of [320, 1366]) {
     await page.setViewportSize({ width, height: 844 });
-    for (const [name, id, op, a, b] of examples) {
+    for (const [
+      name,
+      id,
+      op,
+      a,
+      b,
+      spec = { type: "decimal" },
+      options = {},
+    ] of examples) {
       const q = K.complete(
-        K.arithmetic(
-          id,
-          K.op(op, K.lit(a), K.lit(b)),
-          { type: "decimal" },
-          { written: true },
-        ),
+        K.arithmetic(id, K.op(op, K.lit(a), K.lit(b)), spec, {
+          written: true,
+          ...options,
+        }),
       );
       await open(page, q);
       const count = Teaching.steps(q).length;
@@ -164,11 +190,9 @@ test("TC-U14 textbook written calculations include integer/decimal edge cases at
         ).toBe(true);
         if (info.project.name === "chromium") {
           mkdirSync(`reports/teaching/${name}-${width}`, { recursive: true });
-          await page
-            .locator(".support")
-            .screenshot({
-              path: `reports/teaching/${name}-${width}/step-${String(i).padStart(2, "0")}.png`,
-            });
+          await page.locator(".support").screenshot({
+            path: `reports/teaching/${name}-${width}/step-${String(i).padStart(2, "0")}.png`,
+          });
         }
         if (i + 1 < count) await page.getByTestId("solution-forward").click();
       }
@@ -188,7 +212,7 @@ test("TC-U15 start remains actionable in short viewports, zoom and transformed c
     [390, 844],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.goto(url);
+    await page.goto(url + `?start=${++navigation}`);
     await page.getByTestId("skip").click();
     await page.evaluate(() => {
       const app = document.getElementById("app");
@@ -208,7 +232,7 @@ test("TC-U15 start remains actionable in short viewports, zoom and transformed c
   }
   if (info.project.name === "chromium") {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(url);
+    await page.goto(url + `?start=${++navigation}`);
     await page.getByTestId("skip").click();
     const session = await page.context().newCDPSession(page);
     await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
