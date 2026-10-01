@@ -171,7 +171,12 @@ test("TC-U03 support opening, stopped clock and nearby controls", async ({
 test("TC-U04 TC-U05 all 101 skills, generated input variants and written coordinates at four widths", async ({
   page,
 }, info) => {
-  test.setTimeout(600000);
+  // Windows WebKit takes longer to traverse 104 examples at four widths on modest PCs.
+  test.setTimeout(
+    process.platform === "win32" && info.project.name === "webkit"
+      ? 900000
+      : 600000,
+  );
   const cases = Object.values(fixtures).map((f) => f.question);
   for (const id of ["G1-N02", "G2-N02"]) {
     const g = K.createGenerator(43);
