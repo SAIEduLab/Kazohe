@@ -286,7 +286,10 @@ const KZUI = (() => {
         const cell = node(
           "span",
           {
-            class: "written-cell" + (annotation?.crossed ? " regrouped" : ""),
+            class:
+              "written-cell" +
+              (annotation?.crossed ? " regrouped" : "") +
+              (model.focus === i ? " teaching-focus" : ""),
             "data-column": i,
             "data-value": value,
           },
@@ -345,7 +348,16 @@ const KZUI = (() => {
         class:
           "written-wrap " + (complete ? "teaching-written" : "problem-written"),
       },
-      figure,
+      [
+        figure,
+        model.caption
+          ? node(
+              "p",
+              { class: "written-caption" },
+              readable(model.caption, grade),
+            )
+          : null,
+      ],
     );
   }
   function counters(step, grade) {
@@ -355,6 +367,14 @@ const KZUI = (() => {
         : step.operation === "+"
           ? step.a + step.b
           : step.a;
+    const visible =
+      step.pictureStage === "before"
+        ? step.operation === "*"
+          ? step.a
+          : step.a
+        : step.pictureStage === "groups"
+          ? step.a * step.visibleGroups
+          : total;
     const picture = node("div", {
       class: "counter-picture",
       role: "img",
@@ -362,8 +382,8 @@ const KZUI = (() => {
     });
     const rowSize = step.operation === "*" ? step.a : 10;
     if (!total) picture.append(node("span", { class: "zero-group" }, "0こ"));
-    for (let start = 0; start < total; start += rowSize) {
-      const count = Math.min(rowSize, total - start),
+    for (let start = 0; start < visible; start += rowSize) {
+      const count = Math.min(rowSize, visible - start),
         group = node("div", {
           class: step.operation === "*" ? "counter-group" : "ten-frame",
           style: `--count:${rowSize}`,
@@ -373,6 +393,7 @@ const KZUI = (() => {
           filled = i < count,
           removed =
             step.operation === "-" &&
+            step.pictureStage !== "before" &&
             (step.splitTen
               ? index < 10 && index >= 10 - step.b
               : index >= step.a - step.b);
@@ -419,7 +440,20 @@ const KZUI = (() => {
       [node("h3", {}, "いっしょに たしかめよう")],
     );
     if (q.written) content.append(written(q, true, grade, current.board));
-    for (const [n, d] of q.diagram || q.answerSpec.diagram || [])
+    if (q.task === "compare")
+      content.append(
+        node(
+          "div",
+          { class: "teaching-comparison" },
+          math(
+            `${q.labels?.[0] || KZ.format(q.values[0])} ${complete ? KZ.answerText(q).split("（")[0] : "□"} ${q.labels?.[1] || KZ.format(q.values[1])}`,
+            grade,
+          ),
+        ),
+      );
+    const diagram =
+      steps.slice(0, index + 1).findLast((step) => step.diagram)?.diagram || [];
+    for (const [n, d] of diagram)
       content.append(
         node(
           "div",
@@ -436,9 +470,9 @@ const KZUI = (() => {
       );
     const list = node("ol", {
       class: "solution-steps",
-      start: complete ? 1 : index + 1,
+      start: index + 1,
     });
-    for (const t of complete ? steps : [current]) {
+    for (const t of [current]) {
       const li = node(
         "li",
         { "data-current-step": String(t === current) },
@@ -454,11 +488,7 @@ const KZUI = (() => {
         );
       list.append(li);
     }
-    if (
-      !q.written &&
-      !complete &&
-      !["counters", "dots"].includes(current.kind)
-    ) {
+    if (!q.written && !["counters", "dots"].includes(current.kind)) {
       const picture = steps
         .slice(0, index + 1)
         .findLast((t) => ["counters", "dots"].includes(t.kind));
@@ -486,7 +516,7 @@ const KZUI = (() => {
           "data-testid": "solution-explanation",
         },
         [
-          node("h4", {}, complete ? "ときかたの ふりかえり" : "この いって"),
+          node("h4", {}, complete ? "こたえを たしかめよう" : "この いって"),
           list,
         ],
       ),

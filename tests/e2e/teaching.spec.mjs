@@ -133,7 +133,8 @@ test("TC-U13 every challenge advances and restores each teaching state without s
 test("TC-U14 textbook written calculations include integer/decimal edge cases at both widths", async ({
   page,
 }, info) => {
-  test.setTimeout(300000);
+  // The causal explanations add states; retain every case, width and image.
+  test.setTimeout(600000);
   const examples = [
     ["sub-324", "G3-C02", "-", "324", "166"],
     ["sub-9910", "G3-C04", "-", "9910", "9541"],
@@ -210,6 +211,77 @@ test("TC-U14 textbook written calculations include integer/decimal edge cases at
     }
   }
 });
+test("TC-U16 reasons, exchanges and fraction diagrams follow the visible teaching state", async ({
+  page,
+}, info) => {
+  test.setTimeout(180000);
+  const q = K.complete(
+    K.arithmetic("G3-C04", K.op("-", K.lit(8012), K.lit(7566))),
+  );
+  const frames = Teaching.steps(q);
+  for (const width of [320, 1366]) {
+    await page.setViewportSize({ width, height: 844 });
+    await open(page, q);
+    for (let i = 0; i < frames.length; i++) {
+      const frame = frames[i];
+      await expect(page.getByTestId("solution-progress")).toHaveText(
+        `${i + 1}／${frames.length}`,
+      );
+      if (frame.intent === "borrow-need" && frame.current === 2)
+        expect(await page.locator(".written-annotation").count()).toBe(0);
+      if (frame.intent === "borrow-exchange") {
+        for (const [column, note] of Object.entries(
+          frame.board.rows[0].annotations,
+        ))
+          await expect(
+            page
+              .locator(".written-row")
+              .first()
+              .locator(`[data-column="${column}"] .written-annotation`),
+          ).toHaveText(note.value);
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      if (info.project.name === "chromium") {
+        mkdirSync(`reports/teaching/sub-8012-${width}`, { recursive: true });
+        await page.locator(".support").screenshot({
+          path: `reports/teaching/sub-8012-${width}/step-${String(i).padStart(2, "0")}.png`,
+        });
+      }
+      if (i + 1 < frames.length)
+        await page.getByTestId("solution-forward").click();
+    }
+    await expect(page.locator(".support")).toContainText("446");
+  }
+  await open(page, fixtures["G4-N05"].question);
+  expect(await page.locator(".support .bar").count()).toBe(0);
+  await page.getByTestId("solution-forward").click();
+  await page.getByTestId("solution-forward").click();
+  expect(await page.locator(".support .bar").count()).toBe(1);
+  expect(await page.locator(".support .bar .filled").count()).toBe(1);
+  await page.getByTestId("solution-forward").click();
+  expect(await page.locator(".support .bar .filled").count()).toBe(2);
+  await page.getByTestId("solution-back").click();
+  expect(await page.locator(".support .bar .filled").count()).toBe(1);
+  await page.evaluate(() => {
+    for (let i = 0; i < 100; i++) {
+      const next = document.querySelector('[data-testid="solution-forward"]');
+      if (next.disabled) return;
+      next.click();
+    }
+    throw Error("Nonterminating fraction steps");
+  });
+  expect(await page.locator(".support .bar").count()).toBe(2);
+  await open(page, fixtures["G1-C04"].question);
+  await page.getByTestId("solution-forward").click();
+  expect(await page.locator(".counter.removed").count()).toBe(0);
+  await page.getByTestId("solution-forward").click();
+  expect(await page.locator(".counter.removed").count()).toBe(4);
+});
+
 test("TC-U15 start remains actionable in short viewports, zoom and transformed content containers", async ({
   page,
 }, info) => {

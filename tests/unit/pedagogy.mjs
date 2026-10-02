@@ -59,7 +59,8 @@ s.check("TC-E02", () => {
     (q, h, t) => {
       assert(!/×|÷|かけ算|わり算|かっこ|逆数|小数/.test(h + t));
       if (q.challengeId === "G1-C02" || q.challengeId === "G1-C04")
-        assert(!h.includes("10"));
+        // The literal operand 10 is allowed; an unrelated make-ten strategy is not.
+        assert(!/10のまとまり|10にする|10と.*分け/.test(h));
       if (["G1-C02", "G1-C03", "G1-C04", "G1-C05"].includes(q.challengeId)) {
         const picture = q.solutionTrace.find((t) => t.kind === "counters");
         assert(picture);
@@ -295,5 +296,189 @@ s.check("TC-E09", () => {
     assert.equal(JSON.stringify(frames[0]), earliest);
   }
   return { states, questions: 4040, allChallengeIds: Object.keys(samples) };
+});
+const fixedArithmetic = (id, op, a, b, spec = { type: "integer" }) =>
+  K.complete(K.arithmetic(id, K.op(op, K.lit(a), K.lit(b)), spec));
+function audit8012(frames) {
+  let cursor = -1;
+  const next = (pattern) => {
+    const at = frames.findIndex((f, i) => i > cursor && pattern.test(f.text));
+    assert(at > cursor, `missing causal prerequisite: ${pattern}`);
+    cursor = at;
+    return frames[at];
+  };
+  next(/一の位.*2.*2から6は引けない/);
+  next(/十の位には1.*渡せる/);
+  next(/十の位の1.*一の位では10/);
+  next(/十の位は1−1＝0.*一の位は2＋10＝12/);
+  next(/12−6＝6.*次は十の位.*0.*6を引けない/);
+  next(/十の位.*0から6は引けない/);
+  next(/百の位も0.*借りられない/);
+  next(/千の位には8/);
+  next(/千の位の1.*百の位では10/);
+  next(/千の位は8−1＝7.*百の位は0＋10＝10/);
+  next(/百の位の1.*十の位では10/);
+  next(/百の位は10−1＝9.*十の位は0＋10＝10/);
+  next(/10−6＝4/);
+  next(/9−5＝4/);
+  next(/7−7＝0/);
+  next(/いちばん左の0.*省/);
+  next(/こたえ：446/);
+  for (const frame of frames) {
+    const row = frame.board.rows[0],
+      original = [8, 0, 1, 2];
+    const current = original.map((digit, i) =>
+      Number(row.annotations?.[i]?.value ?? digit),
+    );
+    assert.equal(
+      current.reduce((sum, digit, i) => sum + digit * [1000, 100, 10, 1][i], 0),
+      8012,
+    );
+  }
+}
+s.check("TC-E10", () => {
+  const q = fixedArithmetic("G3-C04", "-", 8012, 7566);
+  const frames = Teaching.steps(q);
+  audit8012(frames);
+  assert.match(K.buildHint(q), /2−6.*2では6を引けない.*1.*10/);
+  // Keep all arithmetic and final answers correct while deliberately removing a reason.
+  for (const pattern of [
+    /一の位.*2から6は引けない/,
+    /十の位の1.*一の位では10/,
+    /一の位は2＋10＝12/,
+    /百の位も0/,
+  ]) {
+    const broken = frames.filter((f) => !pattern.test(f.text));
+    assert.throws(() => audit8012(broken), /missing causal prerequisite/);
+    assert.equal(broken.at(-1).text, "こたえ：446");
+  }
+  for (const qs of Object.values(samples))
+    for (const q of qs.filter((q) => q.written && q.expressionAST.op === "-")) {
+      const frames = Teaching.steps(q),
+        a = K.evaluate(q.expressionAST.args[0]);
+      const scale = Math.max(
+        ...q.expressionAST.args.map((x) => K.decimalPlaces(K.evaluate(x))),
+      );
+      const expected = (BigInt(a.n) * 10n ** BigInt(scale)) / BigInt(a.d);
+      for (let i = 0; i < frames.length; i++) {
+        const f = frames[i];
+        if (f.intent !== "borrow-exchange") continue;
+        assert.equal(f.to, f.from + 1);
+        assert.equal(
+          f.currentDigits.reduce((sum, digit) => sum * 10n + BigInt(digit), 0n),
+          expected,
+        );
+        assert.equal(frames[i - 1].intent, "borrow-unit");
+        assert(frames.slice(0, i).some((f) => f.intent === "borrow-need"));
+      }
+    }
+  return { example: "8012−7566", omittedReasonsDetected: 4 };
+});
+s.check("TC-E11", () => {
+  const f = representatives(K);
+  const ordered = (frames, patterns) => {
+    let at = -1;
+    for (const pattern of patterns) {
+      const next = frames.findIndex((x, i) => i > at && pattern.test(x.text));
+      assert(next > at, `missing intermediate operation: ${pattern}`);
+      at = next;
+    }
+  };
+  const plus = Teaching.steps(f["G5-C06"].question),
+    product = Teaching.steps(f["G6-C03"].question);
+  const plusExpected = [
+    /1\/3と1\/6.*大きさが違う/,
+    /1×2＝2.*1\/3＝2\/6/,
+    /2＋1＝3.*3\/6/,
+    /分子は3÷3＝1/,
+    /分母も.*6÷3＝2/,
+  ];
+  ordered(plus, plusExpected);
+  assert.throws(() =>
+    ordered(
+      plus.filter((f) => !f.text.includes("2＋1＝3")),
+      plusExpected,
+    ),
+  );
+  ordered(product, [
+    /分子どうし：2×9＝18/,
+    /分母どうし：3×10＝30.*18\/30/,
+    /分子は18÷6＝3/,
+    /分母も.*30÷6＝5/,
+  ]);
+  const mixed = Teaching.steps(f["G6-C08"].question);
+  ordered(mixed, [/0.5.*5\/10/, /0.5＝1\/2/, /求めた数を元の場所へ戻す/]);
+  for (const id of ["G1-C08", "G4-C15", "G4-C16", "G5-N13", "G6-N02", "G6-C07"])
+    assert(
+      Teaching.steps(f[id].question).some(
+        (t) => t.intent === "expression-replacement",
+      ),
+      id,
+    );
+  return { addition: "1/3＋1/6", multiplication: "2/3×9/10" };
+});
+s.check("TC-E12", () => {
+  const f = representatives(K);
+  const bundles = Teaching.steps(f["G2-N02"].question);
+  const exchanged = bundles.findIndex((t) => /100が10個で1000/.test(t.text));
+  assert(exchanged > 0);
+  assert(bundles.slice(0, exchanged).every((t) => !t.text.includes("2300")));
+  const equivalent = Teaching.steps(f["G4-N05"].question);
+  assert(
+    Teaching.steps(f["G3-N03"].question).some((t) => /2×10＝20/.test(t.text)),
+  );
+  assert(
+    Teaching.steps(f["G4-N03"].question).some((t) => /3×10＝30/.test(t.text)),
+  );
+  assert(!/分母|分子/.test(K.buildHint(f["G6-N02"].question)));
+  assert(!/1\/2が1個分/.test(K.buildHint(f["G6-C07"].question)));
+  assert(!/同じ数で変える/.test(K.buildHint(f["G2-N03"].question)));
+  assert(
+    Teaching.steps(f["G5-N06"].question).some((t) =>
+      t.text.includes("0.02485"),
+    ),
+  );
+  assert(!equivalent[0].diagram);
+  assert.equal(equivalent.find((t) => t.diagram)?.diagram.length, 1);
+  const before = equivalent.findIndex((t) => t.text.includes("分子も1×2＝2"));
+  assert(before > 0);
+  assert(
+    equivalent
+      .slice(0, before)
+      .every((t) => !t.diagram?.some(([n, d]) => n === 2 && d === 4)),
+  );
+  const times = Teaching.steps(f["G3-C07"].question);
+  assert(times.some((t) => /8＋4＝12/.test(t.text)));
+  assert(!times.some((t) => /12＝12/.test(t.text)));
+  const decimals = Teaching.steps(f["G5-C02"].question);
+  const converted = decimals.findIndex(
+    (t) => t.intent === "integer-working-form",
+  );
+  assert(converted > 0);
+  assert.equal(decimals[converted].board.rows[0].digits, "24");
+  assert.equal(decimals[converted].board.rows[1].digits, "15");
+  const restored = decimals.at(-1).board;
+  assert.equal(restored.rows[0].digits, "2.4");
+  assert.equal(restored.rows[1].digits, "1.5");
+  assert.equal(restored.rows.at(-1).digits, "3.60");
+  const remainder = Teaching.steps(f["G5-C04"].question).at(-1).board;
+  assert.equal(remainder.rows[1].divisor, "0.4");
+  assert.equal(remainder.rows[1].dividend, "7.3");
+  assert.equal(remainder.rows.at(-1).digits, "0.1");
+  const division = Teaching.steps(f["G4-C06"].question);
+  const adjustment = division.find((t) => t.intent === "quotient-adjustment");
+  assert(adjustment.text.includes("3に直した"));
+  assert.equal(adjustment.board.rows[0].digits.at(-1), "3");
+  for (const c of K.CATALOG) {
+    const states = Teaching.steps(f[c.id].question);
+    assert(states.length >= 3, c.id);
+    assert(states.at(-1).text.startsWith("こたえ："));
+    assert(!states.slice(0, -1).some((t) => t.kind === "answer"));
+  }
+  return {
+    challenges: 101,
+    diagrams: "no premature equivalent fraction",
+    trial: "text and board agree",
+  };
 });
 s.done({ seed, generatorCoverage: coverage });

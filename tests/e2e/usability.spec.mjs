@@ -426,11 +426,28 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
   ).toBe(true);
   await open(page, "G3-C02");
   await page.getByTestId("help").click();
-  await completeSolution(page);
   const board = page.getByTestId("written-board");
+  // Audit the exchange when it is taught, with independently specified values.
+  for (let step = 0; step < 100; step++) {
+    if (
+      (await page.locator(".written-notes").innerText()).includes(
+        "十の位は0＋10＝10",
+      )
+    )
+      break;
+    await expect(page.getByTestId("solution-forward")).toBeEnabled();
+    await page.getByTestId("solution-forward").click();
+  }
   await expect(page.locator(".written-notes")).toContainText(
-    "百の位から1を借り、十の位を10",
+    "百の位は4−1＝3。十の位は0＋10＝10",
   );
+  expect(await board.locator(".written-annotation").allTextContents()).toEqual([
+    "3",
+    "10",
+  ]);
+  await completeSolution(page);
+  await expect(page.locator(".written-notes")).toContainText("こたえ：225");
+  expect(await page.locator(".solution-steps li").count()).toBe(1);
   expect(
     await board.locator(".written-row").first().getAttribute("data-row-kind"),
   ).toBe("digits");
