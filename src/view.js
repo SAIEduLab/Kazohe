@@ -440,7 +440,20 @@ const KZUI = (() => {
       [node("h3", {}, "いっしょに たしかめよう")],
     );
     if (q.written) content.append(written(q, true, grade, current.board));
-    for (const [n, d] of current.diagram || [])
+    if (q.task === "compare")
+      content.append(
+        node(
+          "div",
+          { class: "teaching-comparison" },
+          math(
+            `${q.labels?.[0] || KZ.format(q.values[0])} ${complete ? KZ.answerText(q).split("（")[0] : "□"} ${q.labels?.[1] || KZ.format(q.values[1])}`,
+            grade,
+          ),
+        ),
+      );
+    const diagram =
+      steps.slice(0, index + 1).findLast((step) => step.diagram)?.diagram || [];
+    for (const [n, d] of diagram)
       content.append(
         node(
           "div",

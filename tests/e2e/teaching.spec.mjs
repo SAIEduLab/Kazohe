@@ -266,6 +266,15 @@ test("TC-U16 reasons, exchanges and fraction diagrams follow the visible teachin
   expect(await page.locator(".support .bar .filled").count()).toBe(2);
   await page.getByTestId("solution-back").click();
   expect(await page.locator(".support .bar .filled").count()).toBe(1);
+  await page.evaluate(() => {
+    for (let i = 0; i < 100; i++) {
+      const next = document.querySelector('[data-testid="solution-forward"]');
+      if (next.disabled) return;
+      next.click();
+    }
+    throw Error("Nonterminating fraction steps");
+  });
+  expect(await page.locator(".support .bar").count()).toBe(2);
   await open(page, fixtures["G1-C04"].question);
   await page.getByTestId("solution-forward").click();
   expect(await page.locator(".counter.removed").count()).toBe(0);
