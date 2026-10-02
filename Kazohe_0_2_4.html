@@ -6920,7 +6920,7 @@ const KZTeaching = (() => {
               values[0];
             const count = values[values.indexOf(u) === 0 ? 1 : 0];
             emit(
-              `${u}が${count}個。${count <= 9n && count > 0n ? `${Array(Number(count)).fill(String(u)).join("＋")}＝${u * count}。` : `${u}×${count}＝${u * count}。`}`,
+              `${u}が${count}個。${count >= 10n ? "10個ずつのまとまりと残りへ分けてから、数を求める。" : count > 0n ? `${Array(Number(count)).fill(String(u)).join("＋")}＝${u * count}。` : "このまとまりは0個なので0。"}`,
             );
             if (count >= 10n) {
               emit(
@@ -7431,8 +7431,22 @@ const KZTeaching = (() => {
           focus = `${b}は10を何回かけた数かな。${a}の各位を、その回数だけ${ast.op === "*" ? "10倍" : "10分の1"}にしよう。`;
         else if (["G2-C09", "G3-C10"].includes(id))
           focus = `${a}を十のまとまりと残りに分け、それぞれを同じ${b}${ast.op === "*" ? "組分にする" : "組に分ける"}とどうなるかな。最後に2つを合わせよう。`;
-        else if (q.answerSpec.type === "fraction")
-          focus = `${KZ.expression(ast)}。まず、帯分数や小数を、個数が見える分数へ直せるかな。その後の1個分の大きさも確かめよう。`;
+        else if (q.answerSpec.type === "fraction") {
+          const conversion = (node) =>
+            node.op
+              ? node.args.some(conversion)
+              : node.label?.includes("と") ||
+                (!node.label?.includes("/") && KZ.evaluate(node).d !== "1");
+          const unitA = rawFraction(ast.args[0]),
+            unitB = rawFraction(ast.args[1]);
+          focus = conversion(ast)
+            ? `${KZ.expression(ast)}。帯分数や小数を、1個分の大きさと個数が分かる分数へ直そう。その数がどこから来たか、順に確かめよう。`
+            : ["+", "-"].includes(ast.op)
+              ? unitA.d === unitB.d
+                ? `${KZ.expression(ast)}。どちらも1/${unitA.d}が1個分。分母${unitA.d}をそのままにして、分子の個数を${ast.op === "+" ? "合わせる" : "引く"}とどうなるかな。`
+                : `${KZ.expression(ast)}。1個分の大きさが同じかな。分母が違うので共通の倍数を探し、そろえた後の分子の個数を計算しよう。`
+              : `${KZ.expression(ast)}。それぞれの分数の1個分と個数を確かめよう。${ast.op === "/" ? "わる数に何をかけると1になるかな。その数を両方にかけると商は変わらないよ。" : "分子をかけると個数、分母をかけると分け方がどう変わるかな。"}`;
+        }
       }
     }
     return `${focus} ${KZ.generalHint(q)}`;

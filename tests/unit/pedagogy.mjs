@@ -419,6 +419,10 @@ s.check("TC-E11", () => {
 });
 s.check("TC-E12", () => {
   const f = representatives(K);
+  const bundles = Teaching.steps(f["G2-N02"].question);
+  const exchanged = bundles.findIndex((t) => /100が10個で1000/.test(t.text));
+  assert(exchanged > 0);
+  assert(bundles.slice(0, exchanged).every((t) => !t.text.includes("2300")));
   const equivalent = Teaching.steps(f["G4-N05"].question);
   assert(!equivalent[0].diagram);
   assert.equal(equivalent.find((t) => t.diagram)?.diagram.length, 1);
