@@ -133,7 +133,8 @@ test("TC-U13 every challenge advances and restores each teaching state without s
 test("TC-U14 textbook written calculations include integer/decimal edge cases at both widths", async ({
   page,
 }, info) => {
-  test.setTimeout(300000);
+  // The causal explanations add states; retain every case, width and image.
+  test.setTimeout(600000);
   const examples = [
     ["sub-324", "G3-C02", "-", "324", "166"],
     ["sub-9910", "G3-C04", "-", "9910", "9541"],
@@ -246,11 +247,9 @@ test("TC-U16 reasons, exchanges and fraction diagrams follow the visible teachin
       ).toBe(true);
       if (info.project.name === "chromium") {
         mkdirSync(`reports/teaching/sub-8012-${width}`, { recursive: true });
-        await page
-          .locator(".support")
-          .screenshot({
-            path: `reports/teaching/sub-8012-${width}/step-${String(i).padStart(2, "0")}.png`,
-          });
+        await page.locator(".support").screenshot({
+          path: `reports/teaching/sub-8012-${width}/step-${String(i).padStart(2, "0")}.png`,
+        });
       }
       if (i + 1 < frames.length)
         await page.getByTestId("solution-forward").click();

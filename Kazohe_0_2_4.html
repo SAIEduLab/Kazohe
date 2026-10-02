@@ -6505,7 +6505,7 @@ const KZTeaching = (() => {
       : `${["一", "十", "百", "千", "万"][column - scale] || 10 ** (column - scale)}の位`;
   const signs = { "+": "＋", "-": "−", "*": "×", "/": "÷" };
   const show = (v) =>
-    KZ.format(v, KZ.decimalPlaces(v) <= 4 ? "decimal" : "fraction");
+    KZ.format(v, Number.isFinite(KZ.decimalPlaces(v)) ? "decimal" : "fraction");
   const rawFraction = (node) => {
     const v = KZ.evaluate(node),
       label = node.label || "";
@@ -6959,11 +6959,20 @@ const KZTeaching = (() => {
           chunks = String(c)
             .split("")
             .map((x, i, arr) => BigInt(x) * 10n ** BigInt(arr.length - i - 1));
-        chunks.forEach((x, i) =>
+        chunks.forEach((x, i) => {
+          const digit = BigInt(String(c)[i]),
+            perDigit = 10n ** BigInt(chunks.length - i - 1);
           emit(
-            `${place(chunks.length - i - 1, s)}の部分は、${show(unit)}が${x}個分。`,
-          ),
-        );
+            `${place(chunks.length - i - 1, s)}の1は、${show(unit)}が${perDigit}個分。この位の数字は${digit}。`,
+          );
+          checked(
+            `${digit}×${perDigit}＝${x}。だから、この位の部分は${show(unit)}が${x}個分。`,
+            "*",
+            digit,
+            perDigit,
+            x,
+          );
+        });
         emit(
           `${chunks.join("＋")}＝${count.n}個。${show(total)}は${show(unit)}が${count.n}個分。`,
         );
@@ -7199,9 +7208,21 @@ const KZTeaching = (() => {
             b / 100,
             count,
           );
-          emit(
-            `100が${count}個で${count * 100}。${count >= 10 ? `10個で1000なので、${Math.floor(count / 10)}千と${count % 10}百。` : ""}`,
-          );
+          if (count >= 10) {
+            emit(
+              `${count}個を${Math.floor(count / 10) * 10}個と${count % 10}個へ分ける。100が10個で1000になる。`,
+            );
+            emit(
+              `1000が${Math.floor(count / 10)}個で${Math.floor(count / 10) * 1000}、100が${count % 10}個で${(count % 10) * 100}。`,
+            );
+            checked(
+              `2つを合わせる：${Math.floor(count / 10) * 1000}＋${(count % 10) * 100}＝${count * 100}。`,
+              "+",
+              Math.floor(count / 10) * 1000,
+              (count % 10) * 100,
+              count * 100,
+            );
+          } else emit(`100が${count}個で${count * 100}。`);
         } else if (id === "G2-C09" || id === "G3-C10") {
           const left = id === "G2-C09" ? 10 : a - (a % 10),
             right = a - left;
@@ -7407,7 +7428,15 @@ const KZTeaching = (() => {
       if (q.task === "compare")
         focus = `${q.labels?.[0] || show(q.values[0])}と${q.labels?.[1] || show(q.values[1])}は、どこまで同じかな。最初に違う位、または同じ1個分の個数を探そう。`;
       else if (q.task === "fraction")
-        focus = `${q.prompt}。まず1/${q.original.d}が1個分だと確かめよう。表し方を変えても大きさを保つには、何を同じ数で変えるかな。`;
+        focus = ["G2-N03", "G3-N05"].includes(q.challengeId)
+          ? `${q.prompt}。全体を1として、同じ大きさにいくつに分けたかな。そのうち何個分を見ているか数えよう。`
+          : q.challengeId === "G5-N10"
+            ? `${q.prompt}。小数の最後の位は、1をいくつに分けた1個分かな。その個数を分子、分けた数を分母にしよう。`
+            : q.answerSpec.reduced
+              ? `${q.original.n}と${q.original.d}を両方割り切れる整数を探そう。同じ数で両方を割れば、大きさを変えずに表せるよ。`
+              : q.answerSpec.form === "mixed"
+                ? `1/${q.original.d}が${q.original.d}個で1になるよ。${q.original.n}個から1のまとまりをいくつ作れ、何個残るかな。`
+                : `整数1は1/${q.original.d}が何個分かな。整数の分と、残りの分数の個数を合わせよう。`;
       else if (q.task === "common")
         focus = `分母${q.values[0].d}と${q.values[1].d}の倍数を並べると、最初に共通する数はどれかな。その分母へ変える倍率も確かめよう。`;
       else if (q.task === "parity")
@@ -7431,7 +7460,15 @@ const KZTeaching = (() => {
           focus = `${b}は10を何回かけた数かな。${a}の各位を、その回数だけ${ast.op === "*" ? "10倍" : "10分の1"}にしよう。`;
         else if (["G2-C09", "G3-C10"].includes(id))
           focus = `${a}を十のまとまりと残りに分け、それぞれを同じ${b}${ast.op === "*" ? "組分にする" : "組に分ける"}とどうなるかな。最後に2つを合わせよう。`;
-        else if (q.answerSpec.type === "fraction") {
+        else if (id === "G5-N12")
+          focus = `1を${b}等分した1個分を考えよう。${a}を同じように等分すると、その1個分が何個ずつになるかな。`;
+        else if (["G5-N13", "G6-N02"].includes(id))
+          focus = `${q.prompt}。まず${id === "G5-N13" ? "△" : "x"}の場所を示し、指定された数へ書き換えよう。その後、先に求める部分を選ぼう。`;
+        else if (ast.args.some((node) => node.op)) {
+          const first = (node) =>
+            node.op ? node.args.map(first).find(Boolean) || node : null;
+          focus = `${q.prompt}。まず${KZ.expression(first(ast))}を求めよう。求めた数を元の場所へ戻し、残った式を確かめてから次へ進もう。`;
+        } else if (q.answerSpec.type === "fraction") {
           const conversion = (node) =>
             node.op
               ? node.args.some(conversion)

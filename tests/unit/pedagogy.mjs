@@ -424,6 +424,20 @@ s.check("TC-E12", () => {
   assert(exchanged > 0);
   assert(bundles.slice(0, exchanged).every((t) => !t.text.includes("2300")));
   const equivalent = Teaching.steps(f["G4-N05"].question);
+  assert(
+    Teaching.steps(f["G3-N03"].question).some((t) => /2×10＝20/.test(t.text)),
+  );
+  assert(
+    Teaching.steps(f["G4-N03"].question).some((t) => /3×10＝30/.test(t.text)),
+  );
+  assert(!/分母|分子/.test(K.buildHint(f["G6-N02"].question)));
+  assert(!/1\/2が1個分/.test(K.buildHint(f["G6-C07"].question)));
+  assert(!/同じ数で変える/.test(K.buildHint(f["G2-N03"].question)));
+  assert(
+    Teaching.steps(f["G5-N06"].question).some((t) =>
+      t.text.includes("0.02485"),
+    ),
+  );
   assert(!equivalent[0].diagram);
   assert.equal(equivalent.find((t) => t.diagram)?.diagram.length, 1);
   const before = equivalent.findIndex((t) => t.text.includes("分子も1×2＝2"));
