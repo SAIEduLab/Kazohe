@@ -107,8 +107,8 @@ s.check("TC-D02", () => {
       ["T", 16],
       ["P", 28],
       ["B", 18],
-      ["U", 15],
-      ["E", 9],
+      ["U", 16],
+      ["E", 12],
     ].flatMap(([group, count]) =>
       Array.from(
         { length: count },

@@ -120,7 +120,9 @@ const KZTeaching = (() => {
           { intent: "denominator-choice" },
         );
       } else
-        emit(`どちらも1/${d}が1個分。分母はもう同じなので、そのまま使う。`);
+        emit(
+          `どちらも1/${d}が1個分。分母${d}はそのまま、分子の個数を計算する。`,
+        );
       for (const v of [a, b])
         if (v.d !== d) {
           const m = d / v.d;
@@ -330,6 +332,20 @@ const KZTeaching = (() => {
         });
       }
     } else if (ast) {
+      if (
+        !ast.op &&
+        !q.sequence &&
+        !q.unitFraction &&
+        !q.law &&
+        id !== "G5-N11" &&
+        !q.diagram
+      ) {
+        emit(
+          `${q.prompt}。示された数${show(KZ.evaluate(ast))}と、答えを入れる場所を確かめる。`,
+        );
+        out.push({ kind: "answer", text: `こたえ：${KZ.answerText(q)}` });
+        return out;
+      }
       const av = ast.op ? KZ.evaluate(ast.args[0]) : KZ.evaluate(ast),
         bv = ast.op ? KZ.evaluate(ast.args[1]) : null;
       const a = Number(av.n),
