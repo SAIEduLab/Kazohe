@@ -621,6 +621,13 @@ body[data-screen="menu"] {
   background: #fff0bf;
   box-shadow: inset 0 -3px 0 #a46c00;
 }
+.written-caption {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  margin: 12px 0 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
 .number-groups {
   font-size: 0.55em;
   background: #eef4f5;

@@ -348,7 +348,16 @@ const KZUI = (() => {
         class:
           "written-wrap " + (complete ? "teaching-written" : "problem-written"),
       },
-      figure,
+      [
+        figure,
+        model.caption
+          ? node(
+              "p",
+              { class: "written-caption" },
+              readable(model.caption, grade),
+            )
+          : null,
+      ],
     );
   }
   function counters(step, grade) {
@@ -448,9 +457,9 @@ const KZUI = (() => {
       );
     const list = node("ol", {
       class: "solution-steps",
-      start: complete ? 1 : index + 1,
+      start: index + 1,
     });
-    for (const t of complete ? steps : [current]) {
+    for (const t of [current]) {
       const li = node(
         "li",
         { "data-current-step": String(t === current) },
@@ -466,11 +475,7 @@ const KZUI = (() => {
         );
       list.append(li);
     }
-    if (
-      !q.written &&
-      !complete &&
-      !["counters", "dots"].includes(current.kind)
-    ) {
+    if (!q.written && !["counters", "dots"].includes(current.kind)) {
       const picture = steps
         .slice(0, index + 1)
         .findLast((t) => ["counters", "dots"].includes(t.kind));
@@ -498,7 +503,7 @@ const KZUI = (() => {
           "data-testid": "solution-explanation",
         },
         [
-          node("h4", {}, complete ? "ときかたの ふりかえり" : "この いって"),
+          node("h4", {}, complete ? "こたえを たしかめよう" : "この いって"),
           list,
         ],
       ),

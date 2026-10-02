@@ -439,6 +439,14 @@ s.check("TC-E12", () => {
   assert(converted > 0);
   assert.equal(decimals[converted].board.rows[0].digits, "24");
   assert.equal(decimals[converted].board.rows[1].digits, "15");
+  const restored = decimals.at(-1).board;
+  assert.equal(restored.rows[0].digits, "2.4");
+  assert.equal(restored.rows[1].digits, "1.5");
+  assert.equal(restored.rows.at(-1).digits, "3.60");
+  const remainder = Teaching.steps(f["G5-C04"].question).at(-1).board;
+  assert.equal(remainder.rows[1].divisor, "0.4");
+  assert.equal(remainder.rows[1].dividend, "7.3");
+  assert.equal(remainder.rows.at(-1).digits, "0.1");
   const division = Teaching.steps(f["G4-C06"].question);
   const adjustment = division.find((t) => t.intent === "quotient-adjustment");
   assert(adjustment.text.includes("3に直した"));
