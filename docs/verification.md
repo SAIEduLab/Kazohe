@@ -1,6 +1,6 @@
-# v<!-- APP_VERSION -->0.2.3<!-- /APP_VERSION --> 検証ガイド
+# v<!-- APP_VERSION -->0.2.4<!-- /APP_VERSION --> 検証ガイド
 
-配布候補は `Kazohe_0_2_3.html` の1ファイルです。生成元の `src/catalog.json` と独立検証用の `tests/fixtures/catalog.json` は別の役割を持ち、両者と配布HTMLの整合を確認します。
+配布候補は `Kazohe_0_2_4.html` の1ファイルです。生成元の `src/catalog.json` と独立検証用の `tests/fixtures/catalog.json` は別の役割を持ち、両者と配布HTMLの整合を確認します。
 
 ## 自動検証
 

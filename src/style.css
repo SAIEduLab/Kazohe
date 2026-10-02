@@ -617,6 +617,10 @@ body[data-screen="menu"] {
 .problem.compact {
   font-size: 1.3rem;
 }
+.written-cell.teaching-focus {
+  background: #fff0bf;
+  box-shadow: inset 0 -3px 0 #a46c00;
+}
 .number-groups {
   font-size: 0.55em;
   background: #eef4f5;

@@ -1660,6 +1660,9 @@ const KZ = (() => {
     return q;
   }
   function buildHint(q) {
+    return KZTeaching.hint(q);
+  }
+  function generalHint(q) {
     const id = q.challengeId,
       ast = q.expressionAST;
     const early = {
@@ -2070,6 +2073,7 @@ const KZ = (() => {
     return trace;
   }
   function buildSolution(q) {
+    if (!q.written) return KZTeaching.explain(q);
     const t = [];
     if (q.task === "arithmetic") {
       const id = q.challengeId,
@@ -3473,6 +3477,7 @@ const KZ = (() => {
     createGenerator,
     generate,
     buildHint,
+    generalHint,
     buildSolution,
     answerText,
     normalizeInput,

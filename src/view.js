@@ -286,7 +286,10 @@ const KZUI = (() => {
         const cell = node(
           "span",
           {
-            class: "written-cell" + (annotation?.crossed ? " regrouped" : ""),
+            class:
+              "written-cell" +
+              (annotation?.crossed ? " regrouped" : "") +
+              (model.focus === i ? " teaching-focus" : ""),
             "data-column": i,
             "data-value": value,
           },
@@ -355,6 +358,14 @@ const KZUI = (() => {
         : step.operation === "+"
           ? step.a + step.b
           : step.a;
+    const visible =
+      step.pictureStage === "before"
+        ? step.operation === "*"
+          ? step.a
+          : step.a
+        : step.pictureStage === "groups"
+          ? step.a * step.visibleGroups
+          : total;
     const picture = node("div", {
       class: "counter-picture",
       role: "img",
@@ -362,8 +373,8 @@ const KZUI = (() => {
     });
     const rowSize = step.operation === "*" ? step.a : 10;
     if (!total) picture.append(node("span", { class: "zero-group" }, "0こ"));
-    for (let start = 0; start < total; start += rowSize) {
-      const count = Math.min(rowSize, total - start),
+    for (let start = 0; start < visible; start += rowSize) {
+      const count = Math.min(rowSize, visible - start),
         group = node("div", {
           class: step.operation === "*" ? "counter-group" : "ten-frame",
           style: `--count:${rowSize}`,
@@ -373,6 +384,7 @@ const KZUI = (() => {
           filled = i < count,
           removed =
             step.operation === "-" &&
+            step.pictureStage !== "before" &&
             (step.splitTen
               ? index < 10 && index >= 10 - step.b
               : index >= step.a - step.b);
@@ -419,7 +431,7 @@ const KZUI = (() => {
       [node("h3", {}, "いっしょに たしかめよう")],
     );
     if (q.written) content.append(written(q, true, grade, current.board));
-    for (const [n, d] of q.diagram || q.answerSpec.diagram || [])
+    for (const [n, d] of current.diagram || [])
       content.append(
         node(
           "div",
