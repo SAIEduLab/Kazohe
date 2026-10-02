@@ -129,9 +129,8 @@ export function representatives(K) {
     );
   const direct = (id, value, prompt) => {
     q[id] = {
-      question: K.complete(
-        K.arithmetic(id, leaf(value), { type: "integer" }, { prompt }),
-      ),
+      // These placeholders are completed below, after their real AST and teaching data are attached.
+      question: K.arithmetic(id, leaf(value), { type: "integer" }, { prompt }),
       expected: value,
     };
   };

@@ -7684,7 +7684,7 @@ const KZTeaching = (() => {
         const trailing = source.length - i - 1 + untouched.length;
         if (started && previousRow) {
           push(
-            `今の余り${remainder}を次の位へ直すと${remainder}×10＝${remainder * 10n}。次の数字${source[i]}の分を合わせる。`,
+            `${place(source.length - i, tail.length)}の余り${remainder}を、次の${place(source.length - i - 1, tail.length)}の個数へ直すと${remainder}×10＝${remainder * 10n}。次の数字${source[i]}の分を合わせる。`,
             {
               op: "*",
               a: String(remainder),
