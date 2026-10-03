@@ -103,7 +103,7 @@ test("TC-U18 written options preserve challenge IDs, remainder choices and saved
   await expect(page.getByTestId("written-unavailable-G4-C06")).toBeVisible();
   await expect(
     page.getByTestId("written-option-G4-C06").locator('option[value="some"]'),
-  ).toBeDisabled();
+  ).toHaveAttribute("disabled", "");
   const restoredPage = await page.context().newPage();
   await restoredPage.goto(url);
   await expect(restoredPage.getByTestId("written-option-G4-C06")).toHaveValue(
