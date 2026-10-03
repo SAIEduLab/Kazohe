@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { K } from "../../scripts/load-inline-core.mjs";
+import { K, Written } from "../../scripts/load-inline-core.mjs";
+import { writtenOracle } from "../fixtures/written-oracle.mjs";
 import { suite } from "../../scripts/report.mjs";
 import {
   expected,
@@ -233,6 +234,63 @@ s.check("TC-G18", () => {
   assert.throws(() =>
     K.normalizeConfig({ selectedIds: [], mode: "practice", quantity: 10 }),
   );
+});
+s.check("TC-G19", () => {
+  let generated = 0;
+  const distributions = {};
+  for (const id of Written.ids) {
+    const remainders = K.REMAINDER_IDS.includes(id)
+      ? ["none", "some", "mixed"]
+      : [undefined];
+    for (const remainder of remainders)
+      for (const written of ["none", "some", "mixed"]) {
+        const options = { ...(remainder ? { remainder } : {}), written };
+        const available = Written.available(id, remainder);
+        if (written !== "mixed" && !available.includes(written)) {
+          assert.throws(() => K.generate(id, options));
+          continue;
+        }
+        const state = K.createGenerator(seed + 25),
+          twin = K.createGenerator(seed + 25),
+          counts = { none: 0, some: 0 },
+          seen = new Map();
+        for (let i = 0; i < (sample === 10000 ? 400 : 80); i++) {
+          const q = K.generate(id, options, state),
+            oracle = writtenOracle(q),
+            actual = Written.classify(q);
+          verify(q);
+          same(q, K.generate(id, options, twin));
+          assert.equal(actual.has, oracle.has, `${id}: ${q.prompt}`);
+          assert.equal(actual.partialProductCarry, oracle.partialProductCarry);
+          assert.equal(actual.partialSumCarry, oracle.partialSumCarry);
+          assert.equal(actual.divisionBorrow, oracle.divisionBorrow);
+          if (written !== "mixed")
+            assert.equal(oracle.has, written === "some", `${id}: ${q.prompt}`);
+          if (remainder && remainder !== "mixed")
+            assert.equal(
+              q.expectedExactValue.remainder
+                ? q.expectedExactValue.remainder.n !== "0"
+                : false,
+              remainder === "some",
+            );
+          const cycle = `${q.conditionBucket}:${q.cycleId}`;
+          const keys = seen.get(cycle) || new Set();
+          assert(
+            !keys.has(q.canonicalKey),
+            `${id}: repeated within a condition cycle`,
+          );
+          keys.add(q.canonicalKey);
+          seen.set(cycle, keys);
+          counts[oracle.has ? "some" : "none"]++;
+          generated++;
+        }
+        if (written === "mixed")
+          for (const mode of available)
+            assert(counts[mode] > 0, `${id}: missing ${mode}`);
+        distributions[`${id}/${remainder || "na"}/${written}`] = counts;
+      }
+  }
+  return { generated, distributions };
 });
 s.done({
   seed,

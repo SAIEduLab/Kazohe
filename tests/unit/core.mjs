@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { K } from "../../scripts/load-inline-core.mjs";
+import { K, Written, Language } from "../../scripts/load-inline-core.mjs";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { writtenCases, writtenOracle } from "../fixtures/written-oracle.mjs";
 import { suite } from "../../scripts/report.mjs";
 import { rawAnswer, eq } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
@@ -1123,5 +1126,130 @@ s.check("explanations-respect-prerequisite-learning", () => {
   assert(thirds.solutionTrace.some((t) => t.text.includes("分母6はそのまま")));
   assert(!thirds.solutionTrace.some((t) => t.text.includes("分母を2")));
   assert.equal(K.answerText(thirds), "6/6");
+});
+s.check("TC-M71", () => {
+  for (const [id, operator, a, b, has, product, sum] of writtenCases) {
+    const q = K.arithmetic(id, K.op(operator, K.lit(a), K.lit(b)), {
+      type: K.REMAINDER_IDS.includes(id) ? "quotient" : "decimal",
+    });
+    const actual = Written.classify(q),
+      independent = writtenOracle(q);
+    assert.equal(actual.has, has, `${a}${operator}${b}`);
+    for (const key of Object.keys(independent))
+      assert.equal(actual[key], independent[key]);
+    if (product !== undefined)
+      assert.equal(actual.partialProductCarry, product);
+    if (sum !== undefined) assert.equal(actual.partialSumCarry, sum);
+  }
+  assert.throws(() => Written.classify({ challengeId: "G1-C01" }));
+  assert.throws(() =>
+    Written.classify(K.arithmetic("G3-C01", K.op("?", K.lit(1), K.lit(1)))),
+  );
+  const a = K.generate("G4-C12", { written: "none" });
+  assert.equal(Written.classify(a).divisionBorrow, false);
+  const rounded = K.generate("G5-C05", { written: "some" });
+  assert.equal(Written.classify(rounded).has, writtenOracle(rounded).has);
+  for (const id of Written.ids) {
+    Written.label(id);
+    for (const mode of [...Written.available(id), "mixed"]) {
+      const opts = { written: mode };
+      const question = K.generate(id, opts, K.createGenerator(20261003));
+      assert.equal(Written.classify(question).has, writtenOracle(question).has);
+    }
+  }
+  assert.throws(() => K.generate("G3-C01", { written: "invalid" }));
+  assert.throws(() => K.generate("G2-C01", { written: "some" }));
+  assert.throws(() =>
+    K.generate("G4-C06", { written: "some", remainder: "none" }),
+  );
+});
+s.check("TC-M72", () => {
+  const makeConfig = (id, options) =>
+    K.normalizeConfig({
+      selectedIds: [id],
+      mode: "practice",
+      quantity: 10,
+      optionsById: { [id]: options },
+    });
+  for (const id of Written.ids)
+    for (const written of [...Written.available(id), "mixed"]) {
+      const config = makeConfig(id, { written });
+      let r = K.createRun(config, 9025, 0);
+      const save = K.emptySave();
+      save.settings.config = config;
+      save.returnStack = [config];
+      save.practiceCheckpoint = K.checkpoint(r);
+      const backup = K.validateBackup(JSON.stringify(save));
+      same(backup, save);
+      same(
+        K.reduceRun(
+          r,
+          {
+            type: "SUBMIT",
+            questionId: r.currentQuestion.questionId,
+            raw: rawAnswer(r.currentQuestion),
+          },
+          0,
+        ),
+        K.reduceRun(
+          backup.practiceCheckpoint,
+          {
+            type: "SUBMIT",
+            questionId: r.currentQuestion.questionId,
+            raw: rawAnswer(r.currentQuestion),
+          },
+          0,
+        ),
+      );
+    }
+  const oldText = readFileSync("tests/fixtures/v0.2.4-backup.json", "utf8");
+  same(K.validateBackup(oldText), JSON.parse(oldText));
+  const legacy = makeConfig("G3-C07", {}),
+    none = makeConfig("G3-C07", { written: "none" }),
+    some = makeConfig("G3-C07", { written: "some" });
+  assert.equal(legacy.optionsById["G3-C07"].written, undefined);
+  assert.notEqual(
+    K.bestKey(none, "independent"),
+    K.bestKey(some, "independent"),
+  );
+  for (const [id, options] of [
+    ["G1-C01", { written: "none" }],
+    ["G3-C01", { written: "bad" }],
+    ["G2-C01", { written: "some" }],
+    ["G4-C04", { remainder: "none", written: "some" }],
+  ])
+    assert.throws(() => makeConfig(id, options));
+});
+s.check("TC-M73", () => {
+  assert.equal(
+    createHash("sha256").update(Language.allocations.join("")).digest("hex"),
+    "93937d2f07db344a39375b43345b2a37f596c56cc61ffa93ff836c3b8e66a272",
+  );
+  same(
+    Language.allocations.map((s) => [...s].length),
+    [80, 160, 200, 202, 193, 191],
+  );
+  assert.equal(new Set(Language.allocations.join("")).size, 1026);
+  const expected = [0, 80, 240, 440, 642, 835];
+  for (let grade = 1; grade <= 6; grade++) {
+    assert.equal(
+      [...Language.allocations.join("")].filter(
+        (char) => !Language.forbidden(char, grade).length,
+      ).length,
+      expected[grade - 1],
+    );
+    assert(Language.audit("小数点を見て数える。", grade).valid);
+    assert(!Language.audit("鬱蒼", grade).valid);
+  }
+  assert.equal(
+    Language.readable("個数を数えてみよう", 1),
+    "こすうをかぞえてみよう",
+  );
+  assert.equal(Language.readable("くり上がり", 1), "くりあがり");
+  assert.equal(Language.readable("くり下がり", 1), "くりさがり");
+  assert.equal(Language.readable("左", 2), "左");
+  assert.equal(Language.readable("小数", 3), "小数");
+  assert.throws(() => Language.forbidden("小", 0));
+  assert.equal(Language.readable(null, 1), "");
 });
 s.done();

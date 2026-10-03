@@ -7,6 +7,12 @@ import {
 } from "./artifact.mjs";
 const read = (p) => readFileSync(p, "utf8");
 const core =
+  read("src/language.js").replace("__KAZOHE_LANGUAGE__", () =>
+    read("src/language.json"),
+  ) +
+  "\n" +
+  read("src/written.js") +
+  "\n" +
   read("src/core.js").replace("__KAZOHE_CATALOG__", () =>
     read("src/catalog.json"),
   ) +

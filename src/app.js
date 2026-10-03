@@ -6,26 +6,40 @@
     announcer = document.getElementById("announcer");
   const test = window.__KAZOHE_TEST__ || null,
     now = () => performance.now();
+  let languageReady = false;
   const el = (tag, attrs = {}, children = []) => {
     const n = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs)) {
+      if (value === undefined || value === null) continue;
       if (key.startsWith("on"))
         n.addEventListener(key.slice(2).toLowerCase(), value);
-      else if (key === "text") n.textContent = value;
+      else if (key === "text")
+        n.textContent = attrs["data-user-text"]
+          ? value
+          : KZUI.readable(value, uiGrade());
       else if (key === "class") n.className = value;
       else if (key === "checked" || key === "disabled" || key === "hidden")
         n[key] = !!value;
       else if (key === "value") n.value = value;
-      else n.setAttribute(key, value);
+      else
+        n.setAttribute(
+          key,
+          ["aria-label", "title", "placeholder"].includes(key)
+            ? KZUI.readable(value, uiGrade())
+            : value,
+        );
     }
     for (const child of Array.isArray(children) ? children : [children])
       if (child !== null && child !== undefined)
         n.append(
-          typeof child === "string" ? document.createTextNode(child) : child,
+          typeof child === "string"
+            ? document.createTextNode(KZUI.readable(child, uiGrade()))
+            : child,
         );
     return n;
   };
   function uiGrade() {
+    if (!languageReady) return 1;
     return (
       (screen === "play" || screen === "result"
         ? run?.config.languageGrade
@@ -42,17 +56,20 @@
       ...attrs,
     });
   const text = (tag, s, attrs = {}) =>
-    el(tag, { text: KZUI.readable(s, uiGrade()), ...attrs });
+    el(tag, {
+      text: attrs["data-user-text"] ? s : KZUI.readable(s, uiGrade()),
+      ...attrs,
+    });
   const math = (s, attrs = {}) => KZUI.math(s, uiGrade(), attrs);
   const panel = (children, cls = "") =>
     el("section", { class: "panel " + cls }, children);
   const announce = (s) => {
-    announcer.textContent = s;
+    announcer.textContent = KZUI.readable(s, uiGrade());
   };
   const warn = (s) => {
     const n = document.getElementById("storage-warning");
     n.hidden = false;
-    n.textContent = s;
+    n.textContent = KZUI.readable(s, uiGrade());
   };
   let storage;
   try {
@@ -94,6 +111,7 @@
     draftQuestionId = null,
     solutionQuestionId = null,
     solutionStep = 0;
+  languageReady = true;
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -119,7 +137,10 @@
   function modal(title, body, actions) {
     if (dialog.open) dialog.close();
     returnFocus = document.activeElement;
-    document.getElementById("dialog-title").textContent = title;
+    document.getElementById("dialog-title").textContent = KZUI.readable(
+      title,
+      uiGrade(),
+    );
     document.getElementById("dialog-body").replaceChildren(...body);
     document.getElementById("dialog-actions").replaceChildren(...actions);
     dialog.showModal();
@@ -191,6 +212,18 @@
       config = { ...next, selectedIds: [] };
       render();
       return;
+    }
+    next.optionsById = { ...next.optionsById };
+    for (const id of ids) {
+      if (
+        !config.selectedIds.includes(id) &&
+        KZWritten.ids.includes(id) &&
+        !KZWritten.fixed[id]
+      )
+        next.optionsById[id] = {
+          ...next.optionsById[id],
+          written: next.optionsById[id]?.written || "mixed",
+        };
     }
     const long = ids.some((id) => KZ.BY_ID[id].timeClass === "long");
     if (
@@ -329,6 +362,82 @@
       (id) => KZ.BY_ID[id].timeClass === "long",
     );
     const conditionNodes = config.selectedIds.flatMap((id) => {
+      const writtenControls = [];
+      if (KZWritten.ids.includes(id)) {
+        const pair = KZWritten.pairs[id];
+        if (!pair || id === pair.find((value) => selected.has(value))) {
+          const available = KZWritten.available(
+            id,
+            config.optionsById[id]?.remainder,
+          );
+          const selectedMode = pair
+            ? pair.every((value) => selected.has(value))
+              ? "mixed"
+              : KZWritten.fixed[id]
+            : config.optionsById[id]?.written || "mixed";
+          writtenControls.push(
+            select(
+              (pair
+                ? id === "G2-C01" || id === "G2-C02"
+                  ? "2けたのたし算"
+                  : "2けたのひき算"
+                : KZ.BY_ID[id].title) +
+                "の " +
+                KZWritten.label(id),
+              [
+                ["none", "なし"],
+                ["some", "あり"],
+                ["mixed", "どちらも"],
+              ],
+              selectedMode,
+              (value) => {
+                if (pair) {
+                  const ids = config.selectedIds.filter(
+                    (value) => !pair.includes(value),
+                  );
+                  ids.push(
+                    ...(value === "mixed"
+                      ? pair
+                      : pair.filter(
+                          (valueId) => KZWritten.fixed[valueId] === value,
+                        )),
+                  );
+                  setConfig({ ...config, selectedIds: ids });
+                } else
+                  setConfig({
+                    ...config,
+                    optionsById: {
+                      ...config.optionsById,
+                      [id]: { ...config.optionsById[id], written: value },
+                    },
+                  });
+              },
+              { "data-testid": `written-option-${pair ? pair[0] : id}` },
+            ),
+          );
+          if (pair && selectedMode === "mixed")
+            writtenControls.push(
+              text("p", "「あり」と「なし」の2つのチャレンジから出すよ。", {
+                class: "condition-note",
+              }),
+            );
+          if (!pair && available.length === 1) {
+            const control = writtenControls[0].querySelector("select");
+            for (const option of control.options)
+              option.disabled = option.value === "some";
+            writtenControls.push(
+              text(
+                "p",
+                "このあまりなしの条件では、途中のひき算でくり下がりは起こらないよ。「どちらも」でも、なしの問題になるよ。",
+                {
+                  class: "condition-note",
+                  "data-testid": `written-unavailable-${id}`,
+                },
+              ),
+            );
+          }
+        }
+      }
       if (id === "G2-C08")
         return [
           select(
@@ -351,6 +460,7 @@
         ];
       if (KZ.REMAINDER_IDS.includes(id))
         return [
+          ...writtenControls,
           select(
             KZ.BY_ID[id].title + "の あまり",
             [
@@ -362,11 +472,22 @@
             (v) =>
               setConfig({
                 ...config,
-                optionsById: { ...config.optionsById, [id]: { remainder: v } },
+                optionsById: {
+                  ...config.optionsById,
+                  [id]: {
+                    ...config.optionsById[id],
+                    remainder: v,
+                    ...(config.optionsById[id]?.written === "some" &&
+                    !KZWritten.available(id, v).includes("some")
+                      ? { written: "none" }
+                      : {}),
+                  },
+                },
               }),
+            { "data-testid": `remainder-option-${id}` },
           ),
         ];
-      return [];
+      return writtenControls;
     });
     const mode = select(
       "あそびかた",
@@ -436,7 +557,11 @@
         }),
       ]),
       saved.settings.name
-        ? text("p", saved.settings.name + " さん", { class: "name-label" })
+        ? el("p", {
+            text: saved.settings.name + " さん",
+            class: "name-label",
+            "data-user-text": "true",
+          })
         : null,
     ];
     if (saved.practiceCheckpoint)
@@ -1604,7 +1729,10 @@
             saved.settings.name
               ? saved.settings.name + " さんのきろく"
               : "今回のきろく",
-            { class: "muted" },
+            {
+              class: "muted",
+              "data-user-text": saved.settings.name ? "true" : undefined,
+            },
           ),
           text("h2", "おつかれさま！"),
           el("div", { class: "achievement-ribbon" }, [

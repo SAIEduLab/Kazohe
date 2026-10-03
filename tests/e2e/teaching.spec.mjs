@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { K, Teaching, htmlPath } from "../../scripts/load-inline-core.mjs";
+import {
+  K,
+  Teaching,
+  Language,
+  htmlPath,
+} from "../../scripts/load-inline-core.mjs";
 import { hash } from "../../scripts/report.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
 const url = pathToFileURL(htmlPath).href,
@@ -57,53 +62,74 @@ test("TC-U13 every challenge advances and restores each teaching state without s
       await page.getByTestId("solution-back").click();
       expect(await page.locator(".support").innerHTML()).toBe(initial);
     }
-    const geometry = await page.evaluate(() => {
-      const errors = [],
-        heights = [],
-        states = [];
-      for (let step = 0; step < 500; step++) {
-        const board = document.querySelector(".written-board");
-        if (board) {
-          if (board.querySelector(".written-row.annotation"))
-            errors.push("stacked-history");
-          const centers = new Map();
-          const decimalColumn = (selector) =>
-            board.querySelector(selector + " .decimal-mark")?.parentElement
-              .dataset.column;
-          const quotientPoint = decimalColumn('[data-row-kind="quotient"]');
-          const dividendPoint = decimalColumn('[data-row-kind="dividend"]');
-          if (quotientPoint !== undefined && quotientPoint !== dividendPoint)
-            errors.push("quotient-decimal-shift");
-          for (const cell of board.querySelectorAll(".written-cell")) {
-            const rect = cell.getBoundingClientRect(),
-              x = rect.left + rect.width / 2,
-              col = cell.dataset.column;
-            if (centers.has(col) && Math.abs(centers.get(col) - x) > 1)
-              errors.push("column-shift");
-            centers.set(col, x);
-            const note = cell.querySelector(".written-annotation"),
-              digit = cell.querySelector(".written-digit");
-            if (note) {
-              const a = note.getBoundingClientRect(),
-                b = digit.getBoundingClientRect();
-              if (
-                a.bottom > b.top + 1 ||
-                a.left < rect.left - 1 ||
-                a.right > rect.right + 1
-              )
-                errors.push("annotation-overlap");
+    const geometry = await page.evaluate(
+      (allocations) => {
+        const errors = [],
+          heights = [],
+          states = [];
+        const grade = window.kazoheTest.snapshot().run.config.languageGrade;
+        const allowed = new Set(allocations.slice(0, grade - 1).join(""));
+        for (let step = 0; step < 500; step++) {
+          const support = document.querySelector(".support");
+          const strings = [
+            support.textContent,
+            ...[...support.querySelectorAll("[aria-label], [title]")].flatMap(
+              (n) => [
+                n.getAttribute("aria-label") || "",
+                n.getAttribute("title") || "",
+              ],
+            ),
+          ];
+          for (const string of strings)
+            for (const char of string)
+              if (/\p{Script=Han}/u.test(char) && !allowed.has(char))
+                errors.push(`language/${grade}/${step}/${char}: ${string}`);
+          const board = document.querySelector(".written-board");
+          if (board) {
+            if (board.querySelector(".written-row.annotation"))
+              errors.push("stacked-history");
+            const centers = new Map();
+            const decimalColumn = (selector) =>
+              board.querySelector(selector + " .decimal-mark")?.parentElement
+                .dataset.column;
+            const quotientPoint = decimalColumn('[data-row-kind="quotient"]');
+            const dividendPoint = decimalColumn('[data-row-kind="dividend"]');
+            if (quotientPoint !== undefined && quotientPoint !== dividendPoint)
+              errors.push("quotient-decimal-shift");
+            for (const cell of board.querySelectorAll(".written-cell")) {
+              const rect = cell.getBoundingClientRect(),
+                x = rect.left + rect.width / 2,
+                col = cell.dataset.column;
+              if (centers.has(col) && Math.abs(centers.get(col) - x) > 1)
+                errors.push("column-shift");
+              centers.set(col, x);
+              const note = cell.querySelector(".written-annotation"),
+                digit = cell.querySelector(".written-digit");
+              if (note) {
+                const a = note.getBoundingClientRect(),
+                  b = digit.getBoundingClientRect();
+                if (
+                  a.bottom > b.top + 1 ||
+                  a.left < rect.left - 1 ||
+                  a.right > rect.right + 1
+                )
+                  errors.push("annotation-overlap");
+              }
             }
+            heights.push(board.getBoundingClientRect().height);
+            states.push(board.innerHTML);
           }
-          heights.push(board.getBoundingClientRect().height);
-          states.push(board.innerHTML);
+          const next = document.querySelector(
+            '[data-testid="solution-forward"]',
+          );
+          if (next.disabled) break;
+          next.click();
+          if (step === 499) throw Error("Nonterminating teaching steps");
         }
-        const next = document.querySelector('[data-testid="solution-forward"]');
-        if (next.disabled) break;
-        next.click();
-        if (step === 499) throw Error("Nonterminating teaching steps");
-      }
-      return { errors, heights, states: states.length };
-    });
+        return { errors, heights, states: states.length };
+      },
+      [...Language.allocations],
+    );
     expect(geometry.errors, c.id).toEqual([]);
     if (q.written && ["+", "-"].includes(q.expressionAST.op))
       expect(new Set(geometry.heights).size, c.id).toBe(1);
@@ -319,4 +345,83 @@ test("TC-U15 start remains actionable in short viewports, zoom and transformed c
     await expect(page.getByTestId("start")).toBeInViewport({ ratio: 1 });
     await page.getByTestId("start").click();
   }
+});
+
+test("TC-U17 mixed grade final explanations, diagram labels and menus use the lowest grade", async ({
+  page,
+}, info) => {
+  test.setTimeout(420000);
+  const evidence = [];
+  await page.clock.install();
+  for (const c of K.CATALOG) {
+    const q = fixtures[c.id].question;
+    const options = {
+      seed: 25,
+      initialConfig: {
+        selectedIds: [...new Set(["G1-C01", c.id])],
+        mode: "practice",
+        quantity: 10,
+      },
+      fixedQuestion: q,
+    };
+    await page.goto(
+      url +
+        `?language=${++navigation}#` +
+        encodeURIComponent(JSON.stringify(options)),
+    );
+    await page.getByTestId("skip").click();
+    const menuErrors = await page.evaluate(() =>
+      [...document.querySelectorAll("#app, #start-dock-root")].flatMap(
+        (root) => {
+          const strings = [
+            root.textContent,
+            ...[...root.querySelectorAll("[aria-label]")].map((n) =>
+              n.getAttribute("aria-label"),
+            ),
+          ];
+          return strings.filter((s) => /\p{Script=Han}/u.test(s));
+        },
+      ),
+    );
+    expect(menuErrors, c.id + " menu").toEqual([]);
+    await page.getByTestId("start").click();
+    await page.getByTestId("help").click();
+    const errors = await page.evaluate(() => {
+      const errors = [];
+      for (let step = 0; step < 500; step++) {
+        const strings = [
+          ...document.querySelectorAll("#app, #announcer"),
+        ].flatMap((root) => [
+          root.textContent,
+          ...[...root.querySelectorAll("[aria-label]")].map((n) =>
+            n.getAttribute("aria-label"),
+          ),
+        ]);
+        for (const text of strings)
+          if (/\p{Script=Han}|かずえ|くりうえ|くりした/u.test(text))
+            errors.push({ step, text });
+        const next = document.querySelector('[data-testid="solution-forward"]');
+        if (next.disabled) return errors;
+        next.click();
+      }
+      throw Error("solution did not terminate");
+    });
+    expect(errors, c.id).toEqual([]);
+    evidence.push(c.id);
+    if (
+      info.project.name === "chromium" &&
+      ["G1-C03", "G2-C04", "G3-C07", "G5-C04", "G6-C05"].includes(c.id)
+    ) {
+      mkdirSync("reports/screens/language", { recursive: true });
+      await page.screenshot({
+        path: `reports/screens/language/${c.id}-mixed.png`,
+        fullPage: true,
+      });
+    }
+  }
+  mkdirSync("reports/language", { recursive: true });
+  writeFileSync(
+    `reports/language/final-text-${info.project.name}.json`,
+    JSON.stringify({ hash, grade: 1, evidence }, null, 2),
+  );
 });

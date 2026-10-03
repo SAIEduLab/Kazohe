@@ -1,0 +1,423 @@
+{
+  "format": "kazohe-backup",
+  "appVersion": "0.2",
+  "schemaVersion": 1,
+  "settings": {
+    "name": "",
+    "onboarded": false,
+    "sound": true,
+    "effects": true,
+    "config": {
+      "selectedIds": [
+        "G4-C07"
+      ],
+      "optionsById": {
+        "G4-C07": {
+          "remainder": "none"
+        }
+      },
+      "mode": "practice",
+      "quantity": 10,
+      "timeLimitMs": null,
+      "languageGrade": 4,
+      "appVersion": "0.2"
+    }
+  },
+  "bestRecords": {
+    "[\"0.2\",\"G4-C07\",{\"G4-C07\":{\"remainder\":\"none\"}},\"practice\",10,\"independent\"]": {
+      "score": 9000,
+      "bestStreak": 10,
+      "metrics": {
+        "displayN": 10,
+        "presented": 10,
+        "unshown": 0,
+        "learningN": 10,
+        "unansweredN": 10,
+        "correctProblems": 10,
+        "helpProblems": 0,
+        "mistakeEvents": 0,
+        "hintProblems": 0,
+        "firstCorrectProblems": 10,
+        "finalSelfCorrectProblems": 10,
+        "repeatedWrongProblems": 0,
+        "unansweredProblems": 0,
+        "learningUnansweredCount": 0,
+        "exclusions": [],
+        "answerAccuracy": 1
+      },
+      "config": {
+        "selectedIds": [
+          "G4-C07"
+        ],
+        "optionsById": {
+          "G4-C07": {
+            "remainder": "none"
+          }
+        },
+        "mode": "practice",
+        "quantity": 10,
+        "timeLimitMs": null,
+        "languageGrade": 4,
+        "appVersion": "0.2"
+      },
+      "supportClass": "independent",
+      "endReason": "completed"
+    }
+  },
+  "recommendation": null,
+  "returnStack": [],
+  "practiceCheckpoint": {
+    "runId": "20261003-0",
+    "config": {
+      "selectedIds": [
+        "G4-C07"
+      ],
+      "optionsById": {
+        "G4-C07": {
+          "remainder": "none"
+        }
+      },
+      "mode": "practice",
+      "quantity": 10,
+      "timeLimitMs": null,
+      "languageGrade": 4,
+      "appVersion": "0.2"
+    },
+    "phase": "QUESTION",
+    "currentQuestion": {
+      "challengeId": "G4-C07",
+      "task": "arithmetic",
+      "expressionAST": {
+        "op": "/",
+        "args": [
+          {
+            "value": {
+              "n": "798",
+              "d": "1"
+            }
+          },
+          {
+            "value": {
+              "n": "42",
+              "d": "1"
+            }
+          }
+        ],
+        "group": false
+      },
+      "answerSpec": {
+        "type": "integer",
+        "decimalRemainder": false
+      },
+      "expectedExactValue": {
+        "n": "19",
+        "d": "1"
+      },
+      "prompt": "798 ÷ 42",
+      "integerQuotient": true,
+      "conditionBucket": "none",
+      "written": true,
+      "canonicalKey": "[\"G4-C07\",\"arithmetic\",{\"op\":\"/\",\"args\":[{\"value\":{\"n\":\"798\",\"d\":\"1\"}},{\"value\":{\"n\":\"42\",\"d\":\"1\"}}],\"group\":false},{\"type\":\"integer\",\"decimalRemainder\":false},\"798 ÷ 42\"]",
+      "solutionTrace": [
+        {
+          "kind": "text",
+          "text": "商：19"
+        },
+        {
+          "kind": "digits",
+          "digits": "19",
+          "text": "商。途中の0も書く。",
+          "quotient": true,
+          "trailing": 0
+        },
+        {
+          "kind": "digits",
+          "digits": "798",
+          "text": "わり算の筆算",
+          "divisor": "42",
+          "dividend": "798"
+        },
+        {
+          "kind": "digits",
+          "digits": "79",
+          "text": "下ろした数",
+          "column": 1,
+          "trailing": 1,
+          "stage": "partial",
+          "firstStep": true
+        },
+        {
+          "kind": "digits",
+          "digits": "42",
+          "text": "1を立てる → 42×1＝42",
+          "sign": "−",
+          "column": 1,
+          "trailing": 1,
+          "underline": true,
+          "stage": "product",
+          "check": {
+            "op": "*",
+            "a": "42",
+            "b": "1",
+            "result": "42"
+          }
+        },
+        {
+          "kind": "digits",
+          "digits": "37",
+          "text": "79−42＝37。つぎの数字を下ろす。",
+          "column": 1,
+          "trailing": 1,
+          "stage": "remainder",
+          "finalStep": false,
+          "check": {
+            "op": "-",
+            "a": "79",
+            "b": "42",
+            "result": "37"
+          }
+        },
+        {
+          "kind": "digits",
+          "digits": "378",
+          "text": "下ろした数",
+          "column": 2,
+          "trailing": 0,
+          "stage": "partial",
+          "firstStep": false
+        },
+        {
+          "kind": "digits",
+          "digits": "378",
+          "text": "9を立てる → 42×9＝378",
+          "sign": "−",
+          "column": 2,
+          "trailing": 0,
+          "underline": true,
+          "stage": "product",
+          "check": {
+            "op": "*",
+            "a": "42",
+            "b": "9",
+            "result": "378"
+          }
+        },
+        {
+          "kind": "digits",
+          "digits": "0",
+          "text": "378−378＝0。ここまで。",
+          "column": 2,
+          "trailing": 0,
+          "stage": "remainder",
+          "finalStep": true,
+          "check": {
+            "op": "-",
+            "a": "378",
+            "b": "378",
+            "result": "0"
+          }
+        },
+        {
+          "kind": "answer",
+          "text": "こたえ：19"
+        }
+      ],
+      "cycleId": 0,
+      "questionId": "20261003-0:0"
+    },
+    "records": [
+      {
+        "questionId": "20261003-0:0",
+        "challengeId": "G4-C07",
+        "presentationIndex": 0,
+        "question": {
+          "challengeId": "G4-C07",
+          "task": "arithmetic",
+          "expressionAST": {
+            "op": "/",
+            "args": [
+              {
+                "value": {
+                  "n": "798",
+                  "d": "1"
+                }
+              },
+              {
+                "value": {
+                  "n": "42",
+                  "d": "1"
+                }
+              }
+            ],
+            "group": false
+          },
+          "answerSpec": {
+            "type": "integer",
+            "decimalRemainder": false
+          },
+          "expectedExactValue": {
+            "n": "19",
+            "d": "1"
+          },
+          "prompt": "798 ÷ 42",
+          "integerQuotient": true,
+          "conditionBucket": "none",
+          "written": true,
+          "canonicalKey": "[\"G4-C07\",\"arithmetic\",{\"op\":\"/\",\"args\":[{\"value\":{\"n\":\"798\",\"d\":\"1\"}},{\"value\":{\"n\":\"42\",\"d\":\"1\"}}],\"group\":false},{\"type\":\"integer\",\"decimalRemainder\":false},\"798 ÷ 42\"]",
+          "solutionTrace": [
+            {
+              "kind": "text",
+              "text": "商：19"
+            },
+            {
+              "kind": "digits",
+              "digits": "19",
+              "text": "商。途中の0も書く。",
+              "quotient": true,
+              "trailing": 0
+            },
+            {
+              "kind": "digits",
+              "digits": "798",
+              "text": "わり算の筆算",
+              "divisor": "42",
+              "dividend": "798"
+            },
+            {
+              "kind": "digits",
+              "digits": "79",
+              "text": "下ろした数",
+              "column": 1,
+              "trailing": 1,
+              "stage": "partial",
+              "firstStep": true
+            },
+            {
+              "kind": "digits",
+              "digits": "42",
+              "text": "1を立てる → 42×1＝42",
+              "sign": "−",
+              "column": 1,
+              "trailing": 1,
+              "underline": true,
+              "stage": "product",
+              "check": {
+                "op": "*",
+                "a": "42",
+                "b": "1",
+                "result": "42"
+              }
+            },
+            {
+              "kind": "digits",
+              "digits": "37",
+              "text": "79−42＝37。つぎの数字を下ろす。",
+              "column": 1,
+              "trailing": 1,
+              "stage": "remainder",
+              "finalStep": false,
+              "check": {
+                "op": "-",
+                "a": "79",
+                "b": "42",
+                "result": "37"
+              }
+            },
+            {
+              "kind": "digits",
+              "digits": "378",
+              "text": "下ろした数",
+              "column": 2,
+              "trailing": 0,
+              "stage": "partial",
+              "firstStep": false
+            },
+            {
+              "kind": "digits",
+              "digits": "378",
+              "text": "9を立てる → 42×9＝378",
+              "sign": "−",
+              "column": 2,
+              "trailing": 0,
+              "underline": true,
+              "stage": "product",
+              "check": {
+                "op": "*",
+                "a": "42",
+                "b": "9",
+                "result": "378"
+              }
+            },
+            {
+              "kind": "digits",
+              "digits": "0",
+              "text": "378−378＝0。ここまで。",
+              "column": 2,
+              "trailing": 0,
+              "stage": "remainder",
+              "finalStep": true,
+              "check": {
+                "op": "-",
+                "a": "378",
+                "b": "378",
+                "result": "0"
+              }
+            },
+            {
+              "kind": "answer",
+              "text": "こたえ：19"
+            }
+          ],
+          "cycleId": 0,
+          "questionId": "20261003-0:0"
+        },
+        "wrongAttempts": 0,
+        "firstWrongAnswer": null,
+        "hintShown": false,
+        "helpUsed": false,
+        "terminal": null,
+        "endReason": null,
+        "earnedPoints": 0,
+        "streakAfter": null
+      }
+    ],
+    "schedule": [
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07",
+      "G4-C07"
+    ],
+    "generator": {
+      "rngState": 3247560997,
+      "ids": {
+        "[\"G4-C07\",{\"remainder\":\"none\"}]": {
+          "round": [],
+          "buckets": {
+            "0": {
+              "used": [
+                "[\"G4-C07\",\"arithmetic\",{\"op\":\"/\",\"args\":[{\"value\":{\"n\":\"798\",\"d\":\"1\"}},{\"value\":{\"n\":\"42\",\"d\":\"1\"}}],\"group\":false},{\"type\":\"integer\",\"decimalRemainder\":false},\"798 ÷ 42\"]"
+              ],
+              "cursor": "29499",
+              "cycle": 0
+            }
+          },
+          "last": "[\"G4-C07\",\"arithmetic\",{\"op\":\"/\",\"args\":[{\"value\":{\"n\":\"798\",\"d\":\"1\"}},{\"value\":{\"n\":\"42\",\"d\":\"1\"}}],\"group\":false},{\"type\":\"integer\",\"decimalRemainder\":false},\"798 ÷ 42\"]"
+        }
+      }
+    },
+    "score": 0,
+    "streak": 0,
+    "bestStreak": 0,
+    "activeTimeRemainingMs": null,
+    "pauseReasons": [],
+    "lastNow": 0,
+    "finishedOnce": false,
+    "endReason": null
+  }
+}

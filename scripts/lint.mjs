@@ -100,15 +100,15 @@ s.check("TC-D01", () => {
 s.check("TC-D02", () => {
   const expected = [
     ...[
-      ["M", 70],
-      ["G", 18],
+      ["M", 73],
+      ["G", 19],
       ["S", 14],
       ["F", 30],
       ["T", 16],
       ["P", 28],
       ["B", 18],
-      ["U", 16],
-      ["E", 12],
+      ["U", 18],
+      ["E", 14],
     ].flatMap(([group, count]) =>
       Array.from(
         { length: count },
@@ -152,6 +152,8 @@ s.check("TC-D02", () => {
     "084",
     "090",
     "091",
+    "092",
+    "093",
     "100",
     "101",
     "102",
@@ -406,6 +408,9 @@ s.check("public-boundary-and-secrets", () => {
       "style.css",
       "view.js",
       "teaching.js",
+      "language.js",
+      "language.json",
+      "written.js",
     ].map((name) => `src/${name}`),
     ...[
       "artifact",
@@ -436,6 +441,8 @@ s.check("public-boundary-and-secrets", () => {
       "fixtures/implementation-map.json",
       "fixtures/representatives.mjs",
       "fixtures/support-navigation.mjs",
+      "fixtures/written-oracle.mjs",
+      "fixtures/v0.2.4-backup.json",
       "fixtures/tc-ids.json",
       "property/domain-contracts.mjs",
       "property/generators.mjs",
