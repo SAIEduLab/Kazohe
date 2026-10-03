@@ -500,7 +500,7 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
   for (let step = 0; step < 100; step++) {
     if (
       (await page.locator(".written-notes").innerText()).includes(
-        "十の位は0＋10＝10",
+        "じゅうのくらいは0＋10＝10",
       )
     )
       break;
@@ -508,7 +508,7 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
     await page.getByTestId("solution-forward").click();
   }
   await expect(page.locator(".written-notes")).toContainText(
-    "百の位は4−1＝3。十の位は0＋10＝10",
+    "ひゃくのくらいは4−1＝3。じゅうのくらいは0＋10＝10",
   );
   expect(await board.locator(".written-annotation").allTextContents()).toEqual([
     "3",
