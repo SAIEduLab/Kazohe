@@ -55,6 +55,12 @@ const names = [
   "clearScores",
   "validateBackup",
   "storageAdapter",
+  "classify",
+  "add",
+  "subtract",
+  "forbidden",
+  "readable",
+  "audit",
 ];
 const selected = script.functions.filter((f) => names.includes(f.functionName));
 const allRanges = script.functions.flatMap((f) => f.ranges);

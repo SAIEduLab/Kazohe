@@ -13,7 +13,8 @@ export const coreSource = html.match(
 if (!coreSource) throw Error("Final HTML core missing");
 const context = vm.createContext({ TextEncoder });
 vm.runInContext(
-  coreSource + ";globalThis.result=KZ;globalThis.teaching=KZTeaching;",
+  coreSource +
+    ";globalThis.result=KZ;globalThis.teaching=KZTeaching;globalThis.language=KZLanguage;globalThis.written=KZWritten;",
   context,
   {
     filename: htmlPath,
@@ -22,3 +23,5 @@ vm.runInContext(
 );
 export const K = context.result;
 export const Teaching = context.teaching;
+export const Language = context.language;
+export const Written = context.written;

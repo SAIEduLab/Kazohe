@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { K, Teaching } from "../../scripts/load-inline-core.mjs";
+import { K, Teaching, Language } from "../../scripts/load-inline-core.mjs";
 import { suite } from "../../scripts/report.mjs";
 import {
   eq,
@@ -480,5 +480,66 @@ s.check("TC-E12", () => {
     diagrams: "no premature equivalent fraction",
     trial: "text and board agree",
   };
+});
+s.check("TC-E13", () => {
+  let inspected = 0;
+  const fixed = representatives(K);
+  for (const c of K.CATALOG)
+    for (const q of [...samples[c.id], fixed[c.id].question]) {
+      const states = Teaching.steps(q),
+        values = [
+          c.title,
+          q.prompt,
+          q.instruction || "",
+          K.buildHint(q),
+          ...states.flatMap((step) => [step.text, step.board?.caption || ""]),
+        ];
+      // Check both the challenge's own grade and mixed-grade UI at grade one.
+      for (const grade of [...new Set([1, c.grade])])
+        for (const value of values) {
+          const audit = Language.audit(value, grade);
+          assert(
+            audit.valid,
+            `${c.id}/g${grade}: ${audit.rendered} (${audit.invalid})`,
+          );
+          assert(
+            !/かずえ|こかず|くりうえ|くりした/.test(audit.rendered),
+            audit.rendered,
+          );
+          const numeric = (text) => text.match(/\d+(?:\.\d+)?/g) || [];
+          assert.deepEqual(
+            numeric(audit.rendered),
+            numeric(value),
+            `${c.id}: changed numbers`,
+          );
+          inspected++;
+        }
+      assert.equal(states.length, Teaching.steps(q).length);
+    }
+  return { challenges: 101, inspected, exceptionCount: 0 };
+});
+s.check("TC-E14", () => {
+  // A final-string scan does not trust a reading dictionary or the original source.
+  const allowed = (grade) =>
+    new Set(Language.allocations.slice(0, grade - 1).join(""));
+  const valid = (value, grade) =>
+    [...value].every(
+      (char) => !/\p{Script=Han}/u.test(char) || allowed(grade).has(char),
+    );
+  for (let grade = 1; grade <= 6; grade++) {
+    const next = Language.allocations[grade - 1][0];
+    assert(!valid(`ここを ${next} にする`, grade));
+    assert(!valid("ヒントに鬱蒼をまぜる", grade));
+    assert(
+      valid(
+        Language.readable("次の位から借りる。0では引けない。", grade),
+        grade,
+      ),
+    );
+  }
+  assert.equal(
+    Language.readable("左の位の1は、この位では10。", 1),
+    "ひだりのくらいの1は、このくらいでは10。",
+  );
 });
 s.done({ seed, generatorCoverage: coverage });

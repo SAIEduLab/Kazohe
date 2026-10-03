@@ -2,10 +2,11 @@ import { completeSolution } from "../fixtures/support-navigation.mjs";
 import { test, expect } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { K, htmlPath } from "../../scripts/load-inline-core.mjs";
+import { K, Written, htmlPath } from "../../scripts/load-inline-core.mjs";
 import { hash } from "../../scripts/report.mjs";
 import { rawAnswer } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
+import { writtenOracle } from "../fixtures/written-oracle.mjs";
 const url = pathToFileURL(htmlPath).href,
   fixtures = representatives(K);
 const snap = (page) => page.evaluate(() => window.kazoheTest.snapshot());
@@ -52,6 +53,74 @@ test.beforeEach(async ({ page }) => {
   });
 });
 test.afterEach(async ({ page }) => expect(page.__errors).toEqual([]));
+
+test("TC-U18 written options preserve challenge IDs, remainder choices and saved settings", async ({
+  page,
+}, info) => {
+  await page.clock.install();
+  await open(page, null, {
+    initialConfig: { selectedIds: ["G2-C01"], mode: "practice", quantity: 10 },
+  });
+  await page.locator('[data-menu-details="options"] > summary').click();
+  const pair = page.getByTestId("written-option-G2-C01");
+  await pair.selectOption("some");
+  expect((await snap(page)).config.selectedIds).toEqual(["G2-C02"]);
+  await pair.selectOption("none");
+  expect((await snap(page)).config.selectedIds).toEqual(["G2-C01"]);
+  await pair.selectOption("mixed");
+  expect((await snap(page)).config.selectedIds).toEqual(["G2-C01", "G2-C02"]);
+  for (const id of ["G3-C01", "G3-C02", "G3-C07", "G4-C07", "G5-C04"]) {
+    for (const written of ["none", "some", "mixed"]) {
+      await open(page, null, {
+        initialConfig: { selectedIds: [id], mode: "practice", quantity: 10 },
+      });
+      await page.locator('[data-menu-details="options"] > summary').click();
+      if (K.REMAINDER_IDS.includes(id))
+        await page.getByTestId(`remainder-option-${id}`).selectOption("some");
+      await page.getByTestId(`written-option-${id}`).selectOption(written);
+      const config = (await snap(page)).config;
+      expect(config.optionsById[id].written).toBe(written);
+      if (K.REMAINDER_IDS.includes(id))
+        expect(config.optionsById[id].remainder).toBe("some");
+      await page.getByTestId("start").click();
+      const state = await snap(page),
+        q = state.run.currentQuestion;
+      if (written !== "mixed")
+        expect(writtenOracle(q).has).toBe(written === "some");
+      expect(state.run.config.optionsById[id]).toEqual(config.optionsById[id]);
+    }
+  }
+  await open(page, null, {
+    initialConfig: { selectedIds: ["G4-C06"], mode: "practice", quantity: 10 },
+  });
+  await page.locator('[data-menu-details="options"] > summary').click();
+  await page.getByTestId("written-option-G4-C06").selectOption("some");
+  await page.getByTestId("remainder-option-G4-C06").selectOption("none");
+  expect((await snap(page)).config.optionsById["G4-C06"]).toEqual({
+    remainder: "none",
+    written: "none",
+  });
+  await expect(page.getByTestId("written-unavailable-G4-C06")).toBeVisible();
+  await expect(
+    page.getByTestId("written-option-G4-C06").locator('option[value="some"]'),
+  ).toHaveAttribute("disabled", "");
+  const restoredPage = await page.context().newPage();
+  await restoredPage.goto(url);
+  await expect(restoredPage.getByTestId("written-option-G4-C06")).toHaveValue(
+    "none",
+  );
+  await expect(restoredPage.getByTestId("remainder-option-G4-C06")).toHaveValue(
+    "none",
+  );
+  await restoredPage.close();
+  if (info.project.name === "chromium") {
+    mkdirSync("reports/screens/language", { recursive: true });
+    await page.screenshot({
+      path: "reports/screens/language/written-conditions.png",
+      fullPage: true,
+    });
+  }
+});
 
 test("TC-U01 simple menu selection and visible start at four widths", async ({
   page,
@@ -431,7 +500,7 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
   for (let step = 0; step < 100; step++) {
     if (
       (await page.locator(".written-notes").innerText()).includes(
-        "十の位は0＋10＝10",
+        "じゅうのくらいは0＋10＝10",
       )
     )
       break;
@@ -439,7 +508,7 @@ test("TC-U06 decimal columns, division hook and borrowing above original digits"
     await page.getByTestId("solution-forward").click();
   }
   await expect(page.locator(".written-notes")).toContainText(
-    "百の位は4−1＝3。十の位は0＋10＝10",
+    "ひゃくのくらいは4−1＝3。じゅうのくらいは0＋10＝10",
   );
   expect(await board.locator(".written-annotation").allTextContents()).toEqual([
     "3",

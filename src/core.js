@@ -287,7 +287,7 @@ const KZ = (() => {
     bucket,
     size: dims.reduce((a, [l, h]) => a * BigInt(h - l + 1), 1n),
   });
-  function domains(id, options = {}) {
+  function baseDomains(id, options = {}) {
     const grade = BY_ID[id].grade,
       I = { type: "integer" },
       E = { type: "decimal" },
@@ -1552,6 +1552,56 @@ const KZ = (() => {
       );
     throw Error(`Generator missing: ${id}`);
   }
+  function domains(id, options = {}) {
+    const original = baseDomains(id, options);
+    if (!KZWritten.ids.includes(id) || options.written === undefined)
+      return original;
+    const mode = options.written;
+    if (!["none", "some", "mixed"].includes(mode))
+      throw Error("筆算の条件をたしかめてね。");
+    const available = KZWritten.available(id, options.remainder || "mixed");
+    if (mode !== "mixed" && !available.includes(mode))
+      throw Error("この組合せでは問題を作れません。");
+    const modes = mode === "mixed" ? available : [mode];
+    return original.flatMap((d) =>
+      modes.flatMap((condition) => {
+        if (
+          ["carry", "no-carry"].includes(d.bucket) &&
+          (d.bucket === "carry") !== (condition === "some")
+        )
+          return [];
+        if (d.bucket === "zero" && condition === "some") return [];
+        if (
+          ["G4-C04", "G4-C06"].includes(id) &&
+          d.bucket === "none" &&
+          condition === "some"
+        )
+          return [];
+        return [
+          {
+            ...d,
+            bucket: `${d.bucket}:written-${condition}`,
+            ...(id === "G5-C03"
+              ? {
+                  sample: (r) => {
+                    const divisor = int(r, 1, 9999),
+                      step = divisor / Number(gcd(divisor, 1000));
+                    const dividend = step * int(r, 1, Math.floor(99999 / step));
+                    return BigInt(dividend - 1) + BigInt(divisor - 1) * 99999n;
+                  },
+                }
+              : {}),
+            make: (values) => {
+              const q = d.make(values);
+              return q && KZWritten.classify(q).has === (condition === "some")
+                ? q
+                : null;
+            },
+          },
+        ];
+      }),
+    );
+  }
   function decode(d, rank) {
     return d.dims.map(([lo, hi]) => {
       const n = BigInt(hi - lo + 1),
@@ -1569,6 +1619,7 @@ const KZ = (() => {
     }
   }
   function randomRank(d, r) {
+    if (d.sample) return d.sample(r);
     let x = 0n;
     for (const [lo, hi] of d.dims)
       x = x * BigInt(hi - lo + 1) + BigInt(int(r, 0, hi - lo));
@@ -2657,6 +2708,16 @@ const KZ = (() => {
           throw Error("余り条件が不正です");
         next.remainder = o.remainder || "mixed";
       }
+      if (o.written !== undefined) {
+        if (
+          !KZWritten.ids.includes(id) ||
+          !["none", "some", "mixed"].includes(o.written) ||
+          (o.written !== "mixed" &&
+            !KZWritten.available(id, next.remainder).includes(o.written))
+        )
+          throw Error("筆算の条件をたしかめてね。");
+        next.written = o.written;
+      }
       optionsById[id] = next;
     }
     return {
@@ -3004,10 +3065,14 @@ const KZ = (() => {
       (config.mode === "practice" && config.quantity === null)
     )
       return null;
+    const bestOptions = clone(config.optionsById);
+    // A legacy unrestricted record and an explicit "both" option describe the same learning condition.
+    for (const options of Object.values(bestOptions))
+      if (options.written === "mixed") delete options.written;
     return JSON.stringify([
       VERSION,
       config.selectedIds[0],
-      config.optionsById,
+      bestOptions,
       config.mode,
       config.quantity ?? config.timeLimitMs,
       supportClass,
@@ -3345,6 +3410,13 @@ const KZ = (() => {
           { ...r.question, solutionTrace: undefined },
           r.question.conditionBucket,
         );
+        const writtenMode = s.config.optionsById[r.challengeId]?.written;
+        if (
+          writtenMode &&
+          writtenMode !== "mixed" &&
+          KZWritten.classify(rebuilt).has !== (writtenMode === "some")
+        )
+          fail();
         if (
           JSON.stringify(rebuilt.expectedExactValue) !==
             JSON.stringify(r.question.expectedExactValue) ||

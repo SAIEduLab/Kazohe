@@ -40,6 +40,7 @@ async function snapshot(page) {
 }
 async function fill(page, q, raw = rawAnswer(q), touch = false) {
   const s = q.answerSpec;
+  const languageGrade = (await snapshot(page)).run.config.languageGrade;
   const put = async (testId, value) => {
     if (touch) {
       await page.getByTestId(testId).tap();
@@ -54,7 +55,10 @@ async function fill(page, q, raw = rawAnswer(q), touch = false) {
     await put("answer-remainder", raw.remainder);
   } else if (s.type === "fraction" || s.type === "common") {
     const one = async (r, suffix = "") => {
-      const form = page.getByLabel("答えの形" + suffix, { exact: true });
+      const form = page.getByLabel(
+        (languageGrade <= 2 ? "こたえのかたち" : "答えの形") + suffix,
+        { exact: true },
+      );
       if (await form.isVisible()) await form.selectOption(r.form || "fraction");
       else await expect(form).toHaveValue(r.form || "fraction");
       if (r.form === "integer" || r.form === "mixed")
@@ -619,7 +623,7 @@ test("TC-P14 TC-P15 TC-P25 TC-P26 TC-B03 persistence and rejected storage", asyn
   });
   await start(blocked);
   await expect(blocked.locator("#storage-warning")).toContainText(
-    "保存できません",
+    "ほぞんできません",
   );
   await blocked.getByTestId("help").click();
   await completeSolution(blocked);

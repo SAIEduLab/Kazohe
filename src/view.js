@@ -8,104 +8,7 @@ const KZUI = (() => {
         n.append(typeof c === "string" ? document.createTextNode(c) : c);
     return n;
   };
-  const words = {
-    "判定するには問題数が足りません。":
-      "もうすこし とくと、おすすめが わかるよ。",
-    "この回のScoreをたしかめよう。": "こんかいの とくてんを みてみよう。",
-    "このあそびかたはScoreを表示し、ベストは保存しません。":
-      "とくてんは みられるよ。いちばんの きろくには のこさないよ。",
-    "自然な時間切れの最後の問題は、無答率の判定から除いています。誤答がなければ正解率の判定からも除いています。":
-      "じかんぎれで こたえられなかった さいごの もんだいは、「こたえなかった わりあい」には いれないよ。まちがえていなければ、「せいかいの わりあい」にも いれないよ。",
-    判定対象外: "おすすめを きめるには もんだいが たりなかったもの",
-    ヒント後: "ヒントを みたあと",
-    この回: "こんかい",
-    今回: "こんかい",
-    正確: "せいかく",
-    問題数: "もんだいの かず",
-    筆算: "ひっさん",
-    点線: "てんせん",
-    帯分数: "たいぶんすう",
-    回答回数ベース正答率: "こたえた かいすうのうち、せいかいした わりあい",
-    最終自力正解率: "さいごに じぶんで できた わりあい",
-    初回正解率: "1かいで できた わりあい",
-    自己ベスト: "いちばんの きろく",
-    最初の誤答: "はじめの こたえ",
-    未出題のまま終了: "まだ といていない もんだい",
-    正の約数: "0より大きい約数",
-    同じ大きさ: "おなじ おおきさ",
-    繰り上がった数: "くりあがった かず",
-    繰り上がり: "くりあがり",
-    繰り下がり: "くりさがり",
-    全部: "ぜんぶ",
-    最初から: "はじめから",
-    一の位: "いちの くらい",
-    十の位: "じゅうの くらい",
-    百の位: "ひゃくの くらい",
-    千の位: "せんの くらい",
-    下の数: "ひく かず",
-    部分積: "かけて でた かず",
-    入力: "いれる ところ",
-    選択: "えらんだ",
-    演出: "うごき",
-    Score: "とくてん",
-    数字: "すうじ",
-    正解: "せいかい",
-    正答: "こたえ",
-    誤答: "まちがい",
-    未回答: "まだ こたえていない",
-    無答: "まだ こたえていない",
-    学年: "がくねん",
-    複数: "いくつか",
-    最大コンボ: "いちばん れんぞくで できた",
-    コンボ: "れんぞく",
-    分子: "ぶんし",
-    分母: "ぶんぼ",
-    分数: "ぶんすう",
-    整数: "せいすう",
-    練習: "れんしゅう",
-    記録: "きろく",
-    名前: "なまえ",
-    保存: "ほぞん",
-    追加: "ついか",
-    計算: "けいさん",
-    説明: "せつめい",
-    確認: "たしかめ",
-    方法: "やりかた",
-    途中: "とちゅう",
-    借り: "かり",
-    場合: "とき",
-    左: "ひだり",
-    右: "みぎ",
-    同じ: "おなじ",
-    大きい: "おおきい",
-    小さい: "ちいさい",
-    数: "かず",
-    位: "くらい",
-    順: "じゅん",
-    足す: "たす",
-    書く: "かく",
-    見る: "みる",
-    消す: "けす",
-    戻す: "もどす",
-    残り: "のこり",
-    残る: "のこる",
-    入れ: "いれ",
-    答え: "こたえ",
-    解き直し: "ときなおし",
-    含む: "ふくむ",
-    問題: "もんだい",
-  };
-  const entries = Object.entries(words).sort(
-    (a, b) => b[0].length - a[0].length,
-  );
-  const wordPattern = new RegExp(
-    entries.map(([s]) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
-    "g",
-  );
-  function readable(value, grade = 6) {
-    const s = String(value ?? "");
-    return grade <= 2 ? s.replace(wordPattern, (m) => words[m]) : s;
-  }
+  const readable = KZLanguage.readable;
   function math(value, grade = 6, attrs = {}) {
     const s = readable(value, grade),
       out = node("span", { class: "math-text", ...attrs });
@@ -302,7 +205,7 @@ const KZUI = (() => {
               {
                 class: "written-annotation",
                 "data-annotation-value": annotation.value,
-                "aria-label": `この位は${annotation.value}`,
+                "aria-label": readable(`この位は${annotation.value}`, grade),
               },
               annotation.value,
             ),
@@ -311,7 +214,10 @@ const KZUI = (() => {
           cell.append(
             node(
               "span",
-              { class: "decimal-mark", "aria-label": "小数点" },
+              {
+                class: "decimal-mark",
+                "aria-label": readable("小数点", grade),
+              },
               ".",
             ),
           );
@@ -558,5 +464,31 @@ const KZUI = (() => {
       }[raw.value] || String(raw.value ?? "□")
     );
   }
-  return Object.freeze({ readable, math, example, written, solution, answer });
+  function localize(root, grade) {
+    const visit = (node) => {
+      if (node.nodeType === 3) node.nodeValue = readable(node.nodeValue, grade);
+      else if (node.nodeType === 1) {
+        for (const attribute of ["aria-label", "title", "placeholder"])
+          if (node.hasAttribute(attribute))
+            node.setAttribute(
+              attribute,
+              readable(node.getAttribute(attribute), grade),
+            );
+        for (const child of node.childNodes) visit(child);
+      }
+    };
+    visit(root);
+    return root;
+  }
+  return Object.freeze({
+    readable,
+    example,
+    answer,
+    math: (value, grade = 6, attrs = {}) =>
+      localize(math(value, grade, attrs), grade),
+    written: (q, complete = false, grade = 6, state = null) =>
+      localize(written(q, complete, grade, state), grade),
+    solution: (q, grade, stepIndex) =>
+      localize(solution(q, grade, stepIndex), grade),
+  });
 })();
