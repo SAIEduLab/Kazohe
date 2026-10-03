@@ -1212,6 +1212,18 @@ s.check("TC-M72", () => {
     K.bestKey(none, "independent"),
     K.bestKey(some, "independent"),
   );
+  assert.equal(
+    K.bestKey(legacy, "independent"),
+    K.bestKey(makeConfig("G3-C07", { written: "mixed" }), "independent"),
+  );
+  let saved = K.emptySave();
+  for (const config of [none, some]) {
+    let r = K.createRun(config, 41, 0);
+    for (let i = 0; i < 10; i++) r = done(answer(r));
+    saved = K.applyResult(saved, r).saved;
+  }
+  assert.equal(Object.keys(saved.bestRecords).length, 2);
+  same(K.validateBackup(JSON.stringify(saved)), saved);
   for (const [id, options] of [
     ["G1-C01", { written: "none" }],
     ["G3-C01", { written: "bad" }],

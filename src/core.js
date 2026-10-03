@@ -3065,10 +3065,14 @@ const KZ = (() => {
       (config.mode === "practice" && config.quantity === null)
     )
       return null;
+    const bestOptions = clone(config.optionsById);
+    // A legacy unrestricted record and an explicit "both" option describe the same learning condition.
+    for (const options of Object.values(bestOptions))
+      if (options.written === "mixed") delete options.written;
     return JSON.stringify([
       VERSION,
       config.selectedIds[0],
-      config.optionsById,
+      bestOptions,
       config.mode,
       config.quantity ?? config.timeLimitMs,
       supportClass,

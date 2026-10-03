@@ -483,8 +483,9 @@ s.check("TC-E12", () => {
 });
 s.check("TC-E13", () => {
   let inspected = 0;
+  const fixed = representatives(K);
   for (const c of K.CATALOG)
-    for (const q of samples[c.id]) {
+    for (const q of [...samples[c.id], fixed[c.id].question]) {
       const states = Teaching.steps(q),
         values = [
           c.title,

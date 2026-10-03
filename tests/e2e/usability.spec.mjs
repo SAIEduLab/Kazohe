@@ -61,6 +61,7 @@ test("TC-U18 written options preserve challenge IDs, remainder choices and saved
   await open(page, null, {
     initialConfig: { selectedIds: ["G2-C01"], mode: "practice", quantity: 10 },
   });
+  await page.locator('[data-menu-details="options"] > summary').click();
   const pair = page.getByTestId("written-option-G2-C01");
   await pair.selectOption("some");
   expect((await snap(page)).config.selectedIds).toEqual(["G2-C02"]);
@@ -73,6 +74,7 @@ test("TC-U18 written options preserve challenge IDs, remainder choices and saved
       await open(page, null, {
         initialConfig: { selectedIds: [id], mode: "practice", quantity: 10 },
       });
+      await page.locator('[data-menu-details="options"] > summary').click();
       if (K.REMAINDER_IDS.includes(id))
         await page.getByTestId(`remainder-option-${id}`).selectOption("some");
       await page.getByTestId(`written-option-${id}`).selectOption(written);
@@ -91,6 +93,7 @@ test("TC-U18 written options preserve challenge IDs, remainder choices and saved
   await open(page, null, {
     initialConfig: { selectedIds: ["G4-C06"], mode: "practice", quantity: 10 },
   });
+  await page.locator('[data-menu-details="options"] > summary').click();
   await page.getByTestId("written-option-G4-C06").selectOption("some");
   await page.getByTestId("remainder-option-G4-C06").selectOption("none");
   expect((await snap(page)).config.optionsById["G4-C06"]).toEqual({
