@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { K, Teaching, Language } from "../../scripts/load-inline-core.mjs";
+import {
+  K,
+  Teaching,
+  Language,
+  Written,
+} from "../../scripts/load-inline-core.mjs";
 import { suite } from "../../scripts/report.mjs";
 import {
   eq,
@@ -541,5 +546,100 @@ s.check("TC-E14", () => {
     Language.readable("左の位の1は、この位では10。", 1),
     "ひだりのくらいの1は、このくらいでは10。",
   );
+});
+s.check("exact-decimal-division-help", () => {
+  for (const [a, b, quotient] of [
+    ["48.8", "0.4", "122"],
+    ["0", "5.4", "0"],
+  ]) {
+    const q = K.complete(
+      K.arithmetic(
+        "G5-C04",
+        K.op("/", K.lit(a), K.lit(b)),
+        { type: "integer", decimalRemainder: true },
+        { integerQuotient: true },
+      ),
+    );
+    const frames = Teaching.steps(q),
+      board = frames.at(-1).board;
+    assert.equal(board.rows.find((r) => r.quotient).digits, quotient);
+    assert.equal(board.rows.find((r) => r.dividend).divisor, b);
+    assert(eq(board.rows.at(-1).digits, "0"));
+    assert.equal(frames.at(-1).text, `こたえ：${quotient}`);
+  }
+});
+s.check("rounded-quotient-stays-within-board", () => {
+  for (const [a, b, places, expected] of [
+    ["9.99", "1", 1, "10"],
+    ["99.99", "1", 1, "100"],
+    ["29.99", "3", 2, "10"],
+  ]) {
+    const q = K.complete(
+      K.arithmetic(
+        "G5-C05",
+        K.op("/", K.lit(a), K.lit(b)),
+        { type: "decimal" },
+        { roundPlaces: places },
+      ),
+    );
+    const frames = Teaching.steps(q),
+      board = frames.at(-1).board;
+    const row = board.rows.find((r) => r.quotient);
+    assert.equal(row.digits, expected);
+    assert(
+      row.digits.replace(".", "").length + (row.trailing || 0) <= board.cols,
+    );
+    for (const f of frames)
+      for (const r of f.board.rows) {
+        const digits = Array.isArray(r.digits)
+          ? r.digits
+          : r.digits.replace(".", "");
+        assert(digits.length + (r.trailing || 0) <= f.board.cols);
+      }
+    assert.equal(JSON.stringify(Teaching.steps(q)), JSON.stringify(frames));
+  }
+});
+s.check("teaching-with-explicit-generation-options", () => {
+  let combinations = 0,
+    questions = 0;
+  for (const id of Written.ids) {
+    const remainders = K.REMAINDER_IDS.includes(id)
+      ? ["none", "some", "mixed"]
+      : [undefined];
+    for (const remainder of remainders) {
+      const modes = [undefined, ...Written.available(id, remainder), "mixed"];
+      for (const written of modes) {
+        const options = {
+          ...(remainder ? { remainder } : {}),
+          ...(written ? { written } : {}),
+        };
+        const generator = K.createGenerator(20261013);
+        combinations++;
+        for (let i = 0; i < 12; i++) {
+          const q = K.generate(id, options, generator);
+          const frames = Teaching.steps(q);
+          assert.equal(frames.at(-1).text, `こたえ：${K.answerText(q)}`);
+          for (const f of frames) {
+            assert(!/undefined|NaN/.test(f.text), `${id} ${q.prompt}`);
+            if (f.check)
+              assert(
+                eq(operation(f.check.op, f.check.a, f.check.b), f.check.result),
+              );
+            for (const r of f.board?.rows || []) {
+              const width = Array.isArray(r.digits)
+                ? r.digits.length
+                : r.digits.replace(".", "").length;
+              assert(
+                width + (r.trailing || 0) <= f.board.cols,
+                `${id} ${q.prompt}`,
+              );
+            }
+          }
+          questions++;
+        }
+      }
+    }
+  }
+  return { seed: 20261013, combinations, questions };
 });
 s.done({ seed, generatorCoverage: coverage });

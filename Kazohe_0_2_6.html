@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
-      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.5。ネットにつながずに使えます。"
+      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.6。ネットにつながずに使えます。"
     />
     <meta name="color-scheme" content="light" />
-    <title>かぞへ v0.2.5</title>
+    <title>かぞへ v0.2.6</title>
     <style>
       :root {
   font-family: "BIZ UDPGothic", "Yu Gothic", Meiryo, system-ui, sans-serif;
@@ -1854,7 +1854,7 @@ body[data-screen="menu"] {
       </div>
       <div>
         <h1 data-testid="app-title">
-          かぞへ <small>v0.2.5</small>
+          かぞへ <small>v0.2.6</small>
         </h1>
         <p>ひとつずつ、わかるをふやそう。</p>
       </div>
@@ -1868,7 +1868,7 @@ body[data-screen="menu"] {
       <div id="dialog-body"></div>
       <div id="dialog-actions" class="actions"></div>
     </dialog>
-    <footer>かぞへ v0.2.5 · じぶんのペースで、なんどでも。</footer>
+    <footer>かぞへ v0.2.6 · じぶんのペースで、なんどでも。</footer>
     <script id="kazohe-core">
       /* Official grade allocation and whole-word readings, embedded for offline use. */
 const KZLanguage = (() => {
@@ -2645,7 +2645,7 @@ const KZWritten = (() => {
    This source is embedded in the versioned product HTML; tests load that final inline code. */
 const KZ = (() => {
   "use strict";
-  const APP_VERSION = "0.2.5";
+  const APP_VERSION = "0.2.6";
   // Compatibility of saved learning records is independent of the product release.
   const VERSION = "0.2";
   const STORAGE_KEY = "kazohe:v0.2:state";
@@ -6922,7 +6922,10 @@ const KZ = (() => {
     if (!saved.recommendation) return { saved, config: current };
     const next = clone(saved),
       id = next.recommendation.targetId;
-    if (current.selectedIds.length !== 1 || current.selectedIds[0] !== id)
+    if (
+      current.selectedIds.length &&
+      (current.selectedIds.length !== 1 || current.selectedIds[0] !== id)
+    )
       next.returnStack.push(clone(current));
     return {
       saved: next,
@@ -8851,16 +8854,26 @@ const KZTeaching = (() => {
           (quotient.digits.split(".")[1] || "").length +
           untouched.length;
         delete quotient.points;
+        // Rounding 9.99 to 10 adds a whole-number column. Keep every digit
+        // visible and retain the place alignment of the earlier division rows.
+        const extraColumns = Math.max(
+          0,
+          quotient.digits.replace(".", "").length +
+            quotient.trailing -
+            board.cols,
+        );
+        board.cols += extraColumns;
+        board.focus += extraColumns;
         push(
           `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${quotient.digits}。`,
         );
       }
       if (sb && integerQuotient) {
-        const value = KZ.calc(
-            "-",
-            av,
-            KZ.calc("*", bv, KZ.rat(q.expectedExactValue.quotient)),
-          ),
+        const wholeQuotient =
+            q.answerSpec.type === "quotient"
+              ? q.expectedExactValue.quotient
+              : q.expectedExactValue.n,
+          value = KZ.calc("-", av, KZ.calc("*", bv, KZ.rat(wholeQuotient))),
           movedRemainder = KZ.calc("*", value, 10n ** BigInt(sb));
         push(
           `作業の余り${KZ.format(movedRemainder, "decimal")}も元の余りの${10 ** sb}倍。${KZ.format(movedRemainder, "decimal")}÷${10 ** sb}＝${KZ.format(value, "decimal")}に戻す。商の個数は変わらない。`,
@@ -8868,11 +8881,7 @@ const KZTeaching = (() => {
           { intent: "remainder-unit" },
         );
         const originalScale = Math.max(sa, sb),
-          originalProduct = KZ.calc(
-            "*",
-            bv,
-            KZ.rat(q.expectedExactValue.quotient),
-          );
+          originalProduct = KZ.calc("*", bv, KZ.rat(wholeQuotient));
         const originalDividend = decimal(
           coefficient(av, originalScale),
           originalScale,
@@ -8880,11 +8889,11 @@ const KZTeaching = (() => {
         board.cols = Math.max(
           2,
           originalDividend.replace(".", "").length,
-          String(q.expectedExactValue.quotient).length + originalScale,
+          String(wholeQuotient).length + originalScale,
         );
         board.rows = [
           {
-            digits: String(q.expectedExactValue.quotient),
+            digits: String(wholeQuotient),
             quotient: true,
             trailing: originalScale,
           },
@@ -9463,13 +9472,13 @@ const KZUI = (() => {
   };
   function uiGrade() {
     if (!languageReady) return 1;
-    return (
-      (screen === "play" || screen === "result"
-        ? run?.config.languageGrade
-        : multiGrade
-          ? Math.min(...selectedGrades)
-          : grade) || 1
-    );
+    if (screen === "play" || screen === "result")
+      return run?.config.languageGrade || 1;
+    const grades = [
+      ...(multiGrade ? selectedGrades : [grade]),
+      ...config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    ];
+    return grades.length ? Math.min(...grades) : grade;
   }
   const button = (label, action, attrs = {}) =>
     el("button", {
@@ -9533,8 +9542,23 @@ const KZUI = (() => {
     currentRead = null,
     draftQuestionId = null,
     solutionQuestionId = null,
-    solutionStep = 0;
+    solutionStep = 0,
+    reviewQuestionId = null;
+  const reviewSteps = new Map();
+  syncSelection();
   languageReady = true;
+  // A restored/recommended configuration replaces every selection control.
+  // Browsing a grade or category still remains independent during menu edits.
+  function syncSelection() {
+    const first = KZ.BY_ID[config.selectedIds[0]];
+    grade = first.grade;
+    category = first.category;
+    selectedGrades = new Set(
+      config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    );
+    multiSelect = config.selectedIds.length > 1;
+    multiGrade = selectedGrades.size > 1;
+  }
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -9741,19 +9765,40 @@ const KZUI = (() => {
               const next = KZ.recommendConfig(saved, config);
               saved = next.saved;
               config = next.config;
-              grade = KZ.BY_ID[r.targetId].grade;
-              category = KZ.BY_ID[r.targetId].category;
+              syncSelection();
               screen = "menu";
               persist();
               render();
             },
             { "data-testid": "recommendation" },
           ),
-          button("おすすめを消す", () => {
-            saved.recommendation = null;
-            persist();
-            render();
-          }),
+          button(
+            "おすすめを消す",
+            () => {
+              saved.recommendation = null;
+              persist();
+              render();
+              if (screen === "result") {
+                const current = reviewQuestionId
+                  ? app.querySelector(
+                      `[data-review-question="${CSS.escape(reviewQuestionId)}"]`,
+                    )
+                  : null;
+                const details = app.querySelector("[data-result-details]");
+                const review = details?.open
+                  ? current?.open
+                    ? current
+                    : app.querySelector("[data-review-question][open]")
+                  : null;
+                const target =
+                  review?.querySelector(
+                    ".solution-navigation button:not(:disabled)",
+                  ) || details?.querySelector("summary");
+                target?.focus({ preventScroll: true });
+              } else focusFirst();
+            },
+            { "data-testid": "dismiss-recommendation" },
+          ),
         ]),
       ],
       "recommendation",
@@ -9765,12 +9810,7 @@ const KZUI = (() => {
           "さっきのチャレンジにもどる",
           () => {
             config = saved.returnStack.pop();
-            grade = KZ.BY_ID[config.selectedIds[0]].grade;
-            category = KZ.BY_ID[config.selectedIds[0]].category;
-            multiSelect = config.selectedIds.length > 1;
-            selectedGrades = new Set(
-              config.selectedIds.map((id) => KZ.BY_ID[id].grade),
-            );
+            syncSelection();
             screen = "menu";
             persist();
             render();
@@ -10344,7 +10384,9 @@ const KZUI = (() => {
   }
   function resumeCheckpoint() {
     run = KZ.clone(saved.practiceCheckpoint);
-    config = run.config;
+    config = KZ.clone(run.config);
+    syncSelection();
+    persist();
     run.lastNow = now();
     run.pauseReasons = [];
     finishSaved = false;
@@ -10358,6 +10400,8 @@ const KZUI = (() => {
   function finish() {
     if (finishSaved) return;
     finishSaved = true;
+    reviewSteps.clear();
+    reviewQuestionId = null;
     clearTimeout(feedbackTimer);
     result = KZ.applyResult(saved, run);
     saved = result.saved;
@@ -10460,6 +10504,62 @@ const KZUI = (() => {
   function solution(q, stepIndex) {
     return KZUI.solution(q, uiGrade(), stepIndex);
   }
+  function solutionNavigation(step, count, move, prefix = "solution") {
+    return el(
+      "div",
+      {
+        class: "solution-navigation",
+        role: "group",
+        "aria-label": "ときかたを いってずつ",
+      },
+      [
+        button("← もどる", () => move(-1), {
+          "data-testid": prefix + "-back",
+          disabled: step === 0,
+        }),
+        text("span", `${step + 1}／${count}`, {
+          "data-testid": prefix + "-progress",
+          "aria-live": "polite",
+        }),
+        button("つぎへ →", () => move(1), {
+          "data-testid": prefix + "-forward",
+          class: "primary",
+          disabled: step === count - 1,
+        }),
+      ],
+    );
+  }
+  function reviewSolution(q) {
+    const viewer = el("div", { class: "review-solution" }),
+      teaching = KZTeaching.steps(q);
+    let step = reviewSteps.get(q.questionId) || 0;
+    const move = (delta = 0) => {
+      const focused = viewer.contains(document.activeElement)
+        ? document.activeElement.getAttribute("data-testid")
+        : null;
+      step = Math.max(0, Math.min(step + delta, teaching.length - 1));
+      reviewSteps.set(q.questionId, step);
+      viewer.replaceChildren(
+        solution(q, step),
+        solutionNavigation(step, teaching.length, move, "review-solution"),
+      );
+      if (focused) {
+        const target = viewer.querySelector(`[data-testid="${focused}"]`);
+        (target?.disabled
+          ? target
+              .closest(".solution-navigation")
+              .querySelector("button:not(:disabled)")
+          : target
+        )?.focus({ preventScroll: true });
+      }
+      if (delta) {
+        reviewQuestionId = q.questionId;
+        announce(`${step + 1}／${teaching.length}。${teaching[step].text}`);
+      }
+    };
+    move();
+    return viewer;
+  }
   function answerFields(q, disabled) {
     const s = q.answerSpec,
       box = el("div", { class: "answer-fields", "data-testid": "answer" });
@@ -10523,7 +10623,9 @@ const KZUI = (() => {
             ["integer", "整数"],
           ]
             .filter(([v]) =>
-              s.type === "common" || s.form || uiGrade() <= 3
+              s.type === "common" ||
+              s.form ||
+              KZ.BY_ID[q.challengeId].grade <= 3
                 ? v === (s.form || "fraction")
                 : true,
             )
@@ -10837,29 +10939,7 @@ const KZUI = (() => {
               ? el("div", { class: "hint-card" }, math(KZ.buildHint(q)))
               : solution(q, solutionStep),
             run.phase === "SOLUTION_READING"
-              ? el(
-                  "div",
-                  {
-                    class: "solution-navigation",
-                    role: "group",
-                    "aria-label": "ときかたを いってずつ",
-                  },
-                  [
-                    button("← もどる", () => moveSolution(-1), {
-                      "data-testid": "solution-back",
-                      disabled: solutionStep === 0,
-                    }),
-                    text("span", `${solutionStep + 1}／${teaching.length}`, {
-                      "data-testid": "solution-progress",
-                      "aria-live": "polite",
-                    }),
-                    button("つぎへ →", () => moveSolution(1), {
-                      "data-testid": "solution-forward",
-                      class: "primary",
-                      disabled: solutionStep === teaching.length - 1,
-                    }),
-                  ],
-                )
+              ? solutionNavigation(solutionStep, teaching.length, moveSolution)
               : null,
             button(
               run.phase === "HINT_READING" ? "つづける" : "つぎのもんだいへ",
@@ -11073,7 +11153,11 @@ const KZUI = (() => {
     const m = result.metrics;
     const detail = el(
       "details",
-      { class: "result-details", "data-testid": "details" },
+      {
+        class: "result-details",
+        "data-testid": "details",
+        "data-result-details": "",
+      },
       [
         text("summary", "くわしく見る"),
         text(
@@ -11136,9 +11220,13 @@ const KZUI = (() => {
                   `正答：${KZ.answerText(r.question)} ／ ${{ correct: "せいかい", help: "助けてもらった", unanswered: "未回答" }[r.terminal]}`,
                 ),
               ),
-              el("details", {}, [
-                text("summary", "とき方を見る"),
-                solution(r.question),
+              el("details", { "data-review-question": r.questionId }, [
+                text("summary", "とき方を見る", {
+                  onClick: () => {
+                    reviewQuestionId = r.questionId;
+                  },
+                }),
+                reviewSolution(r.question),
               ]),
             ]),
           ),
@@ -11299,6 +11387,7 @@ const KZUI = (() => {
             () => {
               saved = data;
               config = KZ.clone(saved.settings.config);
+              syncSelection();
               screen = saved.settings.onboarded ? "menu" : "welcome";
               persist();
               render();
@@ -11342,7 +11431,8 @@ const KZUI = (() => {
               () => {
                 adapter.reset();
                 saved = KZ.emptySave();
-                config = saved.settings.config;
+                config = KZ.clone(saved.settings.config);
+                syncSelection();
                 screen = "welcome";
                 render();
               },
@@ -11420,7 +11510,10 @@ const KZUI = (() => {
       details = [...app.querySelectorAll("[data-menu-details]")].map((n) => [
         n.dataset.menuDetails,
         n.open,
-      ]);
+      ]),
+      reviewDetails = [
+        ...app.querySelectorAll("[data-result-details],[data-review-question]"),
+      ].map((n) => [n.getAttribute("data-review-question"), n.open]);
     activeInput = null;
     if (
       screen === "play" &&
@@ -11458,10 +11551,25 @@ const KZUI = (() => {
         }
         window.scrollTo({ top: scroll, behavior: "instant" });
       }
+      if (screen === "result") {
+        for (const [key, open] of reviewDetails) {
+          const n = app.querySelector(
+            key === null
+              ? "[data-result-details]"
+              : `[data-review-question="${CSS.escape(key)}"]`,
+          );
+          if (n) n.open = open;
+        }
+        window.scrollTo({ top: scroll, behavior: "instant" });
+      }
       if (identity) {
-        const n = app.querySelector(
+        let n = app.querySelector(
           `[${identity[0]}="${CSS.escape(identity[1])}"]`,
         );
+        if (n?.disabled && n.closest(".solution-navigation"))
+          n = n
+            .closest(".solution-navigation")
+            .querySelector("button:not(:disabled)");
         if (n && !n.disabled && n.getClientRects().length) {
           n.focus({ preventScroll: true });
           if (selection && selection[0] !== null)
@@ -11503,8 +11611,7 @@ const KZUI = (() => {
   if (test) {
     if (test.initialConfig) {
       config = KZ.normalizeConfig(test.initialConfig);
-      grade = KZ.BY_ID[config.selectedIds[0]].grade;
-      category = KZ.BY_ID[config.selectedIds[0]].category;
+      syncSelection();
     }
     Object.defineProperty(window, "kazoheTest", {
       value: Object.freeze({

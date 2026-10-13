@@ -3166,7 +3166,10 @@ const KZ = (() => {
     if (!saved.recommendation) return { saved, config: current };
     const next = clone(saved),
       id = next.recommendation.targetId;
-    if (current.selectedIds.length !== 1 || current.selectedIds[0] !== id)
+    if (
+      current.selectedIds.length &&
+      (current.selectedIds.length !== 1 || current.selectedIds[0] !== id)
+    )
       next.returnStack.push(clone(current));
     return {
       saved: next,

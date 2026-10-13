@@ -1518,16 +1518,26 @@ const KZTeaching = (() => {
           (quotient.digits.split(".")[1] || "").length +
           untouched.length;
         delete quotient.points;
+        // Rounding 9.99 to 10 adds a whole-number column. Keep every digit
+        // visible and retain the place alignment of the earlier division rows.
+        const extraColumns = Math.max(
+          0,
+          quotient.digits.replace(".", "").length +
+            quotient.trailing -
+            board.cols,
+        );
+        board.cols += extraColumns;
+        board.focus += extraColumns;
         push(
           `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${quotient.digits}。`,
         );
       }
       if (sb && integerQuotient) {
-        const value = KZ.calc(
-            "-",
-            av,
-            KZ.calc("*", bv, KZ.rat(q.expectedExactValue.quotient)),
-          ),
+        const wholeQuotient =
+            q.answerSpec.type === "quotient"
+              ? q.expectedExactValue.quotient
+              : q.expectedExactValue.n,
+          value = KZ.calc("-", av, KZ.calc("*", bv, KZ.rat(wholeQuotient))),
           movedRemainder = KZ.calc("*", value, 10n ** BigInt(sb));
         push(
           `作業の余り${KZ.format(movedRemainder, "decimal")}も元の余りの${10 ** sb}倍。${KZ.format(movedRemainder, "decimal")}÷${10 ** sb}＝${KZ.format(value, "decimal")}に戻す。商の個数は変わらない。`,
@@ -1535,11 +1545,7 @@ const KZTeaching = (() => {
           { intent: "remainder-unit" },
         );
         const originalScale = Math.max(sa, sb),
-          originalProduct = KZ.calc(
-            "*",
-            bv,
-            KZ.rat(q.expectedExactValue.quotient),
-          );
+          originalProduct = KZ.calc("*", bv, KZ.rat(wholeQuotient));
         const originalDividend = decimal(
           coefficient(av, originalScale),
           originalScale,
@@ -1547,11 +1553,11 @@ const KZTeaching = (() => {
         board.cols = Math.max(
           2,
           originalDividend.replace(".", "").length,
-          String(q.expectedExactValue.quotient).length + originalScale,
+          String(wholeQuotient).length + originalScale,
         );
         board.rows = [
           {
-            digits: String(q.expectedExactValue.quotient),
+            digits: String(wholeQuotient),
             quotient: true,
             trailing: originalScale,
           },

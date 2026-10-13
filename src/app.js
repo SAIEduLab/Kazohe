@@ -40,13 +40,13 @@
   };
   function uiGrade() {
     if (!languageReady) return 1;
-    return (
-      (screen === "play" || screen === "result"
-        ? run?.config.languageGrade
-        : multiGrade
-          ? Math.min(...selectedGrades)
-          : grade) || 1
-    );
+    if (screen === "play" || screen === "result")
+      return run?.config.languageGrade || 1;
+    const grades = [
+      ...(multiGrade ? selectedGrades : [grade]),
+      ...config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    ];
+    return grades.length ? Math.min(...grades) : grade;
   }
   const button = (label, action, attrs = {}) =>
     el("button", {
@@ -110,8 +110,23 @@
     currentRead = null,
     draftQuestionId = null,
     solutionQuestionId = null,
-    solutionStep = 0;
+    solutionStep = 0,
+    reviewQuestionId = null;
+  const reviewSteps = new Map();
+  syncSelection();
   languageReady = true;
+  // A restored/recommended configuration replaces every selection control.
+  // Browsing a grade or category still remains independent during menu edits.
+  function syncSelection() {
+    const first = KZ.BY_ID[config.selectedIds[0]];
+    grade = first.grade;
+    category = first.category;
+    selectedGrades = new Set(
+      config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    );
+    multiSelect = config.selectedIds.length > 1;
+    multiGrade = selectedGrades.size > 1;
+  }
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -318,19 +333,40 @@
               const next = KZ.recommendConfig(saved, config);
               saved = next.saved;
               config = next.config;
-              grade = KZ.BY_ID[r.targetId].grade;
-              category = KZ.BY_ID[r.targetId].category;
+              syncSelection();
               screen = "menu";
               persist();
               render();
             },
             { "data-testid": "recommendation" },
           ),
-          button("おすすめを消す", () => {
-            saved.recommendation = null;
-            persist();
-            render();
-          }),
+          button(
+            "おすすめを消す",
+            () => {
+              saved.recommendation = null;
+              persist();
+              render();
+              if (screen === "result") {
+                const current = reviewQuestionId
+                  ? app.querySelector(
+                      `[data-review-question="${CSS.escape(reviewQuestionId)}"]`,
+                    )
+                  : null;
+                const details = app.querySelector("[data-result-details]");
+                const review = details?.open
+                  ? current?.open
+                    ? current
+                    : app.querySelector("[data-review-question][open]")
+                  : null;
+                const target =
+                  review?.querySelector(
+                    ".solution-navigation button:not(:disabled)",
+                  ) || details?.querySelector("summary");
+                target?.focus({ preventScroll: true });
+              } else focusFirst();
+            },
+            { "data-testid": "dismiss-recommendation" },
+          ),
         ]),
       ],
       "recommendation",
@@ -342,12 +378,7 @@
           "さっきのチャレンジにもどる",
           () => {
             config = saved.returnStack.pop();
-            grade = KZ.BY_ID[config.selectedIds[0]].grade;
-            category = KZ.BY_ID[config.selectedIds[0]].category;
-            multiSelect = config.selectedIds.length > 1;
-            selectedGrades = new Set(
-              config.selectedIds.map((id) => KZ.BY_ID[id].grade),
-            );
+            syncSelection();
             screen = "menu";
             persist();
             render();
@@ -921,7 +952,9 @@
   }
   function resumeCheckpoint() {
     run = KZ.clone(saved.practiceCheckpoint);
-    config = run.config;
+    config = KZ.clone(run.config);
+    syncSelection();
+    persist();
     run.lastNow = now();
     run.pauseReasons = [];
     finishSaved = false;
@@ -935,6 +968,8 @@
   function finish() {
     if (finishSaved) return;
     finishSaved = true;
+    reviewSteps.clear();
+    reviewQuestionId = null;
     clearTimeout(feedbackTimer);
     result = KZ.applyResult(saved, run);
     saved = result.saved;
@@ -1037,6 +1072,62 @@
   function solution(q, stepIndex) {
     return KZUI.solution(q, uiGrade(), stepIndex);
   }
+  function solutionNavigation(step, count, move, prefix = "solution") {
+    return el(
+      "div",
+      {
+        class: "solution-navigation",
+        role: "group",
+        "aria-label": "ときかたを いってずつ",
+      },
+      [
+        button("← もどる", () => move(-1), {
+          "data-testid": prefix + "-back",
+          disabled: step === 0,
+        }),
+        text("span", `${step + 1}／${count}`, {
+          "data-testid": prefix + "-progress",
+          "aria-live": "polite",
+        }),
+        button("つぎへ →", () => move(1), {
+          "data-testid": prefix + "-forward",
+          class: "primary",
+          disabled: step === count - 1,
+        }),
+      ],
+    );
+  }
+  function reviewSolution(q) {
+    const viewer = el("div", { class: "review-solution" }),
+      teaching = KZTeaching.steps(q);
+    let step = reviewSteps.get(q.questionId) || 0;
+    const move = (delta = 0) => {
+      const focused = viewer.contains(document.activeElement)
+        ? document.activeElement.getAttribute("data-testid")
+        : null;
+      step = Math.max(0, Math.min(step + delta, teaching.length - 1));
+      reviewSteps.set(q.questionId, step);
+      viewer.replaceChildren(
+        solution(q, step),
+        solutionNavigation(step, teaching.length, move, "review-solution"),
+      );
+      if (focused) {
+        const target = viewer.querySelector(`[data-testid="${focused}"]`);
+        (target?.disabled
+          ? target
+              .closest(".solution-navigation")
+              .querySelector("button:not(:disabled)")
+          : target
+        )?.focus({ preventScroll: true });
+      }
+      if (delta) {
+        reviewQuestionId = q.questionId;
+        announce(`${step + 1}／${teaching.length}。${teaching[step].text}`);
+      }
+    };
+    move();
+    return viewer;
+  }
   function answerFields(q, disabled) {
     const s = q.answerSpec,
       box = el("div", { class: "answer-fields", "data-testid": "answer" });
@@ -1100,7 +1191,9 @@
             ["integer", "整数"],
           ]
             .filter(([v]) =>
-              s.type === "common" || s.form || uiGrade() <= 3
+              s.type === "common" ||
+              s.form ||
+              KZ.BY_ID[q.challengeId].grade <= 3
                 ? v === (s.form || "fraction")
                 : true,
             )
@@ -1414,29 +1507,7 @@
               ? el("div", { class: "hint-card" }, math(KZ.buildHint(q)))
               : solution(q, solutionStep),
             run.phase === "SOLUTION_READING"
-              ? el(
-                  "div",
-                  {
-                    class: "solution-navigation",
-                    role: "group",
-                    "aria-label": "ときかたを いってずつ",
-                  },
-                  [
-                    button("← もどる", () => moveSolution(-1), {
-                      "data-testid": "solution-back",
-                      disabled: solutionStep === 0,
-                    }),
-                    text("span", `${solutionStep + 1}／${teaching.length}`, {
-                      "data-testid": "solution-progress",
-                      "aria-live": "polite",
-                    }),
-                    button("つぎへ →", () => moveSolution(1), {
-                      "data-testid": "solution-forward",
-                      class: "primary",
-                      disabled: solutionStep === teaching.length - 1,
-                    }),
-                  ],
-                )
+              ? solutionNavigation(solutionStep, teaching.length, moveSolution)
               : null,
             button(
               run.phase === "HINT_READING" ? "つづける" : "つぎのもんだいへ",
@@ -1650,7 +1721,11 @@
     const m = result.metrics;
     const detail = el(
       "details",
-      { class: "result-details", "data-testid": "details" },
+      {
+        class: "result-details",
+        "data-testid": "details",
+        "data-result-details": "",
+      },
       [
         text("summary", "くわしく見る"),
         text(
@@ -1713,9 +1788,13 @@
                   `正答：${KZ.answerText(r.question)} ／ ${{ correct: "せいかい", help: "助けてもらった", unanswered: "未回答" }[r.terminal]}`,
                 ),
               ),
-              el("details", {}, [
-                text("summary", "とき方を見る"),
-                solution(r.question),
+              el("details", { "data-review-question": r.questionId }, [
+                text("summary", "とき方を見る", {
+                  onClick: () => {
+                    reviewQuestionId = r.questionId;
+                  },
+                }),
+                reviewSolution(r.question),
               ]),
             ]),
           ),
@@ -1876,6 +1955,7 @@
             () => {
               saved = data;
               config = KZ.clone(saved.settings.config);
+              syncSelection();
               screen = saved.settings.onboarded ? "menu" : "welcome";
               persist();
               render();
@@ -1919,7 +1999,8 @@
               () => {
                 adapter.reset();
                 saved = KZ.emptySave();
-                config = saved.settings.config;
+                config = KZ.clone(saved.settings.config);
+                syncSelection();
                 screen = "welcome";
                 render();
               },
@@ -1997,7 +2078,10 @@
       details = [...app.querySelectorAll("[data-menu-details]")].map((n) => [
         n.dataset.menuDetails,
         n.open,
-      ]);
+      ]),
+      reviewDetails = [
+        ...app.querySelectorAll("[data-result-details],[data-review-question]"),
+      ].map((n) => [n.getAttribute("data-review-question"), n.open]);
     activeInput = null;
     if (
       screen === "play" &&
@@ -2035,10 +2119,25 @@
         }
         window.scrollTo({ top: scroll, behavior: "instant" });
       }
+      if (screen === "result") {
+        for (const [key, open] of reviewDetails) {
+          const n = app.querySelector(
+            key === null
+              ? "[data-result-details]"
+              : `[data-review-question="${CSS.escape(key)}"]`,
+          );
+          if (n) n.open = open;
+        }
+        window.scrollTo({ top: scroll, behavior: "instant" });
+      }
       if (identity) {
-        const n = app.querySelector(
+        let n = app.querySelector(
           `[${identity[0]}="${CSS.escape(identity[1])}"]`,
         );
+        if (n?.disabled && n.closest(".solution-navigation"))
+          n = n
+            .closest(".solution-navigation")
+            .querySelector("button:not(:disabled)");
         if (n && !n.disabled && n.getClientRects().length) {
           n.focus({ preventScroll: true });
           if (selection && selection[0] !== null)
@@ -2080,8 +2179,7 @@
   if (test) {
     if (test.initialConfig) {
       config = KZ.normalizeConfig(test.initialConfig);
-      grade = KZ.BY_ID[config.selectedIds[0]].grade;
-      category = KZ.BY_ID[config.selectedIds[0]].category;
+      syncSelection();
     }
     Object.defineProperty(window, "kazoheTest", {
       value: Object.freeze({

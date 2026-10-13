@@ -11,7 +11,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { K, htmlPath } from "../../scripts/load-inline-core.mjs";
+import {
+  K,
+  Teaching,
+  Language,
+  htmlPath,
+} from "../../scripts/load-inline-core.mjs";
 import { hash } from "../../scripts/report.mjs";
 import { rawAnswer } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
@@ -37,6 +42,46 @@ async function start(page, id = "G1-C01", options = {}) {
 }
 async function snapshot(page) {
   return page.evaluate(() => window.kazoheTest.snapshot());
+}
+async function importBackup(page, data) {
+  await page.getByTestId("settings").click();
+  await page.getByTestId("import").setInputFiles({
+    name: "selection-backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(data)),
+  });
+  await page.getByTestId("confirm-accept").click();
+}
+async function expectSelection(page, expected) {
+  const grades = [
+    ...new Set(expected.selectedIds.map((id) => K.BY_ID[id].grade)),
+  ];
+  expect((await snapshot(page)).config).toEqual(expected);
+  await expect(page.locator('[data-grade][aria-pressed="true"]')).toHaveCount(
+    grades.length,
+  );
+  for (const grade of grades)
+    await expect(page.locator(`[data-grade="${grade}"]`)).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  await expect(page.getByTestId("multiple-grades")).toHaveAttribute(
+    "aria-pressed",
+    String(grades.length > 1),
+  );
+  await expect(page.getByTestId("multiple-select")).toHaveAttribute(
+    "aria-pressed",
+    String(expected.selectedIds.length > 1),
+  );
+  const category = K.BY_ID[expected.selectedIds[0]].category;
+  await expect(page.locator(`[data-category="${category}"]`)).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  for (const id of expected.selectedIds.filter(
+    (id) => K.BY_ID[id].category === category,
+  ))
+    await expect(page.locator(`[data-challenge="${id}"]`)).toBeChecked();
 }
 async function fill(page, q, raw = rawAnswer(q), touch = false) {
   const s = q.answerSpec;
@@ -588,6 +633,307 @@ test("TC-B13 TC-P19 TC-P20 TC-P27 backup export, replacement, cancellation and r
     await page.evaluate(() => localStorage.getItem("other-app:test")),
   ).toBe("keep");
 });
+test("TC-B03 TC-P19 TC-P27 restored selections agree with grade and category controls after import, reload and reset", async ({
+  page,
+}) => {
+  await open(page);
+  const data = K.emptySave();
+  data.settings.onboarded = true;
+  data.settings.config = K.normalizeConfig({
+    selectedIds: ["G2-C01", "G5-C01"],
+    mode: "practice",
+    quantity: 20,
+  });
+  await importBackup(page, data);
+  await expectSelection(page, data.settings.config);
+  await page.reload();
+  await expectSelection(page, data.settings.config);
+  await page.getByTestId("settings").click();
+  await page.getByTestId("reset").click();
+  await page.getByTestId("confirm-accept").click();
+  await page.getByTestId("skip").click();
+  await expectSelection(page, K.emptySave().settings.config);
+});
+
+test("TC-B03 TC-F17 recommendation and return restore all selection controls", async ({
+  page,
+}) => {
+  await open(page);
+  const data = K.emptySave();
+  data.settings.onboarded = true;
+  data.settings.config = K.normalizeConfig({
+    selectedIds: ["G1-N01", "G5-C01"],
+    mode: "practice",
+    quantity: 20,
+  });
+  const targetId = K.BY_ID["G3-C02"].fallbackParent;
+  data.recommendation = {
+    sourceId: "G3-C02",
+    targetId,
+    reason: "ひとつずつ れんしゅうしよう。",
+  };
+  await importBackup(page, data);
+  await page.locator('[data-menu-details="selection"] summary').click();
+  await page.getByTestId("all-grades").click();
+  const original = (await snapshot(page)).config;
+  await page.getByTestId("recommendation").click();
+  const recommended = K.normalizeConfig({
+    selectedIds: [targetId],
+    mode: "practice",
+    quantity: 10,
+  });
+  await expectSelection(page, recommended);
+  await page.getByTestId("return").click();
+  await expectSelection(page, original);
+  await page.getByTestId("multiple-select").click();
+  await expectSelection(
+    page,
+    K.normalizeConfig({
+      ...original,
+      selectedIds: original.selectedIds.slice(0, 1),
+    }),
+  );
+  // An empty selection is a valid menu draft, but cannot be a saved return target.
+  await page.getByRole("button", { name: "えらびなおす", exact: true }).click();
+  await expect(page.getByTestId("start")).toBeDisabled();
+  await page.getByTestId("recommendation").click();
+  await expectSelection(page, recommended);
+  expect((await snapshot(page)).saved.returnStack).toEqual([]);
+  await page.getByTestId("settings").click();
+  const download = page.waitForEvent("download");
+  await page.getByTestId("export").click();
+  const file = await download;
+  const exported = readFileSync(await file.path(), "utf8");
+  expect(() => K.validateBackup(exported)).not.toThrow();
+});
+
+test("TC-B03 TC-P14 resuming a checkpoint restores its selection before returning to the menu", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  const data = K.emptySave();
+  data.settings.onboarded = true;
+  const checkpointConfig = K.normalizeConfig({
+    selectedIds: ["G2-C01", "G4-C01"],
+    mode: "practice",
+    quantity: 10,
+  });
+  data.practiceCheckpoint = K.checkpoint(K.createRun(checkpointConfig, 654321));
+  await importBackup(page, data);
+  await page.getByTestId("continue-practice").click();
+  expect((await snapshot(page)).run.config).toEqual(checkpointConfig);
+  await fill(page, (await snapshot(page)).run.currentQuestion);
+  await page.getByTestId("submit").click();
+  await page.clock.runFor(800);
+  await page.getByTestId("end").click();
+  await page.getByTestId("confirm-accept").click();
+  await page.getByTestId("menu").click();
+  await expectSelection(page, checkpointConfig);
+  await page.reload();
+  await expectSelection(page, checkpointConfig);
+});
+
+test("TC-U13 TC-B07 result review restores every teaching step and keyboard focus without changing records", async ({
+  page,
+}, info) => {
+  await page.clock.install();
+  const q = K.complete(
+    K.arithmetic("G3-C04", K.op("-", K.lit(8012), K.lit(7566))),
+  );
+  const count = Teaching.steps(q).length;
+  await start(page, q.challengeId, { fixedQuestion: q });
+  await page.getByTestId("help").click();
+  await page.getByTestId("solution-forward").focus();
+  for (let i = 1; i < count; i++)
+    await page.getByTestId("solution-forward").press("Enter");
+  await expect(page.getByTestId("solution-back")).toBeFocused();
+  for (let i = 1; i < count; i++)
+    await page.getByTestId("solution-back").press("Space");
+  await expect(page.getByTestId("solution-forward")).toBeFocused();
+  await page.getByTestId("next").click();
+  await page.getByTestId("end").click();
+  await page.getByTestId("confirm-accept").click();
+  await page.getByTestId("details").locator("summary").first().click();
+  const review = page.locator(".review-item").first();
+  await review.locator("details summary").click();
+  const initial = await review.locator(".support").innerHTML();
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "0",
+  );
+  await expect(review.getByTestId("review-solution-back")).toBeDisabled();
+  await review.getByTestId("review-solution-forward").press("Enter");
+  const savedBeforeDismiss = (await snapshot(page)).saved;
+  const runBeforeDismiss = (await snapshot(page)).run;
+  await page.getByTestId("dismiss-recommendation").click();
+  await expect(page.getByTestId("details")).toHaveAttribute("open", "");
+  await expect(review.locator("details")).toHaveAttribute("open", "");
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "1",
+  );
+  await expect(review.getByTestId("review-solution-back")).toBeFocused();
+  expect((await snapshot(page)).run).toEqual(runBeforeDismiss);
+  expect((await snapshot(page)).saved).toEqual({
+    ...savedBeforeDismiss,
+    recommendation: null,
+  });
+  const afterDismiss = await snapshot(page);
+  for (let i = 2; i < count; i++)
+    await review.getByTestId("review-solution-forward").press("Enter");
+  await expect(review.getByTestId("review-solution-back")).toBeFocused();
+  await expect(review.getByTestId("review-solution-progress")).toHaveText(
+    `${count}／${count}`,
+  );
+  await review.locator("details summary").click();
+  await review.locator("details summary").click();
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    String(count - 1),
+  );
+  for (const width of [320, 1366]) {
+    await page.setViewportSize({ width, height: 768 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const file = `reports/child-ux/result-review-${info.project.name}-${width}.png`;
+    mkdirSync("reports/child-ux", { recursive: true });
+    await page.screenshot({ path: file, fullPage: true });
+    await info.attach(`result-review-${width}`, {
+      path: file,
+      contentType: "image/png",
+    });
+  }
+  for (let i = 1; i < count; i++)
+    await review.getByTestId("review-solution-back").press("Space");
+  await expect(review.getByTestId("review-solution-forward")).toBeFocused();
+  expect(await review.locator(".support").innerHTML()).toBe(initial);
+  await page.clock.runFor(1500);
+  expect(await snapshot(page)).toEqual(afterDismiss);
+  await review.getByTestId("review-solution-forward").press("Enter");
+  await page.getByTestId("again").click();
+  await page.getByTestId("end").click();
+  await page.getByTestId("confirm-accept").click();
+  await page.getByTestId("details").locator("summary").first().click();
+  await review.locator("details summary").click();
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "0",
+  );
+  await review.getByTestId("review-solution-forward").press("Enter");
+  await page.getByTestId("details").locator("summary").first().click();
+  await page.getByTestId("dismiss-recommendation").click();
+  await expect(page.getByTestId("details")).not.toHaveAttribute("open", "");
+  await expect(
+    page.getByTestId("details").locator("summary").first(),
+  ).toBeFocused();
+  await page.getByTestId("details").locator("summary").first().press("Enter");
+  await expect(review.locator("details")).toHaveAttribute("open", "");
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "1",
+  );
+});
+
+test("TC-U06 TC-U17 fraction forms follow the question grade in a mixed-grade practice", async ({
+  page,
+}) => {
+  await page.clock.install();
+  for (const [a, b, raw] of [
+    [K.rat(1, 2), 2, { form: "integer", whole: "1" }],
+    [
+      K.rat(2, 3),
+      4,
+      { form: "mixed", whole: "2", numerator: "2", denominator: "3" },
+    ],
+  ]) {
+    const q = K.complete(
+      K.arithmetic("G6-C01", K.op("*", K.lit(a), K.lit(b)), {
+        type: "fraction",
+        reduced: true,
+      }),
+    );
+    await page.addInitScript(() =>
+      localStorage.removeItem("kazohe:v0.2:state"),
+    );
+    await start(page, q.challengeId, {
+      fixedQuestion: q,
+      initialConfig: {
+        selectedIds: ["G1-N01", "G6-C01"],
+        mode: "practice",
+        quantity: 10,
+      },
+    });
+    const form = page.getByLabel("こたえのかたち", { exact: true });
+    expect(
+      await form.locator("option").evaluateAll((ns) => ns.map((n) => n.value)),
+    ).toEqual(["fraction", "mixed", "integer"]);
+    expect(
+      Language.forbidden(await page.locator("#app").innerText(), 1),
+    ).toEqual([]);
+    await fill(page, q, raw);
+    await page.getByTestId("submit").click();
+    expect((await snapshot(page)).run.phase).toBe("CORRECT_FEEDBACK");
+  }
+  for (const q of [
+    K.complete(
+      K.arithmetic(
+        "G3-C13",
+        K.op("+", K.lit(K.rat(1, 3)), K.lit(K.rat(1, 3))),
+        { type: "fraction", reduced: true },
+      ),
+    ),
+    K.complete(
+      K.arithmetic("G6-C01", K.op("*", K.lit(K.rat(1, 2)), K.lit(1)), {
+        type: "fraction",
+        form: "fraction",
+        reduced: true,
+      }),
+    ),
+  ]) {
+    await start(page, q.challengeId, { fixedQuestion: q });
+    const form = page.locator(".form-choice select");
+    expect(
+      await form.locator("option").evaluateAll((ns) => ns.map((n) => n.value)),
+    ).toEqual(["fraction"]);
+    await expect(form).toBeHidden();
+  }
+});
+
+test("TC-U17 mixed-grade menu language remains at the lowest selected grade when grade browsing is collapsed", async ({
+  page,
+}) => {
+  await open(page, {
+    initialConfig: {
+      selectedIds: ["G6-C01", "G6-C02"],
+      mode: "practice",
+      quantity: 10,
+    },
+  });
+  await page.locator('[data-menu-details="selection"] summary').click();
+  await page.getByTestId("multiple-grades").click();
+  await page.locator('[data-grade="1"]').click();
+  await page.locator('[data-category="数"]').click();
+  expect((await snapshot(page)).config.selectedIds).toEqual([
+    "G6-C01",
+    "G6-C02",
+  ]);
+  expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(
+    [],
+  );
+  await page.locator('[data-challenge="G1-N01"]').check();
+  const before = (await snapshot(page)).config;
+  expect(before.selectedIds).toEqual(["G1-N01", "G6-C01", "G6-C02"]);
+  await page.getByTestId("multiple-grades").click();
+  expect((await snapshot(page)).config).toEqual(before);
+  expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(
+    [],
+  );
+});
+
 test("TC-P14 TC-P15 TC-P25 TC-P26 TC-B03 persistence and rejected storage", async ({
   page,
   browser,
