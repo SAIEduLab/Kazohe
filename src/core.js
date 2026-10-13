@@ -3089,7 +3089,7 @@ const KZ = (() => {
         sound: true,
         effects: true,
         config: normalizeConfig({
-          selectedIds: ["G1-N01"],
+          selectedIds: ["G1-C01"],
           mode: "practice",
           quantity: 10,
         }),

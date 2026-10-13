@@ -156,6 +156,44 @@ test.afterEach(async ({ page }, info) => {
     contentType: "application/json",
   });
 });
+test("TC-B03 TC-U01 first launch defaults to calculation and presents its first task", async ({
+  page,
+}) => {
+  await open(page);
+  await expectSelection(page, K.normalizeConfig(config("G1-C01")));
+  await page.getByTestId("start").click();
+  const run = (await snapshot(page)).run;
+  expect(run.currentQuestion.challengeId).toBe("G1-C01");
+  await expect(page.getByTestId("problem")).toHaveText(
+    /\d+\s*＋\s*□\s*＝\s*10/,
+  );
+});
+
+test("TC-B03 TC-P19 saved number selection and learning records survive reload", async ({
+  page,
+}) => {
+  const data = JSON.parse(
+    readFileSync("tests/fixtures/v0.2.4-backup.json", "utf8"),
+  );
+  data.settings.onboarded = true;
+  data.settings.config = K.normalizeConfig(config("G1-N01"));
+  const expected = K.validateBackup(JSON.stringify(data));
+  await open(page);
+  await page.evaluate(
+    ({ key, data }) => localStorage.setItem(key, JSON.stringify(data)),
+    { key: K.STORAGE_KEY, data },
+  );
+  await page.reload();
+  await expectSelection(page, expected.settings.config);
+  expect((await snapshot(page)).saved).toEqual(expected);
+  await page.reload();
+  await expectSelection(page, expected.settings.config);
+  expect((await snapshot(page)).saved).toEqual(expected);
+  expect(
+    await page.evaluate((key) => localStorage.getItem(key), K.STORAGE_KEY),
+  ).toBe(JSON.stringify(data));
+});
+
 test("TC-B01 TC-B02 TC-B03 TC-B07 TC-B11 end to end keyboard, retry, hint, help, pause, result", async ({
   page,
 }) => {
@@ -652,7 +690,9 @@ test("TC-B03 TC-P19 TC-P27 restored selections agree with grade and category con
   await page.getByTestId("reset").click();
   await page.getByTestId("confirm-accept").click();
   await page.getByTestId("skip").click();
-  await expectSelection(page, K.emptySave().settings.config);
+  await expectSelection(page, K.normalizeConfig(config("G1-C01")));
+  await page.getByTestId("start").click();
+  expect((await snapshot(page)).run.currentQuestion.challengeId).toBe("G1-C01");
 });
 
 test("TC-B03 TC-F17 recommendation and return restore all selection controls", async ({
