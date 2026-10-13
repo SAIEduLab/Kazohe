@@ -41,6 +41,160 @@ test.beforeEach(async ({ page }) => {
   });
   await page.route(/^https?:/, (r) => r.abort());
 });
+test("TC-U13 TC-U14 exact decimal division and rounded quotients retain all digits and place alignment", async ({
+  page,
+}, info) => {
+  const examples = [
+    [
+      "exact-122",
+      "G5-C04",
+      "48.8",
+      "0.4",
+      { integerQuotient: true },
+      { type: "integer", decimalRemainder: true },
+      "122",
+    ],
+    [
+      "exact-zero",
+      "G5-C04",
+      "0",
+      "5.4",
+      { integerQuotient: true },
+      { type: "integer", decimalRemainder: true },
+      "0",
+    ],
+    [
+      "round-10",
+      "G5-C05",
+      "9.99",
+      "1",
+      { roundPlaces: 1 },
+      { type: "decimal" },
+      "10",
+    ],
+    [
+      "round-100",
+      "G5-C05",
+      "99.99",
+      "1",
+      { roundPlaces: 1 },
+      { type: "decimal" },
+      "100",
+    ],
+    [
+      "round-10-hundredths",
+      "G5-C05",
+      "29.99",
+      "3",
+      { roundPlaces: 2 },
+      { type: "decimal" },
+      "10",
+    ],
+  ];
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const evidence = [];
+  for (const width of [320, 1366]) {
+    await page.setViewportSize({ width, height: 768 });
+    for (const [name, id, a, b, options, spec, answer] of examples) {
+      const q = K.complete(
+        K.arithmetic(id, K.op("/", K.lit(a), K.lit(b)), spec, {
+          written: true,
+          ...options,
+        }),
+      );
+      await open(page, q);
+      const initial = await page.locator(".support").innerHTML();
+      const frames = Teaching.steps(q);
+      for (let i = 1; i < frames.length; i++)
+        await page.getByTestId("solution-forward").click();
+      const board = page.getByTestId("written-board");
+      const quotient = board.locator('[data-row-kind="quotient"]');
+      expect(
+        await quotient.locator(".written-digit").allTextContents(),
+      ).toEqual(expect.arrayContaining([...answer]));
+      expect(
+        (await quotient.locator(".written-digit").allTextContents()).join(""),
+      ).toBe(answer);
+      const geometry = await board.evaluate((board) => {
+        const columns = {},
+          errors = [];
+        for (const cell of board.querySelectorAll(".written-cell")) {
+          const rect = cell.getBoundingClientRect(),
+            column = cell.dataset.column;
+          const center = rect.left + rect.width / 2;
+          if (
+            columns[column] !== undefined &&
+            Math.abs(columns[column] - center) > 1
+          )
+            errors.push("column-shift");
+          columns[column] = center;
+          const digit = cell
+            .querySelector(".written-digit")
+            .getBoundingClientRect();
+          if (
+            digit.width &&
+            (digit.left < rect.left - 1 || digit.right > rect.right + 1)
+          )
+            errors.push("clipped-digit");
+        }
+        const dividend = board.querySelector('[data-row-kind="dividend"]');
+        const point = dividend.querySelector(".decimal-mark")?.parentElement;
+        const quotientCells = [
+          ...board.querySelectorAll('[data-row-kind="quotient"] .written-cell'),
+        ].filter((n) => n.dataset.value);
+        // The integer unit of the quotient belongs above the dividend's unit.
+        if (
+          point &&
+          quotientCells.at(-1)?.dataset.column !== point.dataset.column
+        )
+          errors.push("unit-shift");
+        return { errors, columns };
+      });
+      expect(geometry.errors, name).toEqual([]);
+      if (id === "G5-C04") {
+        await expect(
+          board.locator(
+            '.written-equation:has([data-row-kind="dividend"]) .written-prefix',
+          ),
+        ).toHaveText(b);
+        expect(
+          (
+            await board
+              .locator('[data-row-kind="digits"]')
+              .last()
+              .locator(".written-digit")
+              .allTextContents()
+          )
+            .join("")
+            .replace(/^0+/, "") || "0",
+        ).toBe("0");
+      }
+      const file = `reports/child-ux/${name}-${info.project.name}-${width}.png`;
+      mkdirSync("reports/child-ux", { recursive: true });
+      await page.screenshot({ path: file, fullPage: true });
+      await info.attach(`${name}-${width}`, {
+        path: file,
+        contentType: "image/png",
+      });
+      const final = await page.locator(".support").innerHTML();
+      await page.getByTestId("solution-back").click();
+      await page.getByTestId("solution-forward").click();
+      expect(await page.locator(".support").innerHTML()).toBe(final);
+      for (let i = 1; i < frames.length; i++)
+        await page.getByTestId("solution-back").click();
+      expect(await page.locator(".support").innerHTML()).toBe(initial);
+      await page.getByTestId("next").click();
+      await expect(page.getByTestId("submit")).toBeEnabled();
+      evidence.push({ name, width, answer, steps: frames.length, geometry });
+    }
+  }
+  expect(errors).toEqual([]);
+  writeFileSync(
+    `reports/child-ux/decimal-${info.project.name}.json`,
+    JSON.stringify({ hash, evidence }, null, 2),
+  );
+});
 test("TC-U13 every challenge advances and restores each teaching state without scoring or clock changes", async ({
   page,
 }, info) => {

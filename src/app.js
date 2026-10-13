@@ -40,13 +40,13 @@
   };
   function uiGrade() {
     if (!languageReady) return 1;
-    return (
-      (screen === "play" || screen === "result"
-        ? run?.config.languageGrade
-        : multiGrade
-          ? Math.min(...selectedGrades)
-          : grade) || 1
-    );
+    if (screen === "play" || screen === "result")
+      return run?.config.languageGrade || 1;
+    if (config.selectedIds.length > 1)
+      return Math.min(...config.selectedIds.map((id) => KZ.BY_ID[id].grade));
+    return multiGrade && selectedGrades.size
+      ? Math.min(...selectedGrades)
+      : grade;
   }
   const button = (label, action, attrs = {}) =>
     el("button", {
@@ -111,7 +111,20 @@
     draftQuestionId = null,
     solutionQuestionId = null,
     solutionStep = 0;
+  syncSelection();
   languageReady = true;
+  // A restored/recommended configuration replaces every selection control.
+  // Browsing a grade or category still remains independent during menu edits.
+  function syncSelection() {
+    const first = KZ.BY_ID[config.selectedIds[0]];
+    grade = first.grade;
+    category = first.category;
+    selectedGrades = new Set(
+      config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    );
+    multiSelect = config.selectedIds.length > 1;
+    multiGrade = selectedGrades.size > 1;
+  }
   const persist = () => {
     if (config.selectedIds.length) saved.settings.config = config;
     adapter.write(saved);
@@ -318,8 +331,7 @@
               const next = KZ.recommendConfig(saved, config);
               saved = next.saved;
               config = next.config;
-              grade = KZ.BY_ID[r.targetId].grade;
-              category = KZ.BY_ID[r.targetId].category;
+              syncSelection();
               screen = "menu";
               persist();
               render();
@@ -342,12 +354,7 @@
           "さっきのチャレンジにもどる",
           () => {
             config = saved.returnStack.pop();
-            grade = KZ.BY_ID[config.selectedIds[0]].grade;
-            category = KZ.BY_ID[config.selectedIds[0]].category;
-            multiSelect = config.selectedIds.length > 1;
-            selectedGrades = new Set(
-              config.selectedIds.map((id) => KZ.BY_ID[id].grade),
-            );
+            syncSelection();
             screen = "menu";
             persist();
             render();
@@ -921,7 +928,9 @@
   }
   function resumeCheckpoint() {
     run = KZ.clone(saved.practiceCheckpoint);
-    config = run.config;
+    config = KZ.clone(run.config);
+    syncSelection();
+    persist();
     run.lastNow = now();
     run.pauseReasons = [];
     finishSaved = false;
@@ -1037,6 +1046,59 @@
   function solution(q, stepIndex) {
     return KZUI.solution(q, uiGrade(), stepIndex);
   }
+  function solutionNavigation(step, count, move, prefix = "solution") {
+    return el(
+      "div",
+      {
+        class: "solution-navigation",
+        role: "group",
+        "aria-label": "ときかたを いってずつ",
+      },
+      [
+        button("← もどる", () => move(-1), {
+          "data-testid": prefix + "-back",
+          disabled: step === 0,
+        }),
+        text("span", `${step + 1}／${count}`, {
+          "data-testid": prefix + "-progress",
+          "aria-live": "polite",
+        }),
+        button("つぎへ →", () => move(1), {
+          "data-testid": prefix + "-forward",
+          class: "primary",
+          disabled: step === count - 1,
+        }),
+      ],
+    );
+  }
+  function reviewSolution(q) {
+    const viewer = el("div", { class: "review-solution" }),
+      teaching = KZTeaching.steps(q);
+    let step = 0;
+    const move = (delta = 0) => {
+      const focused = viewer.contains(document.activeElement)
+        ? document.activeElement.getAttribute("data-testid")
+        : null;
+      step = Math.max(0, Math.min(step + delta, teaching.length - 1));
+      viewer.replaceChildren(
+        solution(q, step),
+        solutionNavigation(step, teaching.length, move, "review-solution"),
+      );
+      if (focused) {
+        const target = viewer.querySelector(`[data-testid="${focused}"]`);
+        (target?.disabled
+          ? target
+              .closest(".solution-navigation")
+              .querySelector("button:not(:disabled)")
+          : target
+        )?.focus({ preventScroll: true });
+      }
+      if (delta)
+        announce(`${step + 1}／${teaching.length}。${teaching[step].text}`);
+    };
+    move();
+    return viewer;
+  }
   function answerFields(q, disabled) {
     const s = q.answerSpec,
       box = el("div", { class: "answer-fields", "data-testid": "answer" });
@@ -1100,7 +1162,9 @@
             ["integer", "整数"],
           ]
             .filter(([v]) =>
-              s.type === "common" || s.form || uiGrade() <= 3
+              s.type === "common" ||
+              s.form ||
+              KZ.BY_ID[q.challengeId].grade <= 3
                 ? v === (s.form || "fraction")
                 : true,
             )
@@ -1414,29 +1478,7 @@
               ? el("div", { class: "hint-card" }, math(KZ.buildHint(q)))
               : solution(q, solutionStep),
             run.phase === "SOLUTION_READING"
-              ? el(
-                  "div",
-                  {
-                    class: "solution-navigation",
-                    role: "group",
-                    "aria-label": "ときかたを いってずつ",
-                  },
-                  [
-                    button("← もどる", () => moveSolution(-1), {
-                      "data-testid": "solution-back",
-                      disabled: solutionStep === 0,
-                    }),
-                    text("span", `${solutionStep + 1}／${teaching.length}`, {
-                      "data-testid": "solution-progress",
-                      "aria-live": "polite",
-                    }),
-                    button("つぎへ →", () => moveSolution(1), {
-                      "data-testid": "solution-forward",
-                      class: "primary",
-                      disabled: solutionStep === teaching.length - 1,
-                    }),
-                  ],
-                )
+              ? solutionNavigation(solutionStep, teaching.length, moveSolution)
               : null,
             button(
               run.phase === "HINT_READING" ? "つづける" : "つぎのもんだいへ",
@@ -1715,7 +1757,7 @@
               ),
               el("details", {}, [
                 text("summary", "とき方を見る"),
-                solution(r.question),
+                reviewSolution(r.question),
               ]),
             ]),
           ),
@@ -1876,6 +1918,7 @@
             () => {
               saved = data;
               config = KZ.clone(saved.settings.config);
+              syncSelection();
               screen = saved.settings.onboarded ? "menu" : "welcome";
               persist();
               render();
@@ -1919,7 +1962,8 @@
               () => {
                 adapter.reset();
                 saved = KZ.emptySave();
-                config = saved.settings.config;
+                config = KZ.clone(saved.settings.config);
+                syncSelection();
                 screen = "welcome";
                 render();
               },
@@ -2036,9 +2080,13 @@
         window.scrollTo({ top: scroll, behavior: "instant" });
       }
       if (identity) {
-        const n = app.querySelector(
+        let n = app.querySelector(
           `[${identity[0]}="${CSS.escape(identity[1])}"]`,
         );
+        if (n?.disabled && n.closest(".solution-navigation"))
+          n = n
+            .closest(".solution-navigation")
+            .querySelector("button:not(:disabled)");
         if (n && !n.disabled && n.getClientRects().length) {
           n.focus({ preventScroll: true });
           if (selection && selection[0] !== null)
@@ -2080,8 +2128,7 @@
   if (test) {
     if (test.initialConfig) {
       config = KZ.normalizeConfig(test.initialConfig);
-      grade = KZ.BY_ID[config.selectedIds[0]].grade;
-      category = KZ.BY_ID[config.selectedIds[0]].category;
+      syncSelection();
     }
     Object.defineProperty(window, "kazoheTest", {
       value: Object.freeze({

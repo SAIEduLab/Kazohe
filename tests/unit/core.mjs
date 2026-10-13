@@ -1264,4 +1264,27 @@ s.check("TC-M73", () => {
   assert.throws(() => Language.forbidden("小", 0));
   assert.equal(Language.readable(null, 1), "");
 });
+s.check("recommendation-with-empty-selection", () => {
+  const saved = K.emptySave();
+  saved.recommendation = {
+    sourceId: "G1-C03",
+    targetId: "G1-C01",
+    reason: "practice",
+  };
+  const current = { ...make().config, selectedIds: [], optionsById: {} };
+  const next = K.recommendConfig(saved, current);
+  same(next.saved.returnStack, []);
+  same(next.config.selectedIds, ["G1-C01"]);
+  next.saved.settings.config = next.config;
+  same(K.validateBackup(JSON.stringify(next.saved)), next.saved);
+  const previous = K.normalizeConfig({
+    selectedIds: ["G2-C08"],
+    mode: "practice",
+    quantity: 10,
+  });
+  saved.returnStack.push(previous);
+  const kept = K.recommendConfig(saved, current);
+  same(kept.saved.returnStack, [previous]);
+  same(saved.returnStack, [previous]);
+});
 s.done();
