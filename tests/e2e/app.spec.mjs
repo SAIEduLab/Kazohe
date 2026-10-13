@@ -757,14 +757,30 @@ test("TC-U13 TC-B07 result review restores every teaching step and keyboard focu
   await page.getByTestId("details").locator("summary").first().click();
   const review = page.locator(".review-item").first();
   await review.locator("details summary").click();
-  const before = await snapshot(page);
   const initial = await review.locator(".support").innerHTML();
   await expect(review.locator(".support")).toHaveAttribute(
     "data-step-index",
     "0",
   );
   await expect(review.getByTestId("review-solution-back")).toBeDisabled();
-  for (let i = 1; i < count; i++)
+  await review.getByTestId("review-solution-forward").press("Enter");
+  const savedBeforeDismiss = (await snapshot(page)).saved;
+  const runBeforeDismiss = (await snapshot(page)).run;
+  await page.getByTestId("dismiss-recommendation").click();
+  await expect(page.getByTestId("details")).toHaveAttribute("open", "");
+  await expect(review.locator("details")).toHaveAttribute("open", "");
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "1",
+  );
+  await expect(review.getByTestId("review-solution-back")).toBeFocused();
+  expect((await snapshot(page)).run).toEqual(runBeforeDismiss);
+  expect((await snapshot(page)).saved).toEqual({
+    ...savedBeforeDismiss,
+    recommendation: null,
+  });
+  const afterDismiss = await snapshot(page);
+  for (let i = 2; i < count; i++)
     await review.getByTestId("review-solution-forward").press("Enter");
   await expect(review.getByTestId("review-solution-back")).toBeFocused();
   await expect(review.getByTestId("review-solution-progress")).toHaveText(
@@ -796,7 +812,30 @@ test("TC-U13 TC-B07 result review restores every teaching step and keyboard focu
   await expect(review.getByTestId("review-solution-forward")).toBeFocused();
   expect(await review.locator(".support").innerHTML()).toBe(initial);
   await page.clock.runFor(1500);
-  expect(await snapshot(page)).toEqual(before);
+  expect(await snapshot(page)).toEqual(afterDismiss);
+  await review.getByTestId("review-solution-forward").press("Enter");
+  await page.getByTestId("again").click();
+  await page.getByTestId("end").click();
+  await page.getByTestId("confirm-accept").click();
+  await page.getByTestId("details").locator("summary").first().click();
+  await review.locator("details summary").click();
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "0",
+  );
+  await review.getByTestId("review-solution-forward").press("Enter");
+  await page.getByTestId("details").locator("summary").first().click();
+  await page.getByTestId("dismiss-recommendation").click();
+  await expect(page.getByTestId("details")).not.toHaveAttribute("open", "");
+  await expect(
+    page.getByTestId("details").locator("summary").first(),
+  ).toBeFocused();
+  await page.getByTestId("details").locator("summary").first().press("Enter");
+  await expect(review.locator("details")).toHaveAttribute("open", "");
+  await expect(review.locator(".support")).toHaveAttribute(
+    "data-step-index",
+    "1",
+  );
 });
 
 test("TC-U06 TC-U17 fraction forms follow the question grade in a mixed-grade practice", async ({
@@ -839,14 +878,23 @@ test("TC-U06 TC-U17 fraction forms follow the question grade in a mixed-grade pr
     await page.getByTestId("submit").click();
     expect((await snapshot(page)).run.phase).toBe("CORRECT_FEEDBACK");
   }
-  for (const [id, spec] of [
-    ["G3-C11", { type: "fraction", reduced: true }],
-    ["G6-C01", { type: "fraction", form: "fraction", reduced: true }],
+  for (const q of [
+    K.complete(
+      K.arithmetic(
+        "G3-C13",
+        K.op("+", K.lit(K.rat(1, 3)), K.lit(K.rat(1, 3))),
+        { type: "fraction", reduced: true },
+      ),
+    ),
+    K.complete(
+      K.arithmetic("G6-C01", K.op("*", K.lit(K.rat(1, 2)), K.lit(1)), {
+        type: "fraction",
+        form: "fraction",
+        reduced: true,
+      }),
+    ),
   ]) {
-    const q = K.complete(
-      K.arithmetic(id, K.op("*", K.lit(K.rat(1, 2)), K.lit(1)), spec),
-    );
-    await start(page, id, { fixedQuestion: q });
+    await start(page, q.challengeId, { fixedQuestion: q });
     const form = page.locator(".form-choice select");
     expect(
       await form.locator("option").evaluateAll((ns) => ns.map((n) => n.value)),
@@ -860,7 +908,7 @@ test("TC-U17 mixed-grade menu language remains at the lowest selected grade when
 }) => {
   await open(page, {
     initialConfig: {
-      selectedIds: ["G6-C01"],
+      selectedIds: ["G6-C01", "G6-C02"],
       mode: "practice",
       quantity: 10,
     },
@@ -869,9 +917,16 @@ test("TC-U17 mixed-grade menu language remains at the lowest selected grade when
   await page.getByTestId("multiple-grades").click();
   await page.locator('[data-grade="1"]').click();
   await page.locator('[data-category="数"]').click();
+  expect((await snapshot(page)).config.selectedIds).toEqual([
+    "G6-C01",
+    "G6-C02",
+  ]);
+  expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(
+    [],
+  );
   await page.locator('[data-challenge="G1-N01"]').check();
   const before = (await snapshot(page)).config;
-  expect(before.selectedIds).toEqual(["G1-N01", "G6-C01"]);
+  expect(before.selectedIds).toEqual(["G1-N01", "G6-C01", "G6-C02"]);
   await page.getByTestId("multiple-grades").click();
   expect((await snapshot(page)).config).toEqual(before);
   expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(

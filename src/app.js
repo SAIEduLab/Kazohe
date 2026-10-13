@@ -42,11 +42,11 @@
     if (!languageReady) return 1;
     if (screen === "play" || screen === "result")
       return run?.config.languageGrade || 1;
-    if (config.selectedIds.length > 1)
-      return Math.min(...config.selectedIds.map((id) => KZ.BY_ID[id].grade));
-    return multiGrade && selectedGrades.size
-      ? Math.min(...selectedGrades)
-      : grade;
+    const grades = [
+      ...(multiGrade ? selectedGrades : [grade]),
+      ...config.selectedIds.map((id) => KZ.BY_ID[id].grade),
+    ];
+    return grades.length ? Math.min(...grades) : grade;
   }
   const button = (label, action, attrs = {}) =>
     el("button", {
@@ -110,7 +110,9 @@
     currentRead = null,
     draftQuestionId = null,
     solutionQuestionId = null,
-    solutionStep = 0;
+    solutionStep = 0,
+    reviewQuestionId = null;
+  const reviewSteps = new Map();
   syncSelection();
   languageReady = true;
   // A restored/recommended configuration replaces every selection control.
@@ -338,11 +340,33 @@
             },
             { "data-testid": "recommendation" },
           ),
-          button("おすすめを消す", () => {
-            saved.recommendation = null;
-            persist();
-            render();
-          }),
+          button(
+            "おすすめを消す",
+            () => {
+              saved.recommendation = null;
+              persist();
+              render();
+              if (screen === "result") {
+                const current = reviewQuestionId
+                  ? app.querySelector(
+                      `[data-review-question="${CSS.escape(reviewQuestionId)}"]`,
+                    )
+                  : null;
+                const details = app.querySelector("[data-result-details]");
+                const review = details?.open
+                  ? current?.open
+                    ? current
+                    : app.querySelector("[data-review-question][open]")
+                  : null;
+                const target =
+                  review?.querySelector(
+                    ".solution-navigation button:not(:disabled)",
+                  ) || details?.querySelector("summary");
+                target?.focus({ preventScroll: true });
+              } else focusFirst();
+            },
+            { "data-testid": "dismiss-recommendation" },
+          ),
         ]),
       ],
       "recommendation",
@@ -944,6 +968,8 @@
   function finish() {
     if (finishSaved) return;
     finishSaved = true;
+    reviewSteps.clear();
+    reviewQuestionId = null;
     clearTimeout(feedbackTimer);
     result = KZ.applyResult(saved, run);
     saved = result.saved;
@@ -1074,12 +1100,13 @@
   function reviewSolution(q) {
     const viewer = el("div", { class: "review-solution" }),
       teaching = KZTeaching.steps(q);
-    let step = 0;
+    let step = reviewSteps.get(q.questionId) || 0;
     const move = (delta = 0) => {
       const focused = viewer.contains(document.activeElement)
         ? document.activeElement.getAttribute("data-testid")
         : null;
       step = Math.max(0, Math.min(step + delta, teaching.length - 1));
+      reviewSteps.set(q.questionId, step);
       viewer.replaceChildren(
         solution(q, step),
         solutionNavigation(step, teaching.length, move, "review-solution"),
@@ -1093,8 +1120,10 @@
           : target
         )?.focus({ preventScroll: true });
       }
-      if (delta)
+      if (delta) {
+        reviewQuestionId = q.questionId;
         announce(`${step + 1}／${teaching.length}。${teaching[step].text}`);
+      }
     };
     move();
     return viewer;
@@ -1692,7 +1721,11 @@
     const m = result.metrics;
     const detail = el(
       "details",
-      { class: "result-details", "data-testid": "details" },
+      {
+        class: "result-details",
+        "data-testid": "details",
+        "data-result-details": "",
+      },
       [
         text("summary", "くわしく見る"),
         text(
@@ -1755,8 +1788,12 @@
                   `正答：${KZ.answerText(r.question)} ／ ${{ correct: "せいかい", help: "助けてもらった", unanswered: "未回答" }[r.terminal]}`,
                 ),
               ),
-              el("details", {}, [
-                text("summary", "とき方を見る"),
+              el("details", { "data-review-question": r.questionId }, [
+                text("summary", "とき方を見る", {
+                  onClick: () => {
+                    reviewQuestionId = r.questionId;
+                  },
+                }),
                 reviewSolution(r.question),
               ]),
             ]),
@@ -2041,7 +2078,10 @@
       details = [...app.querySelectorAll("[data-menu-details]")].map((n) => [
         n.dataset.menuDetails,
         n.open,
-      ]);
+      ]),
+      reviewDetails = [
+        ...app.querySelectorAll("[data-result-details],[data-review-question]"),
+      ].map((n) => [n.getAttribute("data-review-question"), n.open]);
     activeInput = null;
     if (
       screen === "play" &&
@@ -2075,6 +2115,17 @@
       if (screen === "menu") {
         for (const [key, open] of details) {
           const n = app.querySelector(`[data-menu-details="${key}"]`);
+          if (n) n.open = open;
+        }
+        window.scrollTo({ top: scroll, behavior: "instant" });
+      }
+      if (screen === "result") {
+        for (const [key, open] of reviewDetails) {
+          const n = app.querySelector(
+            key === null
+              ? "[data-result-details]"
+              : `[data-review-question="${CSS.escape(key)}"]`,
+          );
           if (n) n.open = open;
         }
         window.scrollTo({ top: scroll, behavior: "instant" });
