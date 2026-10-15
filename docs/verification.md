@@ -33,7 +33,7 @@ TCと担当方法は `scripts/manifest.mjs`、現行仕様の実装所有先と�
 
 Actionsの各ジョブと集約は、対象repository・checkout SHA・head SHA・HTML SHA-256・run/attempt、およびsuiteのPASS/FAIL/NOT_RUNを短いsummaryに出力します。失敗IDとreports内の出力名から、同じrunのログ・artifactを確認できます。欠落はNOT_RUN、不一致や偽PASSはFAILとして示し、summary自体は合格判定を置き換えません。集約は必須証拠を検証してから出力し、失敗理由もaggregate.jsonに残します。
 
-未出力、重複、不一致、失敗、別commit・別runのレポートは集約できません。PRの合成マージSHAを検証のcheckout commitとして記録し、PR head SHAは別に保持します。Playwrightの再試行は0です。生成検証は `DEEP_AUDIT=1` で各技能10,000問に増やせます。
+未出力、重複、不一致、失敗、別commit・別runのレポートは集約できません。PRの合成マージSHAを検証のcheckout commitとして記録し、PR head SHAは別に保持します。math・browser・aggregateはcheckoutと必要なhead commitをdepth 1で取得し、headの版・製品ファイルと検証HTMLを照合します。visualは比較基点と祖先確認のため全履歴を保持します。Playwrightの再試行は0です。生成検証は `DEEP_AUDIT=1` で各技能10,000問に増やせます。
 
 ## 目視と実機
 

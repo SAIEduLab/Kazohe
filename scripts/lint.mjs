@@ -10,7 +10,13 @@ import { execFileSync } from "node:child_process";
 import { parse } from "parse5";
 import { parse as parseJS } from "acorn";
 import { html } from "./load-inline-core.mjs";
-import { suite, hash, summaryRows, executionSummary } from "./report.mjs";
+import {
+  suite,
+  hash,
+  summaryRows,
+  executionSummary,
+  expectedExecution,
+} from "./report.mjs";
 import { collectEvidence } from "./aggregate-evidence.mjs";
 import { manifest, tcIds } from "./manifest.mjs";
 import { K } from "./load-inline-core.mjs";
@@ -220,6 +226,35 @@ s.check("TC-D05", () => {
 });
 s.check("TC-D06", () => {
   assert.throws(() => validateEvidence({}, hash, manifest));
+  const execution = expectedExecution();
+  const environment = Object.fromEntries(
+    ["GITHUB_ACTIONS", "GITHUB_SHA", "AUDIT_HEAD_SHA"].map((key) => [
+      key,
+      process.env[key],
+    ]),
+  );
+  try {
+    process.env.GITHUB_ACTIONS = "true";
+    process.env.GITHUB_SHA = "0".repeat(40);
+    assert.throws(() => expectedExecution(), /Checked-out commit differs/);
+    process.env.GITHUB_SHA = execution.runCommit;
+    process.env.AUDIT_HEAD_SHA = "0".repeat(40);
+    assert.throws(() =>
+      execFileSync(
+        process.execPath,
+        [
+          "--input-type=module",
+          "--eval",
+          "import { expectedExecution } from './scripts/report.mjs'; expectedExecution();",
+        ],
+        { stdio: "pipe" },
+      ),
+    );
+  } finally {
+    for (const [key, value] of Object.entries(environment))
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+  }
   const fixture = {
     repository: "SAIEduLab/Kazohe",
     runId: "123",

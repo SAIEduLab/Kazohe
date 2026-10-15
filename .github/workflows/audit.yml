@@ -28,12 +28,12 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Resolve versioned product
         run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
-          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          git fetch --depth=1 --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
@@ -77,12 +77,12 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Resolve versioned product
         run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
-          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          git fetch --depth=1 --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
@@ -169,12 +169,12 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Resolve versioned product
         run: node scripts/artifact.mjs --github-env
       - name: Verify tested checkout and PR head HTML
         run: |
-          git fetch --no-tags origin "$AUDIT_HEAD_SHA"
+          git fetch --depth=1 --no-tags origin "$AUDIT_HEAD_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git show "$AUDIT_HEAD_SHA:$APP_HTML" | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$APP_HTML" | cut -d' ' -f1)"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
