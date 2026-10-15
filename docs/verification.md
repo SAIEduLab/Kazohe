@@ -31,6 +31,8 @@
 
 TCと担当方法は `scripts/manifest.mjs`、現行仕様の実装所有先とテスト群は `tests/fixtures/implementation-map.json` で管理します。TC-D01は公開文書・GitHub Pages用紹介ページの必須内容とリンク、TC-D04は現行カタログの整合を検査します。TC-D08は紹介ページのレスポンシブ表示、主要導線、キーボード操作、アクセシビリティ、外部通信なしを3ブラウザで検査します。TC-D02は独立したID範囲を基準に、欠落・重複・参照切れを検出します。
 
+Actionsの各ジョブと集約は、対象repository・checkout SHA・head SHA・HTML SHA-256・run/attempt、およびsuiteのPASS/FAIL/NOT_RUNを短いsummaryに出力します。失敗IDとreports内の出力名から、同じrunのログ・artifactを確認できます。欠落はNOT_RUN、不一致や偽PASSはFAILとして示し、summary自体は合格判定を置き換えません。集約は必須証拠を検証してから出力し、失敗理由もaggregate.jsonに残します。
+
 未出力、重複、不一致、失敗、別commit・別runのレポートは集約できません。PRの合成マージSHAを検証のcheckout commitとして記録し、PR head SHAは別に保持します。Playwrightの再試行は0です。生成検証は `DEEP_AUDIT=1` で各技能10,000問に増やせます。
 
 ## 目視と実機

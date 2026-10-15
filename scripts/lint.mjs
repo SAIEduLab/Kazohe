@@ -10,7 +10,8 @@ import { execFileSync } from "node:child_process";
 import { parse } from "parse5";
 import { parse as parseJS } from "acorn";
 import { html } from "./load-inline-core.mjs";
-import { suite, hash } from "./report.mjs";
+import { suite, hash, summaryRows, executionSummary } from "./report.mjs";
+import { collectEvidence } from "./aggregate-evidence.mjs";
 import { manifest, tcIds } from "./manifest.mjs";
 import { K } from "./load-inline-core.mjs";
 import { validateEvidence, validManualProvenance } from "./release-gate.mjs";
@@ -297,6 +298,127 @@ s.check("TC-D06", () => {
     ].map((id) => ({ id, width, changedPixels: 0 })),
   );
   assert(validateEvidence(sample, hash, manifest, fixture));
+  const inputsFor = (reports) => [
+    ...Object.entries(reports)
+      .filter(([name]) => name !== "e2e")
+      .map(([name, result]) => ({ path: `artifacts/${name}.json`, result })),
+    ...["chromium", "firefox", "webkit"].map((browser) => ({
+      path: `artifacts/e2e-${browser}.json`,
+      result: {
+        ...reports.e2e,
+        cases: reports.e2e.cases.filter((c) => c.browser === browser),
+      },
+    })),
+  ];
+  const inputs = inputsFor(sample);
+  assert(collectEvidence(inputs, fixture));
+  const names = inputs.map((i) => i.path.split("/").at(-1).slice(0, -5));
+  assert(summaryRows(inputs, fixture, names).every((r) => r.status === "PASS"));
+  const markdown = executionSummary(inputs, fixture, names, "success");
+  for (const value of [
+    fixture.repository,
+    fixture.runCommit,
+    fixture.headCommit,
+    hash,
+    "run: 123",
+    "attempt: 1",
+    "[Logs]",
+    "[Artifacts]",
+    "NOT_RUN",
+  ])
+    assert(markdown.includes(value), value);
+  assert.equal(summaryRows([], fixture, ["unit"])[0].status, "NOT_RUN");
+  for (const patch of [
+    { commit: fixture.headCommit },
+    { htmlSha256: "different HTML" },
+    ...[
+      { repository: "other/repo" },
+      { runId: "old run" },
+      { runAttempt: "2" },
+      { headCommit: "d".repeat(40) },
+      { headHtmlSha256: "different HTML" },
+    ].map((change) => ({ execution: { ...fixture, ...change } })),
+  ]) {
+    const different = inputs.map((i) =>
+      i.result.suite === "unit"
+        ? { ...i, result: { ...i.result, ...patch } }
+        : i,
+    );
+    assert.equal(summaryRows(different, fixture, ["unit"])[0].status, "FAIL");
+    assert.throws(() => collectEvidence(different, fixture));
+  }
+  for (const badInputs of [
+    [...inputs, inputs.find((i) => i.result.suite === "unit")],
+    inputs.map((i) => (i.result.suite === "unit" ? { ...i, result: null } : i)),
+    inputs.map((i) =>
+      i.result.suite === "unit"
+        ? { ...i, result: { ...i.result, cases: [] } }
+        : i,
+    ),
+    inputs.map((i) =>
+      i.result.suite === "unit"
+        ? {
+            ...i,
+            result: {
+              ...i.result,
+              cases: [
+                {
+                  id: "exception",
+                  status: "FAIL",
+                  actual: "exception | <error>\nstack",
+                },
+              ],
+            },
+          }
+        : i,
+    ),
+    inputs.map((i) =>
+      i.result.suite === "unit"
+        ? {
+            ...i,
+            result: {
+              ...i.result,
+              cases: [{ id: "skipped", status: "NOT_RUN" }],
+            },
+          }
+        : i,
+    ),
+  ]) {
+    assert.equal(summaryRows(badInputs, fixture, ["unit"])[0].status, "FAIL");
+    assert.throws(() => collectEvidence(badInputs, fixture));
+  }
+  const timedOut = inputs.map((i) =>
+    i.path.endsWith("e2e-firefox.json")
+      ? { ...i, result: { ...i.result, runnerStatus: "timedout" } }
+      : i,
+  );
+  assert.equal(
+    summaryRows(timedOut, fixture, ["e2e-firefox"])[0].status,
+    "FAIL",
+  );
+  assert.throws(() => collectEvidence(timedOut, fixture));
+  const failedGate = [
+    {
+      path: "reports/aggregate.json",
+      result: {
+        ...sample.unit,
+        suite: "aggregate",
+        cases: [
+          {
+            id: "automatic-evidence",
+            status: "FAIL",
+            actual: "Missing case: TC-M01/unit",
+          },
+        ],
+        status: "FAIL",
+      },
+    },
+  ];
+  assert(
+    executionSummary(failedGate, fixture, ["aggregate"], "failure").includes(
+      "TC-M01/unit",
+    ),
+  );
   const reviewed = {
     htmlSha256: hash,
     targetRepository: "SAIEduLab/Kazohe",
@@ -376,6 +498,7 @@ s.check("TC-D06", () => {
     const invalid = structuredClone(sample);
     mutate(invalid);
     assert.throws(() => validateEvidence(invalid, hash, manifest, fixture));
+    assert.throws(() => collectEvidence(inputsFor(invalid), fixture));
   }
 });
 s.check("TC-D07", () => {
