@@ -165,6 +165,7 @@ s.check("TC-D04", () => {
   assert.equal(JSON.stringify(K.CATALOG), JSON.stringify(source));
   assert.equal(JSON.stringify(K.CATALOG), JSON.stringify(oracle));
   assert.equal(K.CATALOG.length, 101);
+  assert.equal(new Set(K.CATALOG.map((c) => c.id)).size, 101);
 });
 s.check("TC-D05", () => {
   const codes = new Set([
