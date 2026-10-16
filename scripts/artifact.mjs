@@ -47,8 +47,7 @@ export function verifyCheckout(
   full = process.argv.includes("--full"),
 ) {
   const head = env.AUDIT_HEAD_SHA;
-  if (!/^[0-9a-f]{40}$/.test(head ?? ""))
-    throw Error("AUDIT_HEAD_SHA missing");
+  if (!/^[0-9a-f]{40}$/.test(head ?? "")) throw Error("AUDIT_HEAD_SHA missing");
   const git = (args, encoding = "utf8") =>
     execFileSync("git", args, { encoding, maxBuffer: 20 * 1024 * 1024 });
   git(["fetch", ...(full ? [] : ["--depth=1"]), "--no-tags", "origin", head]);
