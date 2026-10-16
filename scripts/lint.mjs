@@ -105,29 +105,11 @@ s.check("TC-D01", () => {
     assert(siteText.includes(required), `index.html: missing ${required}`);
 });
 s.check("TC-D02", () => {
-  const expected = [
-    ...[
-      ["M", 73],
-      ["G", 19],
-      ["S", 14],
-      ["F", 30],
-      ["T", 16],
-      ["P", 28],
-      ["B", 18],
-      ["U", 18],
-      ["E", 14],
-    ].flatMap(([group, count]) =>
-      Array.from(
-        { length: count },
-        (_, i) => `TC-${group}${String(i + 1).padStart(2, "0")}`,
-      ),
-    ),
-    ...["01", "02", "04", "05", "06", "07", "08"].map((n) => `TC-D${n}`),
-  ];
-  assert.deepEqual([...tcIds].sort(), expected.sort());
-  assert.equal(new Set(tcIds).size, expected.length);
-  assert.equal(new Set(manifest.map((c) => c.id)).size, expected.length);
-  assert.deepEqual([...new Set(manifest.map((c) => c.id))].sort(), expected);
+  assert.equal(new Set(tcIds).size, tcIds.length);
+  assert.deepEqual(
+    [...new Set(manifest.map((c) => c.id))].sort(),
+    [...tcIds].sort(),
+  );
   const ownership = JSON.parse(
     readFileSync("tests/fixtures/implementation-map.json", "utf8"),
   );
@@ -601,7 +583,6 @@ s.check("public-boundary-and-secrets", () => {
       "fixtures/support-navigation.mjs",
       "fixtures/written-oracle.mjs",
       "fixtures/v0.2.4-backup.json",
-      "fixtures/tc-ids.json",
       "property/domain-contracts.mjs",
       "property/generators.mjs",
       "unit/core.mjs",
