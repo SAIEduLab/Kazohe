@@ -183,7 +183,7 @@ export function executionSummary(
     "",
     ...(run ? [`[Logs](${run}) · [Artifacts](${run}#artifacts)`] : []),
     "Reported results only. Job results and aggregate/release validation determine acceptance; missing reports are NOT_RUN.",
-    "Manual visual review / physical devices: NOT_RUN unless separately verified.",
+    "Visual review and physical devices are owner checks recorded in tests/evidence/visual-review.json, outside this run.",
     "",
   ].join("\n");
 }

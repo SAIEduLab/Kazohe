@@ -1,14 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { K } from "./load-inline-core.mjs";
 import { suite } from "./report.mjs";
-const s = suite("catalog"),
-  reference = JSON.parse(readFileSync("tests/fixtures/catalog.json", "utf8"));
-s.check("catalog-metadata", () => {
-  assert.equal(JSON.stringify(K.CATALOG), JSON.stringify(reference));
-  assert.equal(K.CATALOG.length, 101);
-  assert.equal(new Set(K.CATALOG.map((c) => c.id)).size, 101);
-});
+// Equality with src/catalog.json and the independent fixture is TC-D04 (lint).
+const s = suite("catalog");
 s.check("catalog-connected-functions", () => {
   for (const c of K.CATALOG) {
     assert(c.sourceCodes.every((x) => /^M[1-6]A[1-7]$/.test(x)));

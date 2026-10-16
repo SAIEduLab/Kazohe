@@ -50,9 +50,9 @@ npm run audit:release -- --machine-only
 
 画像比較は新Public内の別commitにあるHTMLと候補を同じブラウザで撮影します。PRではbase、pushでは更新前のcommitを基点にします。別の基点は環境変数 `VISUAL_BASE_REF` にcommitを指定できます。基点が取得できなければ失敗します。差分画像の生成成功は、見やすさの合格を意味しません。
 
-結果は `reports/`、スクリーンショットは `reports/screens/`、画像比較は `reports/visual-diff/index.html` に生成します。レポートには対象HTMLのSHA-256が付きます。検証の対応と制限は [検証ガイド](docs/verification.md) を参照してください。旧環境の目視結果は新しい検証の合格として引き継ぎません。
+結果は `reports/`、スクリーンショットは `reports/screens/`、画像比較は `reports/visual-diff/index.html` に生成します。レポートには対象HTMLのSHA-256が付きます。検証の対応と制限は [検証ガイド](docs/verification.md) を参照してください。
 
-通常の `npm run audit:release` は目視・実機の証跡も要求します。`--machine-only` の成功は自動検証済み候補であり、正式リリースの判定ではありません。GitHub Actionsはpush・pull_request・手動実行で起動し、数学・教材、3ブラウザの並列検査、画像比較、同じHTMLの証跡集約を行います。公開やマージは行いません。
+目視・実機・児童の利用観察は所有者が行い、`tests/evidence/visual-review.json` に記録します。正式リリースの `npm run audit:release` はこの記録を要求し、日常の自動検証は `--machine-only` で行います。GitHub Actionsはmainへのpush・pull_request・手動実行で起動し、数学・教材、3ブラウザの並列検査、画像比較、同じHTMLの証跡集約を行います。公開やマージは行いません。
 
 このPublicリポジトリは、実装、テスト、GitHub Actions、公開リリースの作業場所として使用します。
 
