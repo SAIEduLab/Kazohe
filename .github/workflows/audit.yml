@@ -53,7 +53,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve mathematics evidence
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kazohe-math-${{ github.sha }}
           path: |
@@ -101,7 +101,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve browser evidence even when assertions fail
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kazohe-browser-${{ matrix.engine }}-${{ github.sha }}
           path: |
@@ -139,7 +139,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve comparison images for visual review
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kazohe-visual-${{ github.sha }}
           path: reports/
@@ -163,7 +163,7 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: kazohe-*-${{ github.sha }}
           path: .artifacts
@@ -178,7 +178,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Upload aggregate evidence
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kazohe-aggregate-${{ github.sha }}
           path: reports/
@@ -186,7 +186,7 @@ jobs:
           retention-days: 3
       - name: Upload automatically checked candidate (not a release)
         if: ${{ success() }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kazohe-checked-candidate-${{ github.sha }}
           path: ${{ env.APP_HTML }}
