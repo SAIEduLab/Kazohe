@@ -1,7 +1,25 @@
-import { readFileSync } from "node:fs";
-export const tcIds = JSON.parse(
-  readFileSync("tests/fixtures/tc-ids.json", "utf8"),
-);
+// The single registry of test-case IDs: group letter and number of cases.
+// Adding or removing a case means changing the count here.
+export const tcGroups = [
+  ["M", 73],
+  ["G", 19],
+  ["S", 14],
+  ["F", 30],
+  ["T", 16],
+  ["P", 28],
+  ["B", 18],
+  ["U", 18],
+  ["E", 14],
+];
+export const tcIds = [
+  ...tcGroups.flatMap(([group, count]) =>
+    Array.from(
+      { length: count },
+      (_, i) => `TC-${group}${String(i + 1).padStart(2, "0")}`,
+    ),
+  ),
+  ...["01", "02", "04", "05", "06", "07", "08"].map((n) => `TC-D${n}`),
+];
 export const manifest = tcIds.flatMap((id) => {
   if (/^TC-E/.test(id)) return [{ id, method: "pedagogy" }];
   if (/^TC-U/.test(id))
