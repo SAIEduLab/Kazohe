@@ -1,4 +1,61 @@
 {
   "changes": [],
-  "allowances": []
+  "allowances": [
+    {
+      "change": "source-read-allowance:scripts/artifact.mjs#1",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: verifyCheckout hashes the versioned product HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#1",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#2",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#3",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#4",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#5",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#6",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#7",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#8",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#9",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#10",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/build.mjs#11",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: build.mjs reads src/ inputs to assemble the single-file HTML."
+    },
+    {
+      "change": "source-read-allowance:scripts/lint.mjs#1",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: TC-D04 verifies src/catalog.json against the embedded catalog."
+    },
+    {
+      "change": "source-read-allowance:scripts/load-inline-core.mjs#1",
+      "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: canonical shared reader loads the built product HTML."
+    }
+  ]
 }
