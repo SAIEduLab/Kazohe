@@ -385,8 +385,7 @@ export function timerPromiseIssues(texts, counts = TIMER_PROMISE_COUNTS) {
 // 3. Raw reads of src/ or product HTML as text (shrink-only).
 export const SOURCE_READ_BASELINE = Object.freeze({
   "scripts/artifact.mjs": 1,
-  "scripts/build.mjs": 11,
-  "scripts/lint.mjs": 1,
+  "scripts/build.mjs": 5,
   "scripts/load-inline-core.mjs": 1,
 });
 export const SCOPED_SOURCE_READS = Object.freeze({});

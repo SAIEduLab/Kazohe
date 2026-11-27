@@ -1,57 +1,96 @@
 /* Chronological teaching states. Each state is complete, so going back restores every mark. */
-const KZTeaching = (() => {
-  const clone = KZ.clone;
-  const places = (value) =>
-    (KZ.format(value, "decimal").split(".")[1] || "").length;
-  const coefficient = (value, scale) =>
-    (BigInt(value.n) * 10n ** BigInt(scale)) / BigInt(value.d);
-  const decimal = (value, scale) => {
-    const s = String(value).padStart(scale + 1, "0");
-    return scale ? s.slice(0, -scale) + "." + s.slice(-scale) : s;
-  };
-  const place = (column, scale = 0) =>
-    column < scale
-      ? `小数第${scale - column}位`
-      : `${["一", "十", "百", "千", "万"][column - scale] || 10 ** (column - scale)}の位`;
-  const signs = { "+": "＋", "-": "−", "*": "×", "/": "÷" };
-  const show = (v) =>
-    KZ.format(v, Number.isFinite(KZ.decimalPlaces(v)) ? "decimal" : "fraction");
-  const rawFraction = (node) => {
-    const v = KZ.evaluate(node),
-      label = node.label || "";
+import { clone } from "./00-prelude.ts";
+import {
+  OP_SIGNS,
+  answerText,
+  calc,
+  coefficient,
+  decimal,
+  decimalPlaces,
+  evaluate,
+  expectNumeric,
+  expectQuotient,
+  expectRational,
+  expression,
+  format,
+  gcd,
+  generalHint,
+  lcm,
+  lit,
+  op,
+  placeName,
+  rat,
+  roundExact,
+} from "./02-math.ts";
+import type {
+  ArithmeticOp,
+  ExprBinary,
+  ExprNode,
+  KZTeachingApi,
+  NumericInput,
+  Question,
+  Rational,
+  TeachingStep,
+  WrittenBoard,
+  WrittenRow,
+} from "../types/contracts.d.ts";
+
+interface RawFraction {
+  n: bigint;
+  d: bigint;
+  mixed?: RegExpMatchArray;
+}
+
+export const KZTeaching: KZTeachingApi = (() => {
+  const places = (value: NumericInput): number =>
+    (format(value, "decimal").split(".")[1] || "").length;
+  const show = (v: NumericInput): string =>
+    format(v, Number.isFinite(decimalPlaces(v)) ? "decimal" : "fraction");
+  const rawFraction = (node: ExprNode): RawFraction => {
+    const v = evaluate(node);
+    const label = node.label || "";
     const mixed = label.match(/^(\d+)と(\d+)\/(\d+)$/);
     const fraction = label.match(/^(\d+)\/(\d+)$/);
-    if (mixed)
+    if (mixed) {
       return {
         n: BigInt(mixed[1]) * BigInt(mixed[3]) + BigInt(mixed[2]),
         d: BigInt(mixed[3]),
         mixed,
       };
+    }
     if (fraction) return { n: BigInt(fraction[1]), d: BigInt(fraction[2]) };
     return { n: BigInt(v.n), d: BigInt(v.d) };
   };
-  function explain(q) {
-    const out = [],
-      id = q.challengeId,
-      ast = q.expressionAST;
-    const emit = (text, extra = {}) =>
+
+  function explain(q: Question): TeachingStep[] {
+    const out: TeachingStep[] = [];
+    const id = q.challengeId;
+    const ast = q.expressionAST;
+    const emit = (text: string, extra: Partial<TeachingStep> = {}): number =>
       out.push({ kind: "text", text, ...extra });
-    const numericText = (v) =>
-      typeof v === "object" ? KZ.format(v) : String(v);
-    const checked = (text, op, a, b, value, extra = {}) =>
+    const numericText = (v: NumericInput): string =>
+      typeof v === "object" ? format(v) : String(v);
+    const checked = (
+      text: string,
+      operator: ArithmeticOp,
+      a: NumericInput,
+      b: NumericInput,
+      value: NumericInput,
+      extra: Partial<TeachingStep> = {},
+    ): number =>
       emit(text, {
         check: {
-          op,
+          op: operator,
           a: numericText(a),
           b: numericText(b),
           result: numericText(value),
         },
         ...extra,
       });
-    const reduce = (n, d) => {
-      const g = KZ.gcd(n, d);
+    const reduce = (n: bigint, d: bigint): void => {
+      const g = gcd(n, d);
       if (g > 1n) {
-        const candidates = [];
+        const candidates: bigint[] = [];
         emit(`約分に使う数を探すため、分子${n}を整数のかけ算の組に分ける。`);
         if (n === 0n) {
           emit(
@@ -59,7 +98,7 @@ const KZTeaching = (() => {
           );
           candidates.push(d);
         }
-        for (let factor = 1n; factor * factor <= n; factor++)
+        for (let factor = 1n; factor * factor <= n; factor++) {
           if (n % factor === 0n) {
             const partner = n / factor;
             candidates.push(factor, partner);
@@ -71,7 +110,8 @@ const KZTeaching = (() => {
               n,
             );
           }
-        const shared = [...new Set(candidates.map(String))]
+        }
+        const shared = [...new Set<string>(candidates.map(String))]
           .map(BigInt)
           .filter((factor) => d % factor === 0n)
           .sort((a, b) => (a < b ? -1 : 1));
@@ -90,14 +130,15 @@ const KZTeaching = (() => {
           d / g,
         );
         emit(`${n}/${d}＝${n / g}/${d / g}。`, { intent: "reduction" });
-      } else
+      } else {
         emit(
           `${n}と${d}を両方わる1より大きい整数はないので、これ以上約分しない。`,
         );
+      }
     };
-    const convert = (node) => {
-      const f = rawFraction(node),
-        v = KZ.evaluate(node);
+    const convert = (node: ExprNode): RawFraction => {
+      const f = rawFraction(node);
+      const v = evaluate(node);
       if (f.mixed) {
         const [, w, n, d] = f.mixed;
         emit(
@@ -120,30 +161,35 @@ const KZTeaching = (() => {
       } else if (
         !node.label?.includes("/") &&
         v.d !== "1" &&
-        KZ.decimalPlaces(v) <= 4
+        decimalPlaces(v) <= 4
       ) {
-        const s = KZ.format(v, "decimal"),
-          scale = places(v),
-          d = 10n ** BigInt(scale),
-          n = coefficient(v, scale);
+        const s = format(v, "decimal");
+        const scale = places(v);
+        const d = 10n ** BigInt(scale);
+        const n = coefficient(v, scale);
         emit(`${s}は1/${d}が${n}個分。小数を分数にすると${n}/${d}。`);
         reduce(n, d);
         emit(`この先は${s}＝${v.n}/${v.d}として計算する。`, {
           intent: "conversion",
         });
-      } else if (f.d === 1n)
+      } else if (f.d === 1n) {
         emit(`整数${f.n}は${f.n}/1。分母1の分数としても表せる。`);
+      }
       return f;
     };
-    const common = (a, b, forced) => {
-      const d = forced ? BigInt(forced) : KZ.lcm(a.d, b.d);
+    const common = (
+      a: RawFraction,
+      b: RawFraction,
+      forced?: string,
+    ): { d: bigint; an: bigint; bn: bigint } => {
+      const d = forced ? BigInt(forced) : lcm(a.d, b.d);
       if (a.d !== b.d) {
         emit(
           `1/${a.d}と1/${b.d}は1個分の大きさが違う。分母をそろえてから個数を計算する。`,
           { intent: "common-unit" },
         );
         for (const divisor of [a.d, b.d]) {
-          const multiples = [];
+          const multiples: bigint[] = [];
           for (let n = divisor; n <= d; n += divisor) multiples.push(n);
           emit(`${divisor}の倍数を順に見る：${multiples.join("、")}。`);
         }
@@ -151,11 +197,12 @@ const KZTeaching = (() => {
           `${a.d}と${b.d}の共通の倍数を探す。${d}は${a.d}×${d / a.d}と${b.d}×${d / b.d}の両方で作れる。`,
           { intent: "denominator-choice" },
         );
-      } else
+      } else {
         emit(
           `どちらも1/${d}が1個分。分母${d}はそのまま、分子の個数を計算する。`,
         );
-      for (const v of [a, b])
+      }
+      for (const v of [a, b]) {
         if (v.d !== d) {
           const m = d / v.d;
           checked(
@@ -174,16 +221,19 @@ const KZTeaching = (() => {
             { intent: "equivalence" },
           );
         }
+      }
       return { d, an: a.n * (d / a.d), bn: b.n * (d / b.d) };
     };
-    const rounding = (value, p) => {
-      const rounded = KZ.roundExact(value, p),
-        unit = 10n ** BigInt(-p),
-        n = BigInt(value),
-        digit = (n / (unit / 10n)) % 10n;
-      emit(`${place(-p)}まで残す。その1つ右の${place(-p - 1)}の数字で決める。`);
+    const rounding = (value: string | number | bigint, p: number): void => {
+      const rounded = roundExact(value, p);
+      const unit = 10n ** BigInt(-p);
+      const n = BigInt(value);
+      const digit = (n / (unit / 10n)) % 10n;
       emit(
-        `${value}の${place(-p - 1)}は${digit}。${digit >= 5n ? "5以上なので、残す数を1増やす" : "5未満なので、残す数はそのまま"}。`,
+        `${placeName(-p)}まで残す。その1つ右の${placeName(-p - 1)}の数字で決める。`,
+      );
+      emit(
+        `${value}の${placeName(-p - 1)}は${digit}。${digit >= 5n ? "5以上なので、残す数を1増やす" : "5未満なので、残す数はそのまま"}。`,
         { intent: "round-decision" },
       );
       emit(
@@ -191,17 +241,17 @@ const KZTeaching = (() => {
         { intent: "round-result" },
       );
     };
-    const divisors = (n) => {
-      const found = [];
+    const divisors = (n: bigint): string[] => {
+      const found: bigint[] = [];
       emit(`${n}をかけ算の2つの整数の組に分ける。割り切れる整数が約数になる。`);
       for (let a = 1n; a * a <= n; a++) {
-        const b = n / a,
-          rem = n % a;
-        if (rem)
+        const b = n / a;
+        const rem = n % a;
+        if (rem) {
           emit(
             `${n}÷${a}＝${b} あまり${rem}。割り切れないので${a}は約数に入れない。`,
           );
-        else {
+        } else {
           found.push(a, b);
           checked(
             `${a}×${b}＝${n}。${a}${a === b ? "" : `と${b}`}は約数。`,
@@ -215,87 +265,102 @@ const KZTeaching = (() => {
       emit(
         `これ以上は同じ組を逆に探すことになる。重複を取り、小さい順に並べる。`,
       );
-      return [...new Set(found.map(String))].sort((a, b) =>
+      return [...new Set<string>(found.map(String))].sort((a, b) =>
         BigInt(a) < BigInt(b) ? -1 : 1,
       );
     };
-    if (q.task === "compare") {
+
+    if (q.task === "compare" && q.values) {
+      const v0 = expectNumeric(q.values[0]);
+      const v1 = expectNumeric(q.values[1]);
       emit(
-        `${q.labels?.[0] || show(q.values[0])}と${q.labels?.[1] || show(q.values[1])}を比べる。どこが同じで、どこが違うか順に確かめる。`,
+        `${q.labels?.[0] || show(v0)}と${q.labels?.[1] || show(v1)}を比べる。どこが同じで、どこが違うか順に確かめる。`,
         { intent: "focus" },
       );
       if (["G3-N06", "G5-N09"].includes(id)) {
-        const a = rawFraction(KZ.lit(q.values[0], q.labels?.[0])),
-          b = rawFraction(KZ.lit(q.values[1], q.labels?.[1]));
+        const a = rawFraction(lit(v0, q.labels?.[0]));
+        const b = rawFraction(lit(v1, q.labels?.[1]));
         const { d, an, bn } = common(a, b);
         emit(
           `同じ1/${d}の個数を比べる：${an} ${an < bn ? "＜" : an > bn ? "＞" : "＝"} ${bn}。`,
           { intent: "comparison" },
         );
       } else {
-        const scale = Math.max(...q.values.map(places)),
-          values = q.values.map((v) => decimal(coefficient(v, scale), scale));
-        if (scale)
+        const numVals = q.values.map(expectNumeric);
+        const scale = Math.max(...numVals.map(places));
+        const values = numVals.map((v) => decimal(coefficient(v, scale), scale));
+        if (scale) {
           emit(
-            `小数の右に0を補っても大きさは変わらない。${q.values.map((v, i) => `${show(v)}＝${values[i]}`).join("、")}。小数点をそろえる。`,
+            `小数の右に0を補っても大きさは変わらない。${numVals.map((v, i) => `${show(v)}＝${values[i]}`).join("、")}。小数点をそろえる。`,
           );
-        const a = values[0].replace(".", ""),
-          b = values[1].replace(".", "");
-        if (a.length !== b.length)
+        }
+        const a = values[0].replace(".", "");
+        const b = values[1].replace(".", "");
+        if (a.length !== b.length) {
           emit(
             `左は${a.length - scale}桁、右は${b.length - scale}桁の整数部分。大きい位まである方が大きい。`,
           );
-        else
+        } else {
           for (let i = 0; i < a.length; i++) {
             emit(
-              `${place(a.length - i - 1, scale)}は${a[i]}と${b[i]}。${a[i] === b[i] ? (i + 1 < a.length ? "同じなので次の位を見る。" : "最後まで同じなので、2つの数は同じ。") : `${a[i]}${a[i] < b[i] ? "＜" : "＞"}${b[i]}なので、ここで大小が決まる。`}`,
+              `${placeName(a.length - i - 1, scale)}は${a[i]}と${b[i]}。${a[i] === b[i] ? (i + 1 < a.length ? "同じなので次の位を見る。" : "最後まで同じなので、2つの数は同じ。") : `${a[i]}${a[i] < b[i] ? "＜" : "＞"}${b[i]}なので、ここで大小が決まる。`}`,
               { intent: "comparison" },
             );
             if (a[i] !== b[i]) break;
           }
+        }
       }
-    } else if (q.task === "blocks") {
+    } else if (q.task === "blocks" && q.values) {
       emit(`${q.prompt}。まとまりの大きさごとに分けて考える。`, {
         intent: "focus",
       });
-      const units =
+      const units: bigint[] =
         id === "G1-N02"
           ? [10n, 1n]
           : id === "G2-N02"
             ? [1n, 10n, 100n, 1000n]
             : [1n, 10000n, 100000000n, 1000000000000n];
-      let rest = q.values.reduce((sum, v, i) => sum + BigInt(v) * units[i], 0n);
+      let rest = q.values.reduce<bigint>(
+        (sum, v, i) => sum + BigInt(typeof v === "object" ? v.n : v) * units[i],
+        0n,
+      );
+      const specLabels = q.answerSpec.labels || [];
       for (const i of units
-        .map((_, i) => i)
+        .map((_, idx) => idx)
         .sort((a, b) => (units[a] > units[b] ? -1 : 1))) {
-        const u = units[i],
-          count = rest / u,
-          next = rest % u;
+        const u = units[i];
+        const count = rest / u;
+        const next = rest % u;
         emit(
-          `${rest}の中から${u}のまとまりを取り出す。${count > 0n && count <= 9n ? `${Array(Number(count)).fill(String(u)).join("＋")}＝${count * u}` : `${u}のまとまり${count}個で${count * u}`}。だから${q.answerSpec.labels[i]}は${count}個。${count === 0n ? "このまとまりがないので0を書く。" : "対応する欄へ個数を書く。"}`,
+          `${rest}の中から${u}のまとまりを取り出す。${count > 0n && count <= 9n ? `${Array<string>(Number(count)).fill(String(u)).join("＋")}＝${count * u}` : `${u}のまとまり${count}個で${count * u}`}。だから${specLabels[i]}は${count}個。${count === 0n ? "このまとまりがないので0を書く。" : "対応する欄へ個数を書く。"}`,
         );
-        if (u > 1n)
+        if (u > 1n) {
           emit(
             `${rest}−${count * u}＝${next}。取り出したまとまりを除いた${next}を、次の小さいまとまりに分ける。`,
           );
+        }
         rest = next;
       }
-    } else if (q.task === "parity") {
-      const n = BigInt(q.values[0]),
-        r = n % 2n;
+    } else if (q.task === "parity" && q.values) {
+      const v0 = q.values[0];
+      const n = BigInt(typeof v0 === "object" ? v0.n : v0);
+      const r = n % 2n;
       emit(`${n}を2個ずつの組に分けられるか確かめる。`, { intent: "focus" });
       emit(
         `${n}＝2×${n / 2n}${r ? "＋1" : ""}。${r ? "1個余るので奇数" : "余りが0なので偶数"}。${n === 0n ? "0も2×0で表せる。" : ""}`,
       );
-    } else if (["divisors", "gcd", "lcm"].includes(q.task)) {
+    } else if (["divisors", "gcd", "lcm"].includes(q.task) && q.values) {
+      const strVals = q.values.map((v) =>
+        typeof v === "object" ? v.n : String(v),
+      );
       if (q.task === "lcm") {
         emit(
-          `${q.values.join("と")}の倍数を小さい順に作り、最初に同じになる数を探す。`,
+          `${strVals.join("と")}の倍数を小さい順に作り、最初に同じになる数を探す。`,
           { intent: "focus" },
         );
-        const end = BigInt(q.expectedExactValue.n);
-        for (const n of q.values.map(BigInt))
-          for (let i = 1n; n * i <= end; i++)
+        const end = BigInt(expectRational(q.expectedExactValue).n);
+        for (const n of strVals.map(BigInt)) {
+          for (let i = 1n; n * i <= end; i++) {
             checked(
               `${n}の${i}番目の正の倍数：${n}×${i}＝${n * i}。`,
               "*",
@@ -303,43 +368,48 @@ const KZTeaching = (() => {
               i,
               n * i,
             );
+          }
+        }
         emit(`両方に最初に出てきた数が${end}。これが最小公倍数。`);
       } else {
-        const sets = q.values.map((n) => divisors(BigInt(n)));
-        sets.forEach((ds, i) =>
-          emit(`${q.values[i]}の約数：${ds.join("、")}。`),
-        );
+        const sets = strVals.map((n) => divisors(BigInt(n)));
+        sets.forEach((ds, i) => emit(`${strVals[i]}の約数：${ds.join("、")}。`));
         if (q.task === "gcd") {
           const both = sets[0].filter((x) => sets[1].includes(x));
           emit(`両方にある約数は${both.join("、")}。共通のものだけを残す。`);
           emit(`この中で一番大きい${both.at(-1)}が最大公約数。`);
         }
       }
-    } else if (q.task === "round") rounding(q.values[0], q.places);
-    else if (q.task === "common") {
+    } else if (q.task === "round" && q.values && q.places !== undefined) {
+      const v0 = q.values[0];
+      rounding(typeof v0 === "object" ? v0.n : v0, q.places);
+    } else if (q.task === "common" && q.values && q.labels) {
       emit(`${q.labels.join("と")}の1個分を同じ大きさにする。`, {
         intent: "focus",
       });
-      common(...q.values.map((v, i) => rawFraction(KZ.lit(v, q.labels[i]))));
-    } else if (q.task === "reciprocal") {
+      const fracs = q.values.map((v, i) =>
+        rawFraction(lit(expectNumeric(v), q.labels?.[i])),
+      );
+      common(fracs[0], fracs[1]);
+    } else if (q.task === "reciprocal" && q.values && q.labels) {
       emit(`${q.labels[0]}にかけて1になる数を探す。`, { intent: "focus" });
-      const f = convert(KZ.lit(q.values[0], q.labels[0]));
+      const f = convert(lit(expectNumeric(q.values[0]), q.labels[0]));
       emit(`${f.n}/${f.d}の分子と分母を入れ替えると${f.d}/${f.n}。`);
       emit(
         `${f.n}/${f.d}×${f.d}/${f.n}＝${f.n * f.d}/${f.d * f.n}＝1。だから逆数になる。`,
       );
-      if (KZ.gcd(f.n, f.d) > 1n) reduce(f.d, f.n);
-    } else if (q.task === "fraction") {
-      const n = BigInt(q.original.n),
-        d = BigInt(q.original.d);
+      if (gcd(f.n, f.d) > 1n) reduce(f.d, f.n);
+    } else if (q.task === "fraction" && q.original) {
+      const n = BigInt(q.original.n);
+      const d = BigInt(q.original.d);
       emit(`${q.prompt}。1個分の大きさと、その個数を確かめる。`, {
         intent: "focus",
       });
       if (id === "G5-N10") {
-        const v = KZ.format(q.original, "decimal"),
-          scale = places(q.original),
-          denominator = 10n ** BigInt(scale),
-          numerator = coefficient(q.original, scale);
+        const v = format(q.original, "decimal");
+        const scale = places(q.original);
+        const denominator = 10n ** BigInt(scale);
+        const numerator = coefficient(q.original, scale);
         emit(
           scale
             ? `${v}は1/${denominator}が${numerator}個分。分母を${denominator}、分子を${numerator}にする。`
@@ -371,8 +441,9 @@ const KZTeaching = (() => {
           n % d,
           n,
         );
-      } else if (q.answerSpec.reduced) reduce(n, d);
-      else {
+      } else if (q.answerSpec.reduced) {
+        reduce(n, d);
+      } else {
         emit(`全体を1として、同じ大きさに${d}つに分ける。1個分は1/${d}。`, {
           diagram: [[0, Number(d)]],
         });
@@ -390,15 +461,15 @@ const KZTeaching = (() => {
         !q.diagram
       ) {
         emit(
-          `${q.prompt}。示された数${show(KZ.evaluate(ast))}と、答えを入れる場所を確かめる。`,
+          `${q.prompt}。示された数${show(evaluate(ast))}と、答えを入れる場所を確かめる。`,
         );
-        out.push({ kind: "answer", text: `こたえ：${KZ.answerText(q)}` });
+        out.push({ kind: "answer", text: `こたえ：${answerText(q)}` });
         return out;
       }
-      const av = ast.op ? KZ.evaluate(ast.args[0]) : KZ.evaluate(ast),
-        bv = ast.op ? KZ.evaluate(ast.args[1]) : null;
-      const a = Number(av.n),
-        b = bv ? Number(bv.n) : 0;
+      const av = ast.op ? evaluate(ast.args[0]) : evaluate(ast);
+      const bv = ast.op ? evaluate(ast.args[1]) : null;
+      const a = Number(av.n);
+      const b = bv ? Number(bv.n) : 0;
       emit(
         q.unknown !== undefined
           ? `${q.prompt}。□が表す数を確かめてから、計算の式を作る。`
@@ -406,7 +477,9 @@ const KZTeaching = (() => {
         { intent: "focus" },
       );
       if (q.sequence) {
-        const index = q.prompt.split(/[、,]/).findIndex((x) => x.includes("□"));
+        const index = (q.prompt || "")
+          .split(/[、,]/)
+          .findIndex((x) => x.includes("□"));
         const i = index < 0 ? 1 : index;
         emit(
           `となりは1だけ違う。${i === 0 ? `右の${q.sequence[1]}の1つ前なので、1を引く` : `左の${q.sequence[i - 1]}の1つ後なので、1を足す`}。`,
@@ -418,19 +491,19 @@ const KZTeaching = (() => {
         );
         emit(`${q.sequence.join(" → ")}と1ずつ続くことを確かめる。`);
       } else if (id === "G1-N02" || id === "G2-N02") {
-        const total = BigInt(q.expectedExactValue.n),
-          units = id === "G1-N02" ? [10n, 1n] : [1000n, 100n, 10n, 1n];
-        const terms = (node) =>
+        const total = BigInt(expectRational(q.expectedExactValue).n);
+        const units = id === "G1-N02" ? [10n, 1n] : [1000n, 100n, 10n, 1n];
+        const terms = (node: ExprNode): ExprNode[] =>
           node.op === "+" ? node.args.flatMap(terms) : [node];
         for (const term of terms(ast)) {
           if (term.op === "*") {
-            const values = term.args.map(KZ.evaluate).map((v) => BigInt(v.n));
+            const values = term.args.map(evaluate).map((v) => BigInt(v.n));
             const u =
               values.find((v) => [1n, 10n, 100n, 1000n].includes(v)) ||
               values[0];
             const count = values[values.indexOf(u) === 0 ? 1 : 0];
             emit(
-              `${u}が${count}個。${count >= 10n ? "10個ずつのまとまりと残りへ分けてから、数を求める。" : count > 0n ? `${Array(Number(count)).fill(String(u)).join("＋")}＝${u * count}。` : "このまとまりは0個なので0。"}`,
+              `${u}が${count}個。${count >= 10n ? "10個ずつのまとまりと残りへ分けてから、数を求める。" : count > 0n ? `${Array<string>(Number(count)).fill(String(u)).join("＋")}＝${u * count}。` : "このまとまりは0個なので0。"}`,
             );
             if (count >= 10n) {
               emit(
@@ -440,40 +513,45 @@ const KZTeaching = (() => {
                 `${u}が10個で${u * 10n}。${count / 10n}組を1つ上の位へ移し、${u}が${count % 10n}個残る。`,
               );
             }
-          } else
-            emit(`ばらの1は${show(KZ.evaluate(term))}個。まとまりと合わせる。`);
+          } else {
+            emit(`ばらの1は${show(evaluate(term))}個。まとまりと合わせる。`);
+          }
         }
-        for (const u of units)
+        for (const u of units) {
           emit(`${u}が${(total / u) % 10n}個で${((total / u) % 10n) * u}。`);
+        }
         emit(
           `${units.map((u) => ((total / u) % 10n) * u).join("＋")}＝${total}。まとまりとばらを合わせる。`,
         );
       } else if (id === "G4-N02") {
         emit(`一・万・億・兆のまとまりに分ける。それぞれ4桁分の場所を使う。`);
-        const n = BigInt(q.expectedExactValue.n),
-          groups = [];
-        for (let p = 3; p >= 0; p--)
+        const n = BigInt(expectRational(q.expectedExactValue).n);
+        const groups: string[] = [];
+        for (let p = 3; p >= 0; p--) {
           groups.push(
             String((n / 10000n ** BigInt(p)) % 10000n).padStart(4, "0"),
           );
+        }
         emit(
           `兆｜億｜万｜一の順に${groups.join("｜")}。ない位も0で場所を埋める。`,
         );
-      } else if (["G3-N03", "G4-N03"].includes(id)) {
-        const unit = KZ.evaluate(ast.args[ast.op === "/" ? 1 : 0]),
-          count = ast.op === "/" ? q.expectedExactValue : bv,
-          total = ast.op === "/" ? av : q.expectedExactValue;
+      } else if (["G3-N03", "G4-N03"].includes(id) && ast.op && bv) {
+        const unit = evaluate(ast.args[ast.op === "/" ? 1 : 0]);
+        const count =
+          ast.op === "/" ? expectRational(q.expectedExactValue) : bv;
+        const total =
+          ast.op === "/" ? av : expectRational(q.expectedExactValue);
         emit(`1は${show(unit)}が${unit.d}個。整数部分をこの単位の個数へ直す。`);
-        const s = places(unit),
-          c = coefficient(total, s),
-          chunks = String(c)
-            .split("")
-            .map((x, i, arr) => BigInt(x) * 10n ** BigInt(arr.length - i - 1));
+        const s = places(unit);
+        const c = coefficient(total, s);
+        const chunks = String(c)
+          .split("")
+          .map((x, i, arr) => BigInt(x) * 10n ** BigInt(arr.length - i - 1));
         chunks.forEach((x, i) => {
-          const digit = BigInt(String(c)[i]),
-            perDigit = 10n ** BigInt(chunks.length - i - 1);
+          const digit = BigInt(String(c)[i]);
+          const perDigit = 10n ** BigInt(chunks.length - i - 1);
           emit(
-            `${place(chunks.length - i - 1, s)}の1は、${show(unit)}が${perDigit}個分。この位の数字は${digit}。`,
+            `${placeName(chunks.length - i - 1, s)}の1は、${show(unit)}が${perDigit}個分。この位の数字は${digit}。`,
           );
           checked(
             `${digit}×${perDigit}＝${x}。だから、この位の部分は${show(unit)}が${x}個分。`,
@@ -486,7 +564,7 @@ const KZTeaching = (() => {
         emit(
           `${chunks.join("＋")}＝${count.n}個。${show(total)}は${show(unit)}が${count.n}個分。`,
         );
-        if (ast.op === "*")
+        if (ast.op === "*") {
           checked(
             `${show(unit)}×${show(count)}＝${show(total)}。個数を数に戻す。`,
             "*",
@@ -494,17 +572,18 @@ const KZTeaching = (() => {
             count,
             total,
           );
-      } else if (["G3-N02", "G5-N06"].includes(id)) {
-        const power = Number(bv.n),
-          times = String(power).length - 1;
+        }
+      } else if (["G3-N02", "G5-N06"].includes(id) && ast.op && bv) {
+        const power = Number(bv.n);
+        const times = String(power).length - 1;
         emit(
           `${power}は10を${times}回かけた数。${ast.op === "*" ? "10倍" : "10分の1"}を${times}回行う。`,
         );
         let value = av;
         for (let i = 0; i < times; i++) {
-          const next = KZ.calc(ast.op, value, 10);
+          const next = calc(ast.op, value, 10);
           checked(
-            `${show(value)}${signs[ast.op]}10＝${show(next)}。各位の値が${ast.op === "*" ? "10倍になり、1つ左の位へ" : "10分の1になり、1つ右の位へ"}移る。`,
+            `${show(value)}${OP_SIGNS[ast.op]}10＝${show(next)}。各位の値が${ast.op === "*" ? "10倍になり、1つ左の位へ" : "10分の1になり、1つ右の位へ"}移る。`,
             ast.op,
             value,
             10,
@@ -512,9 +591,9 @@ const KZTeaching = (() => {
           );
           value = next;
         }
-      } else if (id === "G4-N05") {
-        const [[n, d], [nn, dd]] = q.diagram,
-          factor = dd / d;
+      } else if (id === "G4-N05" && q.diagram) {
+        const [[n, d], [nn, dd]] = q.diagram;
+        const factor = dd / d;
         emit(`${n}/${d}の大きさを変えず、分母${dd}の分数にしたい。`, {
           diagram: [[n, d]],
         });
@@ -551,60 +630,66 @@ const KZTeaching = (() => {
         );
       } else if (id === "G5-N03") {
         emit(`正の倍数は1倍から数える。0はこの並びに入れない。`);
-        for (let i = 1; i <= b; i++)
+        for (let i = 1; i <= b; i++) {
           checked(`${i}番目は${a}×${i}＝${a * i}。`, "*", a, i, a * i);
+        }
       } else if (q.law) {
-        const { a, b, c, kind } = q.law;
+        const { a: la, b: lb, c: lc, kind } = q.law;
         if (kind === "associate") {
-          emit(`${b * c}を${b}と何をかけた数かで考える。`);
+          emit(`${lb * lc}を${lb}と何をかけた数かで考える。`);
           checked(
-            `${b * c}÷${b}＝${c}なので、${b * c}＝${b}×${c}。`,
+            `${lb * lc}÷${lb}＝${lc}なので、${lb * lc}＝${lb}×${lc}。`,
             "/",
-            b * c,
-            b,
-            c,
+            lb * lc,
+            lb,
+            lc,
           );
           emit(
-            `${a}×（${b}×${c}）＝（${a}×${b}）×${c}。かけるまとまりを変えても積は同じ。`,
+            `${la}×（${lb}×${lc}）＝（${la}×${lb}）×${lc}。かけるまとまりを変えても積は同じ。`,
           );
-        } else if (kind === "exchange")
+        } else if (kind === "exchange") {
           emit(
-            `${a}×${b}の2つの数の順を入れ替えると${b}×${a}。積は同じなので、対応する数を□へ入れる。`,
+            `${la}×${lb}の2つの数の順を入れ替えると${lb}×${la}。積は同じなので、対応する数を□へ入れる。`,
           );
-        else {
+        } else {
           emit(
-            `${a}を（${b}＋${c}）にかけるので、${b}と${c}の両方に${a}をかける。`,
+            `${la}を（${lb}＋${lc}）にかけるので、${lb}と${lc}の両方に${la}をかける。`,
           );
           emit(
-            `${a}×（${b}＋${c}）＝${a}×${b}＋${a}×${c}。2つ目の積の数と□を対応させる。`,
+            `${la}×（${lb}＋${lc}）＝${la}×${lb}＋${la}×${lc}。2つ目の積の数と□を対応させる。`,
           );
         }
-      } else if (["G1-C01", "G1-C09", "G2-C10", "G3-C15"].includes(id)) {
-        if (["G1-C01", "G1-C09"].includes(id))
+      } else if (
+        ["G1-C01", "G1-C09", "G2-C10", "G3-C15"].includes(id) &&
+        ast.op &&
+        bv
+      ) {
+        if (["G1-C01", "G1-C09"].includes(id)) {
           emit(
             `全部${a}から、分かっている${b}を除いた残りが□。だから${a}−${b}を計算する。`,
           );
-        else if (id === "G2-C10")
+        } else if (id === "G2-C10") {
           emit(
             ast.op === "+"
               ? `引く前の□を求める。残った${a}に、取った${b}を戻すので、たし算になる。`
               : `全部${a}から、分かっている部分${b}を除くと□の部分が残る。だからひき算になる。`,
           );
-        else
+        } else {
           emit(
             ast.op === "*"
               ? `わられる数は、1つ分と組数を合わせた全体。${a}が${b}個分なのでかけ算になる。`
               : `${q.prompt}の1つ分・組数・全体を確かめる。全体${a}を分かっている${b}で分けるので、わり算になる。`,
           );
+        }
         checked(
-          `${a}${signs[ast.op]}${b}＝${show(KZ.evaluate(ast))}。`,
+          `${a}${OP_SIGNS[ast.op]}${b}＝${show(evaluate(ast))}。`,
           ast.op,
           av,
           bv,
-          KZ.evaluate(ast),
+          evaluate(ast),
         );
         emit(
-          `□に${KZ.answerText(q)}を戻して、元の式の左右が同じになるか確かめる。`,
+          `□に${answerText(q)}を戻して、元の式の左右が同じになるか確かめる。`,
         );
       } else if (
         [
@@ -619,23 +704,33 @@ const KZTeaching = (() => {
           "G2-C07",
           "G3-C09",
           "G3-C10",
-        ].includes(id)
+        ].includes(id) &&
+        ast.op &&
+        bv
       ) {
-        const picture = (text, stage, extra = {}) =>
+        const astOp = ast.op;
+        const picture = (
+          text: string,
+          stage: "before" | "after" | "groups",
+          extra: Partial<TeachingStep> = {},
+        ): void => {
+          if (astOp === "/") return;
           emit(text, {
             kind: "counters",
-            operation: ast.op,
+            operation: astOp,
             a,
             b,
             splitTen: id === "G1-C05",
             pictureStage: stage,
             ...extra,
           });
-        if (["G1-C02", "G1-C03", "G1-C04", "G1-C05", "G2-C08"].includes(id))
+        };
+        if (["G1-C02", "G1-C03", "G1-C04", "G1-C05", "G2-C08"].includes(id)) {
           picture(
-            `${a}${ast.op === "*" ? `が1つ分。${b}組を作る` : `個が初めの数。${b}個を${ast.op === "+" ? "合わせる" : "取る"}`}。`,
+            `${a}${astOp === "*" ? `が1つ分。${b}組を作る` : `個が初めの数。${b}個を${astOp === "+" ? "合わせる" : "取る"}`}。`,
             "before",
           );
+        }
         if (id === "G1-C03") {
           const need = 10 - a;
           emit(
@@ -664,21 +759,22 @@ const KZTeaching = (() => {
             a - b,
           );
         } else if (id === "G2-C08") {
-          for (let i = 1; i <= b; i++)
+          for (let i = 1; i <= b; i++) {
             picture(
-              `${a}が${i}組で${Array(i).fill(a).join("＋")}＝${a * i}。${i < b ? `次はもう1組、${a}を足す。` : "全部の組を数えた。"}`,
+              `${a}が${i}組で${Array<number>(i).fill(a).join("＋")}＝${a * i}。${i < b ? `次はもう1組、${a}を足す。` : "全部の組を数えた。"}`,
               "groups",
               { visibleGroups: i },
             );
+          }
         } else if (["G1-C06", "G1-C07"].includes(id)) {
           if (a % 10 === 0 && b % 10 === 0) {
-            const count = ast.op === "+" ? a / 10 + b / 10 : a / 10 - b / 10;
+            const count = astOp === "+" ? a / 10 + b / 10 : a / 10 - b / 10;
             emit(
               `${a}は10のまとまりが${a / 10}個、${b}は${b / 10}個。ばらはどちらも0。`,
             );
             checked(
-              `まとまりの個数を計算する：${a / 10}${signs[ast.op]}${b / 10}＝${count}個。`,
-              ast.op,
+              `まとまりの個数を計算する：${a / 10}${OP_SIGNS[astOp]}${b / 10}＝${count}個。`,
+              astOp,
               a / 10,
               b / 10,
               count,
@@ -687,33 +783,33 @@ const KZTeaching = (() => {
               `10のまとまりが${count}個なので${count * 10}。ばらの位は0を残す。`,
             );
           } else {
-            const tens = a - (a % 10),
-              ones = a % 10,
-              value = ast.op === "+" ? ones + b : ones - b;
+            const tens = a - (a % 10);
+            const ones = a % 10;
+            const value = astOp === "+" ? ones + b : ones - b;
             emit(`${a}は${tens}と${ones}。${tens}のまとまりはそのまま残す。`);
             checked(
-              `ばらの数だけ計算する：${ones}${signs[ast.op]}${b}＝${value}。`,
-              ast.op,
+              `ばらの数だけ計算する：${ones}${OP_SIGNS[astOp]}${b}＝${value}。`,
+              astOp,
               ones,
               b,
               value,
             );
             checked(
-              `${tens}と${value}を合わせる：${tens}＋${value}＝${a + (ast.op === "+" ? b : -b)}。`,
+              `${tens}と${value}を合わせる：${tens}＋${value}＝${a + (astOp === "+" ? b : -b)}。`,
               "+",
               tens,
               value,
-              a + (ast.op === "+" ? b : -b),
+              a + (astOp === "+" ? b : -b),
             );
           }
         } else if (id === "G2-C07") {
           emit(
             `${a}は100が${a / 100}個、${b}は100が${b / 100}個。100を1つ分として個数を計算する。`,
           );
-          const count = Number(q.expectedExactValue.n) / 100;
+          const count = Number(expectRational(q.expectedExactValue).n) / 100;
           checked(
-            `${a / 100}${signs[ast.op]}${b / 100}＝${count}個。`,
-            ast.op,
+            `${a / 100}${OP_SIGNS[astOp]}${b / 100}＝${count}個。`,
+            astOp,
             a / 100,
             b / 100,
             count,
@@ -732,17 +828,19 @@ const KZTeaching = (() => {
               (count % 10) * 100,
               count * 100,
             );
-          } else emit(`100が${count}個で${count * 100}。`);
+          } else {
+            emit(`100が${count}個で${count * 100}。`);
+          }
         } else if (id === "G2-C09" || id === "G3-C10") {
-          const left = id === "G2-C09" ? 10 : a - (a % 10),
-            right = a - left;
+          const left = id === "G2-C09" ? 10 : a - (a % 10);
+          const right = a - left;
           emit(
-            `${a}を${left}と${right}に分ける。両方を同じ${b}${ast.op === "*" ? "組分にする" : "組へ分ける"}。`,
+            `${a}を${left}と${right}に分ける。両方を同じ${b}${astOp === "*" ? "組分にする" : "組へ分ける"}。`,
           );
-          const x = id === "G2-C09" ? left * b : left / b,
-            y = id === "G2-C09" ? right * b : right / b;
-          checked(`${left}${signs[ast.op]}${b}＝${x}。`, ast.op, left, b, x);
-          checked(`${right}${signs[ast.op]}${b}＝${y}。`, ast.op, right, b, y);
+          const x = id === "G2-C09" ? left * b : left / b;
+          const y = id === "G2-C09" ? right * b : right / b;
+          checked(`${left}${OP_SIGNS[astOp]}${b}＝${x}。`, astOp, left, b, x);
+          checked(`${right}${OP_SIGNS[astOp]}${b}＝${y}。`, astOp, right, b, y);
           checked(
             `分けて計算した2つを合わせる：${x}＋${y}＝${x + y}。`,
             "+",
@@ -751,9 +849,9 @@ const KZTeaching = (() => {
             x + y,
           );
         } else if (id === "G3-C09") {
-          const count = Math.floor(a / b),
-            product = count * b,
-            r = a - product;
+          const count = Math.floor(a / b);
+          const product = count * b;
+          const r = a - product;
           checked(
             `${b}×${count}＝${product}で${a}を超えない。`,
             "*",
@@ -771,12 +869,13 @@ const KZTeaching = (() => {
           checked(`${a}−${product}＝${r}が余り。`, "-", a, product, r);
           emit(`${r}＜${b}なので、もう1組は作れない。`);
         } else {
-          if (ast.op === "+")
+          if (astOp === "+") {
             emit(
               `${a}からあと${b}個数える：${Array.from({ length: b }, (_, i) => a + i + 1).join("、")}。`,
             );
+          }
           picture(
-            `${a}${signs[ast.op]}${b}＝${ast.op === "+" ? a + b : a - b}。${ast.op === "+" ? "合わせた個数" : "取った個数と残った個数"}を確かめる。`,
+            `${a}${OP_SIGNS[astOp]}${b}＝${astOp === "+" ? a + b : a - b}。${astOp === "+" ? "合わせた個数" : "取った個数と残った個数"}を確かめる。`,
             "after",
           );
         }
@@ -785,42 +884,49 @@ const KZTeaching = (() => {
         emit(
           `${a}を同じように分けると、1人に1/${b}が${a}個ずつ。だから${a}/${b}。`,
         );
-        if (q.answerSpec.reduced && KZ.gcd(a, b) > 1n)
+        if (q.answerSpec.reduced && gcd(a, b) > 1n) {
           reduce(BigInt(a), BigInt(b));
+        }
       } else {
-        if (q.roundOperands)
+        if (q.roundOperands) {
           q.roundOperands.forEach((v) => rounding(v.original, v.places));
-        if (["G5-N13", "G6-N02"].includes(id))
+        }
+        if (["G5-N13", "G6-N02"].includes(id)) {
           emit(
-            `${id === "G5-N13" ? "△" : "x"}の場所を、指定された数へ置き換える。計算する式は${KZ.expression(ast)}。`,
+            `${id === "G5-N13" ? "△" : "x"}の場所を、指定された数へ置き換える。計算する式は${expression(ast)}。`,
             { intent: "substitution" },
           );
+        }
         if (id === "G5-N11" && !ast.op) {
           emit(
             `${av.n}/${av.d}は${av.n}÷${av.d}で求められる。小数まで割り進める。`,
           );
-          const inner = {
+          const inner: Question = {
             ...q,
             written: true,
-            expressionAST: KZ.op("/", KZ.lit(av.n), KZ.lit(av.d)),
+            expressionAST: op("/", lit(av.n), lit(av.d)),
             answerSpec: { type: "decimal" },
             expectedExactValue: av,
             challengeId: "G4-C12",
           };
           for (const state of steps(inner).slice(0, -1)) out.push(state);
         } else {
-          let working = clone(ast);
-          const walk = (node, path = []) => {
+          let working: ExprNode = clone(ast);
+          const walk = (node: ExprNode, path: number[] = []): void => {
             if (!node.op) return;
             node.args.forEach((v, i) => walk(v, [...path, i]));
-            let current = working;
-            for (const i of path) current = current.args[i];
-            const op = current.op,
-              left = KZ.evaluate(current.args[0]),
-              right = KZ.evaluate(current.args[1]),
-              value = KZ.evaluate(current);
+            let current: ExprNode = working;
+            for (const i of path) {
+              if (!current.op) return;
+              current = current.args[i];
+            }
+            if (!current.op) return;
+            const curOp = current.op;
+            const left = evaluate(current.args[0]);
+            const right = evaluate(current.args[1]);
+            const value = evaluate(current);
             emit(
-              `${KZ.expression(current)}を先に計算する。${node.group ? "かっこの中を先に求める。" : ["*", "/"].includes(op) ? "かけ算・わり算を、たし算・ひき算より先に求める。" : "同じ順序の計算は左から進める。"}`,
+              `${expression(current)}を先に計算する。${node.group ? "かっこの中を先に求める。" : ["*", "/"].includes(curOp) ? "かけ算・わり算を、たし算・ひき算より先に求める。" : "同じ順序の計算は左から進める。"}`,
               { intent: "operation-focus" },
             );
             if (
@@ -829,25 +935,26 @@ const KZTeaching = (() => {
                 right.d !== "1" ||
                 current.args.some((x) => x.label?.includes("/")))
             ) {
-              const x = convert(current.args[0]),
-                y = convert(current.args[1]);
-              let n, d;
-              if (["+", "-"].includes(op)) {
+              const x = convert(current.args[0]);
+              const y = convert(current.args[1]);
+              let n: bigint;
+              let d: bigint;
+              if (["+", "-"].includes(curOp)) {
                 const c = common(x, y, q.displayDenominator);
-                n = c.an + (op === "+" ? c.bn : -c.bn);
+                n = c.an + (curOp === "+" ? c.bn : -c.bn);
                 d = c.d;
                 checked(
-                  `1/${d}の個数を計算する：${c.an}${signs[op]}${c.bn}＝${n}。だから${n}/${d}。`,
-                  op,
+                  `1/${d}の個数を計算する：${c.an}${OP_SIGNS[curOp]}${c.bn}＝${n}。だから${n}/${d}。`,
+                  curOp,
                   c.an,
                   c.bn,
                   n,
                   { intent: "fraction-operation" },
                 );
               } else {
-                let yn = y.n,
-                  yd = y.d;
-                if (op === "/") {
+                let yn = y.n;
+                let yd = y.d;
+                if (curOp === "/") {
                   emit(
                     `割る数${y.n}/${y.d}を1にしたい。その逆数${y.d}/${y.n}をかけると1になる。両方に同じ数をかけても商は変わらない。`,
                     { intent: "reciprocal-reason" },
@@ -857,10 +964,11 @@ const KZTeaching = (() => {
                     { intent: "reciprocal-operation" },
                   );
                   [yn, yd] = [y.d, y.n];
-                } else
+                } else {
                   emit(
                     `1/${x.d}の${yn}/${yd}倍を考える。1個を${yd}等分し、その${yn}個分を取るので、分母も掛ける。`,
                   );
+                }
                 n = x.n * yn;
                 d = x.d * yd;
                 checked(`分子どうし：${x.n}×${yn}＝${n}。`, "*", x.n, yn, n);
@@ -873,31 +981,40 @@ const KZTeaching = (() => {
                   { intent: "fraction-operation" },
                 );
               }
-              if (q.answerSpec.reduced && KZ.gcd(n, d) > 1n) reduce(n, d);
+              if (q.answerSpec.reduced && gcd(n, d) > 1n) reduce(n, d);
               emit(
-                `${KZ.expression(current)}＝${q.displayDenominator ? `${n}/${d}` : KZ.format(value)}。`,
+                `${expression(current)}＝${q.displayDenominator ? `${n}/${d}` : format(value)}。`,
               );
-            } else
+            } else {
               checked(
-                `${KZ.expression(current)}＝${show(value)}。`,
-                op,
+                `${expression(current)}＝${show(value)}。`,
+                curOp,
                 left,
                 right,
                 value,
               );
-            const replacement = KZ.lit(
+            }
+            const replacement = lit(
               value,
-              q.answerSpec.type === "fraction" ? KZ.format(value) : show(value),
+              q.answerSpec.type === "fraction" ? format(value) : show(value),
             );
             if (path.length) {
-              let parent = working;
-              for (const i of path.slice(0, -1)) parent = parent.args[i];
-              parent.args[path.at(-1)] = replacement;
+              let parentNode: ExprNode = working;
+              for (const i of path.slice(0, -1)) {
+                if (!parentNode.op) return;
+                parentNode = parentNode.args[i];
+              }
+              const lastIdx = path.at(-1);
+              if (parentNode.op && lastIdx !== undefined) {
+                parentNode.args[lastIdx] = replacement;
+              }
               emit(
-                `求めた数を元の場所へ戻す。次の式は${KZ.expression(working)}。`,
+                `求めた数を元の場所へ戻す。次の式は${expression(working)}。`,
                 { intent: "expression-replacement" },
               );
-            } else working = replacement;
+            } else {
+              working = replacement;
+            }
           };
           walk(ast);
         }
@@ -905,39 +1022,41 @@ const KZTeaching = (() => {
     }
     out.push({
       kind: "answer",
-      text: `こたえ：${KZ.answerText(q)}`,
+      text: `こたえ：${answerText(q)}`,
       ...(q.diagram ? { diagram: q.diagram } : {}),
     });
     return out;
   }
-  function hint(q) {
-    let focus;
-    if (q.written) {
-      const ast = q.expressionAST,
-        a = KZ.evaluate(ast.args[0]),
-        b = KZ.evaluate(ast.args[1]),
-        scale = Math.max(places(a), places(b));
+
+  function hint(q: Question): string {
+    let focus: string;
+    if (q.written && q.expressionAST?.op) {
+      const ast = q.expressionAST;
+      const a = evaluate(ast.args[0]);
+      const b = evaluate(ast.args[1]);
+      const scale = Math.max(places(a), places(b));
       if (["+", "-"].includes(ast.op)) {
-        const x = Number(coefficient(a, scale) % 10n),
-          y = Number(coefficient(b, scale) % 10n);
-        focus = `まず${place(0, scale)}の${x}${signs[ast.op]}${y}を見よう。${ast.op === "-" && x < y ? `${x}では${y}を引けないね。左の位から借りられるか確かめよう。左の位の1は、この位では10だよ。` : "この位の答えを考えてから、次の位へ進もう。"}`;
-      } else if (ast.op === "*")
+        const x = Number(coefficient(a, scale) % 10n);
+        const y = Number(coefficient(b, scale) % 10n);
+        focus = `まず${placeName(0, scale)}の${x}${OP_SIGNS[ast.op]}${y}を見よう。${ast.op === "-" && x < y ? `${x}では${y}を引けないね。左の位から借りられるか確かめよう。左の位の1は、この位では10だよ。` : "この位の答えを考えてから、次の位へ進もう。"}`;
+      } else if (ast.op === "*") {
         focus =
           places(a) + places(b)
             ? `${show(a)}と${show(b)}を整数にして計算すると、それぞれ何倍になるかな。積を最後にその倍率で戻そう。`
             : `まず一の位の${coefficient(a, 0) % 10n}に、かける数の一の位${coefficient(b, 0) % 10n}をかけよう。`;
-      else
+      } else {
         focus = places(b)
           ? `${show(b)}を整数にするには何倍かな。${show(a)}も同じ倍率にすると、何個分かは変わらないよ。`
           : `${show(a)}の左の位から見よう。${show(b)}を何組作れるか、次の1組では多くならないかも確かめよう。`;
+      }
     } else {
-      const ast = q.expressionAST,
-        left = ast?.op ? KZ.evaluate(ast.args[0]) : null,
-        right = ast?.op ? KZ.evaluate(ast.args[1]) : null;
+      const ast = q.expressionAST;
+      const left = ast?.op ? evaluate(ast.args[0]) : null;
+      const right = ast?.op ? evaluate(ast.args[1]) : null;
       focus = explain(q)[0].text;
-      if (q.task === "compare")
-        focus = `${q.labels?.[0] || show(q.values[0])}と${q.labels?.[1] || show(q.values[1])}は、どこまで同じかな。最初に違う位、または同じ1個分の個数を探そう。`;
-      else if (q.task === "fraction")
+      if (q.task === "compare" && q.values) {
+        focus = `${q.labels?.[0] || show(expectNumeric(q.values[0]))}と${q.labels?.[1] || show(expectNumeric(q.values[1]))}は、どこまで同じかな。最初に違う位、または同じ1個分の個数を探そう。`;
+      } else if (q.task === "fraction" && q.original) {
         focus = ["G2-N03", "G3-N05"].includes(q.challengeId)
           ? `${q.prompt}。全体を1として、同じ大きさにいくつに分けたかな。そのうち何個分を見ているか数えよう。`
           : q.challengeId === "G5-N10"
@@ -947,72 +1066,82 @@ const KZTeaching = (() => {
               : q.answerSpec.form === "mixed"
                 ? `1/${q.original.d}が${q.original.d}個で1になるよ。${q.original.n}個から1のまとまりをいくつ作れ、何個残るかな。`
                 : `整数1は1/${q.original.d}が何個分かな。整数の分と、残りの分数の個数を合わせよう。`;
-      else if (q.task === "common")
-        focus = `分母${q.values[0].d}と${q.values[1].d}の倍数を並べると、最初に共通する数はどれかな。その分母へ変える倍率も確かめよう。`;
-      else if (q.task === "parity")
-        focus = `${q.values[0]}を2個ずつの組にすると、最後に1個余るかな。0も、余りがあるかで考えよう。`;
-      else if (left && right) {
-        const a = show(left),
-          b = show(right),
-          id = q.challengeId;
-        if (["G1-C02", "G1-C04"].includes(id))
+      } else if (q.task === "common" && q.values) {
+        const r0 = expectRational(q.values[0]);
+        const r1 = expectRational(q.values[1]);
+        focus = `分母${r0.d}と${r1.d}の倍数を並べると、最初に共通する数はどれかな。その分母へ変える倍率も確かめよう。`;
+      } else if (q.task === "parity" && q.values) {
+        focus = `${String(q.values[0])}を2個ずつの組にすると、最後に1個余るかな。0も、余りがあるかで考えよう。`;
+      } else if (left && right && ast?.op) {
+        const a = show(left);
+        const b = show(right);
+        const id = q.challengeId;
+        if (["G1-C02", "G1-C04"].includes(id)) {
           focus = `初めに${a}個あるよ。${b}個を${ast.op === "+" ? "合わせた" : "取った"}後の個数を、順に数えてみよう。`;
-        else if (id === "G1-C03")
+        } else if (id === "G1-C03") {
           focus = `${a}を10にするには、あといくつかな。${b}をその数と残りに分けると、10のまとまりを作れるよ。`;
-        else if (id === "G1-C05")
+        } else if (id === "G1-C05") {
           focus = `${a}のばらの数だけで${b}を取れるかな。10のまとまりから取った残りと、元からのばらを区別しよう。`;
-        else if (id === "G2-C08")
+        } else if (id === "G2-C08") {
           focus = `${a}が1組分で、${b}組あるよ。${a}のだんを忘れたら、1組ずつ${a}を足して確かめよう。`;
-        else if (["G3-N03", "G4-N03"].includes(id)) {
-          const unit = KZ.evaluate(ast.args[ast.op === "/" ? 1 : 0]);
+        } else if (["G3-N03", "G4-N03"].includes(id)) {
+          const unit = evaluate(ast.args[ast.op === "/" ? 1 : 0]);
           focus = `1は${show(unit)}が何個分かな。整数部分と小数部分を、同じ${show(unit)}の個数に直して合わせよう。`;
-        } else if (["G3-N02", "G5-N06"].includes(id))
+        } else if (["G3-N02", "G5-N06"].includes(id)) {
           focus = `${b}は10を何回かけた数かな。${a}の各位を、その回数だけ${ast.op === "*" ? "10倍" : "10分の1"}にしよう。`;
-        else if (["G2-C09", "G3-C10"].includes(id))
+        } else if (["G2-C09", "G3-C10"].includes(id)) {
           focus = `${a}を十のまとまりと残りに分け、それぞれを同じ${b}${ast.op === "*" ? "組分にする" : "組に分ける"}とどうなるかな。最後に2つを合わせよう。`;
-        else if (id === "G5-N12")
+        } else if (id === "G5-N12") {
           focus = `1を${b}等分した1個分を考えよう。${a}を同じように等分すると、その1個分が何個ずつになるかな。`;
-        else if (["G5-N13", "G6-N02"].includes(id))
+        } else if (["G5-N13", "G6-N02"].includes(id)) {
           focus = `${q.prompt}。まず${id === "G5-N13" ? "△" : "x"}の場所を示し、指定された数へ書き換えよう。その後、先に求める部分を選ぼう。`;
-        else if (
+        } else if (
           ["G1-C08", "G4-C15", "G4-C16", "G5-C09", "G6-C07", "G6-C08"].includes(
             id,
           ) &&
-          ast.args.some((node) => node.op)
+          ast.args.some((node) => Boolean(node.op))
         ) {
-          const first = (node) =>
+          const first = (node: ExprNode): ExprBinary | null =>
             node.op ? node.args.map(first).find(Boolean) || node : null;
-          focus = `${q.prompt}。まず${KZ.expression(first(ast))}を求めよう。求めた数を元の場所へ戻し、残った式を確かめてから次へ進もう。`;
+          const firstOp = first(ast);
+          if (firstOp) {
+            focus = `${q.prompt}。まず${expression(firstOp)}を求めよう。求めた数を元の場所へ戻し、残った式を確かめてから次へ進もう。`;
+          }
         } else if (q.answerSpec.type === "fraction") {
-          const conversion = (node) =>
+          const conversion = (node: ExprNode): boolean =>
             node.op
               ? node.args.some(conversion)
-              : node.label?.includes("と") ||
-                (!node.label?.includes("/") && KZ.evaluate(node).d !== "1");
-          const unitA = rawFraction(ast.args[0]),
-            unitB = rawFraction(ast.args[1]);
+              : Boolean(node.label?.includes("と")) ||
+                (!node.label?.includes("/") && evaluate(node).d !== "1");
+          const unitA = rawFraction(ast.args[0]);
+          const unitB = rawFraction(ast.args[1]);
           focus = conversion(ast)
-            ? `${KZ.expression(ast)}。帯分数や小数を、1個分の大きさと個数が分かる分数へ直そう。その数がどこから来たか、順に確かめよう。`
+            ? `${expression(ast)}。帯分数や小数を、1個分の大きさと個数が分かる分数へ直そう。その数がどこから来たか、順に確かめよう。`
             : ["+", "-"].includes(ast.op)
               ? unitA.d === unitB.d
-                ? `${KZ.expression(ast)}。どちらも1/${unitA.d}が1個分。分母${unitA.d}をそのままにして、分子の個数を${ast.op === "+" ? "合わせる" : "引く"}とどうなるかな。`
-                : `${KZ.expression(ast)}。1個分の大きさが同じかな。分母が違うので共通の倍数を探し、そろえた後の分子の個数を計算しよう。`
-              : `${KZ.expression(ast)}。それぞれの分数の1個分と個数を確かめよう。${ast.op === "/" ? "わる数に何をかけると1になるかな。その数を両方にかけると商は変わらないよ。" : "分子をかけると個数、分母をかけると分け方がどう変わるかな。"}`;
+                ? `${expression(ast)}。どちらも1/${unitA.d}が1個分。分母${unitA.d}をそのままにして、分子の個数を${ast.op === "+" ? "合わせる" : "引く"}とどうなるかな。`
+                : `${expression(ast)}。1個分の大きさが同じかな。分母が違うので共通の倍数を探し、そろえた後の分子の個数を計算しよう。`
+              : `${expression(ast)}。それぞれの分数の1個分と個数を確かめよう。${ast.op === "/" ? "わる数に何をかけると1になるかな。その数を両方にかけると商は変わらないよ。" : "分子をかけると個数、分母をかけると分け方がどう変わるかな。"}`;
         }
       }
     }
-    return `${focus} ${KZ.generalHint(q)}`;
+    return `${focus} ${generalHint(q)}`;
   }
-  function steps(q) {
-    if (!q.written) return explain(q);
+
+  function steps(q: Question): TeachingStep[] {
     const ast = q.expressionAST;
-    const av = KZ.evaluate(ast.args[0]),
-      bv = KZ.evaluate(ast.args[1]);
-    const sa = places(av),
-      sb = places(bv);
-    const result = [],
-      board = { op: ast.op, cols: 2, rows: [] };
-    const push = (text, check, meta = {}) =>
+    if (!q.written || !ast?.op) return explain(q);
+    const av = evaluate(ast.args[0]);
+    const bv = evaluate(ast.args[1]);
+    const sa = places(av);
+    const sb = places(bv);
+    const result: TeachingStep[] = [];
+    const board: WrittenBoard = { op: ast.op, cols: 2, rows: [] };
+    const push = (
+      text: string,
+      check?: { op: ArithmeticOp; a: string; b: string; result: string },
+      meta: Partial<TeachingStep> = {},
+    ): number =>
       result.push({
         text,
         kind: "text",
@@ -1020,23 +1149,29 @@ const KZTeaching = (() => {
         ...(check ? { check } : {}),
         ...meta,
       });
-    const blank = () => Array(board.cols).fill("");
-    const mark = (row, column, value, crossed = false) => {
+    const blank = (): string[] => Array<string>(board.cols).fill("");
+    const mark = (
+      row: WrittenRow,
+      column: number,
+      value: number | string,
+      crossed = false,
+    ): void => {
       row.annotations ||= {};
       row.annotations[column] = { value: String(value), crossed };
     };
     if (["+", "-"].includes(ast.op)) {
-      const scale = Math.max(sa, sb),
-        a = coefficient(av, scale),
-        b = coefficient(bv, scale);
+      const scale = Math.max(sa, sb);
+      const a = coefficient(av, scale);
+      const b = coefficient(bv, scale);
       const size = Math.max(String(a).length, String(b).length, scale + 1);
       const aa = String(a).padStart(size, "0").split("").map(Number);
       const bb = String(b).padStart(size, "0").split("").map(Number);
       board.cols =
         size + (ast.op === "+" && String(a + b).length > size ? 1 : 0);
       const offset = board.cols - size;
-      const top = { digits: decimal(a, scale) },
-        answer = { digits: blank(), line: true };
+      const top: WrittenRow = { digits: decimal(a, scale) };
+      const answerDigits = blank();
+      const answer: WrittenRow = { digits: answerDigits, line: true };
       if (scale) answer.points = [board.cols - scale - 1];
       board.rows = [
         top,
@@ -1052,10 +1187,11 @@ const KZTeaching = (() => {
           ? "小数点と同じ位をそろえる。"
           : "同じ位をそろえ、一の位から計算する。",
       );
-      if (scale)
+      if (scale) {
         push(
-          `${KZ.format(av, "decimal")}＝${decimal(a, scale)}、${KZ.format(bv, "decimal")}＝${decimal(b, scale)}。右に0を補っても大きさは同じ。小数点をそろえ、同じ大きさの位で計算する。`,
+          `${format(av, "decimal")}＝${decimal(a, scale)}、${format(bv, "decimal")}＝${decimal(b, scale)}。右に0を補っても大きさは同じ。小数点をそろえ、同じ大きさの位で計算する。`,
         );
+      }
       let carry = 0;
       for (let i = size - 1; i >= 0; i--) {
         const col = offset + i;
@@ -1063,7 +1199,7 @@ const KZTeaching = (() => {
         if (ast.op === "-") {
           if (aa[i] < bb[i]) {
             push(
-              `${place(size - i - 1, scale)}は今${aa[i]}。${aa[i]}から${bb[i]}は引けないので、左の位から借りられるか見よう。`,
+              `${placeName(size - i - 1, scale)}は今${aa[i]}。${aa[i]}から${bb[i]}は引けないので、左の位から借りられるか見よう。`,
               undefined,
               {
                 intent: "borrow-need",
@@ -1076,7 +1212,7 @@ const KZTeaching = (() => {
             while (j >= 0 && aa[j] === 0) {
               board.focus = offset + j;
               push(
-                `${place(size - j - 1, scale)}も0なので、ここからは借りられない。もう1つ左の位を見よう。`,
+                `${placeName(size - j - 1, scale)}も0なので、ここからは借りられない。もう1つ左の位を見よう。`,
                 undefined,
                 { intent: "borrow-search", column: offset + j, current: 0 },
               );
@@ -1085,16 +1221,16 @@ const KZTeaching = (() => {
             if (j < 0) throw Error("Teaching borrow underflow");
             board.focus = offset + j;
             push(
-              `${place(size - j - 1, scale)}には${aa[j]}あるので、ここから1を渡せる。隣の位へ順に移そう。`,
+              `${placeName(size - j - 1, scale)}には${aa[j]}あるので、ここから1を渡せる。隣の位へ順に移そう。`,
               undefined,
               { intent: "borrow-donor", column: offset + j, current: aa[j] },
             );
             // Across zeros, move one place at a time; old states never become extra rows.
             for (let k = j; k < i; k++) {
-              const from = place(size - k - 1, scale),
-                to = place(size - k - 2, scale),
-                oldFrom = aa[k],
-                oldTo = aa[k + 1];
+              const from = placeName(size - k - 1, scale);
+              const to = placeName(size - k - 2, scale);
+              const oldFrom = aa[k];
+              const oldTo = aa[k + 1];
               push(
                 `${from}の1は、${to}では10と同じ大きさ。この10を${to}へ移そう。`,
                 undefined,
@@ -1124,9 +1260,9 @@ const KZTeaching = (() => {
           }
           const value = aa[i] - bb[i];
           board.focus = col;
-          answer.digits[col] = String(value);
+          answerDigits[col] = String(value);
           push(
-            `${place(size - i - 1, scale)}：今の${aa[i]}から${bb[i]}を引くと${value}。${aa[i]}−${bb[i]}＝${value}。${value}を書く。${i ? `次は${place(size - i, scale)}。今は${aa[i - 1]}${aa[i - 1] < bb[i - 1] ? `なので${bb[i - 1]}を引けない。左の位を見よう。` : `から${bb[i - 1]}を引こう。`}` : "すべての位を計算できた。"}`,
+            `${placeName(size - i - 1, scale)}：今の${aa[i]}から${bb[i]}を引くと${value}。${aa[i]}−${bb[i]}＝${value}。${value}を書く。${i ? `次は${placeName(size - i, scale)}。今は${aa[i - 1]}${aa[i - 1] < bb[i - 1] ? `なので${bb[i - 1]}を引けない。左の位を見よう。` : `から${bb[i - 1]}を引こう。`}` : "すべての位を計算できた。"}`,
             {
               op: "-",
               a: String(aa[i]),
@@ -1135,10 +1271,10 @@ const KZTeaching = (() => {
             },
           );
         } else {
-          const sum = aa[i] + bb[i] + carry,
-            previous = carry;
+          const sum = aa[i] + bb[i] + carry;
+          const previous = carry;
           push(
-            `${place(size - i - 1, scale)}：${aa[i]}＋${bb[i]}${previous ? `＋${previous}（右の位から来たまとまり）` : ""}＝${sum}。`,
+            `${placeName(size - i - 1, scale)}：${aa[i]}＋${bb[i]}${previous ? `＋${previous}（右の位から来たまとまり）` : ""}＝${sum}。`,
             {
               op: "+",
               a: String(aa[i] + bb[i]),
@@ -1147,17 +1283,18 @@ const KZTeaching = (() => {
             },
             { intent: "column-sum", column: col },
           );
-          if (sum >= 10)
+          if (sum >= 10) {
             push(
-              `${sum}は10と${sum % 10}。この位の10個を、左の${place(size - i, scale)}の1個にまとめる。`,
+              `${sum}は10と${sum % 10}。この位の10個を、左の${placeName(size - i, scale)}の1個にまとめる。`,
               undefined,
               { intent: "carry-unit", column: col },
             );
-          answer.digits[col] = String(sum % 10);
+          }
+          answerDigits[col] = String(sum % 10);
           carry = Math.floor(sum / 10);
           if (carry) mark(top, col - 1, carry);
           push(
-            `${place(size - i - 1, scale)}に${sum % 10}を書く。${carry ? `左の${place(size - i, scale)}へ1をくり上げる。次はその1も足す。` : i ? `次は${place(size - i, scale)}の${aa[i - 1]}と${bb[i - 1]}を足す。` : "すべての位を計算できた。"}`,
+            `${placeName(size - i - 1, scale)}に${sum % 10}を書く。${carry ? `左の${placeName(size - i, scale)}へ1をくり上げる。次はその1も足す。` : i ? `次は${placeName(size - i, scale)}の${aa[i - 1]}と${bb[i - 1]}を足す。` : "すべての位を計算できた。"}`,
             {
               op: "+",
               a: String(aa[i] + bb[i]),
@@ -1168,30 +1305,31 @@ const KZTeaching = (() => {
         }
       }
       if (carry) {
-        answer.digits[0] = String(carry);
+        answerDigits[0] = String(carry);
         push(`左の位に、くり上がった${carry}を書く。`);
       }
-      if (ast.op === "-" && answer.digits[0] === "0")
+      if (ast.op === "-" && answerDigits[0] === "0") {
         push(
           "答えのいちばん左の0は省いて書ける。途中の位の0は、その場所を保つために残す。",
         );
+      }
       answer.digits = decimal(ast.op === "+" ? a + b : a - b, scale);
     } else if (ast.op === "*") {
-      const a = coefficient(av, sa),
-        b = coefficient(bv, sb),
-        product = a * b;
-      const aa = String(a).split("").reverse().map(Number),
-        bb = String(b).split("").reverse().map(Number);
+      const a = coefficient(av, sa);
+      const b = coefficient(bv, sb);
+      const product = a * b;
+      const aa = String(a).split("").reverse().map(Number);
+      const bb = String(b).split("").reverse().map(Number);
       board.cols = Math.max(
         String(a).length,
         String(b).length,
         String(product).length,
         sa + sb + 1,
       );
-      const top = { digits: KZ.format(av, "decimal") };
+      const top: WrittenRow = { digits: format(av, "decimal") };
       board.rows = [
         top,
-        { digits: KZ.format(bv, "decimal"), sign: "×", underline: true },
+        { digits: format(bv, "decimal"), sign: "×", underline: true },
       ];
       push(
         sa + sb
@@ -1200,7 +1338,7 @@ const KZTeaching = (() => {
       );
       if (sa + sb) {
         push(
-          `${KZ.format(av, "decimal")}を${10 ** sa}倍して${a}、${KZ.format(bv, "decimal")}を${10 ** sb}倍して${b}にする。作業する積は${10 ** sa}×${10 ** sb}＝${10 ** (sa + sb)}倍になる。`,
+          `${format(av, "decimal")}を${10 ** sa}倍して${a}、${format(bv, "decimal")}を${10 ** sb}倍して${b}にする。作業する積は${10 ** sa}×${10 ** sb}＝${10 ** (sa + sb)}倍になる。`,
         );
         top.digits = String(a);
         board.rows[1].digits = String(b);
@@ -1211,20 +1349,24 @@ const KZTeaching = (() => {
           { intent: "integer-working-form" },
         );
       }
-      const partials = [];
+      const partials: WrittenRow[] = [];
+      const partialDigitArrays: string[][] = [];
       for (let shift = 0; shift < bb.length; shift++) {
         top.annotations = {};
-        const row = { digits: blank(), shift, line: shift === 0 };
+        const rowDigits = blank();
+        const row: WrittenRow = { digits: rowDigits, shift, line: shift === 0 };
         board.rows.push(row);
         partials.push(row);
-        if (shift)
+        partialDigitArrays.push(rowDigits);
+        if (shift) {
           push(
-            `${place(shift)}の${bb[shift]}は${bb[shift] * 10 ** shift}。${a}×${bb[shift]}の${10 ** shift}倍なので、部分積は${place(shift)}から書く。`,
+            `${placeName(shift)}の${bb[shift]}は${bb[shift] * 10 ** shift}。${a}×${bb[shift]}の${10 ** shift}倍なので、部分積は${placeName(shift)}から書く。`,
           );
+        }
         let carry = 0;
         for (let i = 0; i < aa.length; i++) {
-          const value = aa[i] * bb[shift] + carry,
-            previous = carry;
+          const value = aa[i] * bb[shift] + carry;
+          const previous = carry;
           const col = board.cols - 1 - i - shift;
           board.focus = col;
           push(
@@ -1237,22 +1379,24 @@ const KZTeaching = (() => {
             },
             { intent: "product-sum" },
           );
-          if (value >= 10)
+          if (value >= 10) {
             push(
               `${value}は${Math.floor(value / 10)}個の10と${value % 10}。10のまとまりを左の位へ渡す。`,
               undefined,
               { intent: "carry-unit" },
             );
-          row.digits[col] = String(value % 10);
+          }
+          rowDigits[col] = String(value % 10);
           carry = Math.floor(value / 10);
           if (carry && i + 1 < aa.length) mark(top, board.cols - 2 - i, carry);
-          if (i + 1 === aa.length && carry) row.digits[col - 1] = String(carry);
+          if (i + 1 === aa.length && carry) rowDigits[col - 1] = String(carry);
           if (i + 1 === aa.length) {
             // Keep one zero for a zero partial product, and omit other leading zeros.
-            let first = row.digits.findIndex((v) => v !== "" && v !== "0");
-            if (first < 0) first = row.digits.findLastIndex((v) => v !== "");
-            for (let column = 0; column < first; column++)
-              row.digits[column] = "";
+            let first = rowDigits.findIndex((v) => v !== "" && v !== "0");
+            if (first < 0) first = rowDigits.findLastIndex((v) => v !== "");
+            for (let column = 0; column < first; column++) {
+              rowDigits[column] = "";
+            }
           }
           push(
             i + 1 === aa.length
@@ -1268,23 +1412,25 @@ const KZTeaching = (() => {
         }
       }
       top.annotations = {};
-      let answer;
-      if (partials.length === 1) answer = partials[0];
-      else {
-        answer = { digits: blank(), line: true };
+      let answer: WrittenRow;
+      if (partials.length === 1) {
+        answer = partials[0];
+      } else {
+        const answerDigits = blank();
+        answer = { digits: answerDigits, line: true };
         board.rows.push(answer);
         let carry = 0;
         for (let col = board.cols - 1; col >= 0; col--) {
-          const add = partials.reduce(
-              (sum, row) => sum + Number(row.digits[col] || 0),
-              0,
-            ),
-            previous = carry,
-            sum = add + carry;
-          const terms = partials.map((row) => row.digits[col] || "0");
+          const add = partialDigitArrays.reduce(
+            (sum, digits) => sum + Number(digits[col] || 0),
+            0,
+          );
+          const previous = carry;
+          const sum = add + carry;
+          const terms = partialDigitArrays.map((digits) => digits[col] || "0");
           board.focus = col;
           push(
-            `${place(board.cols - col - 1)}の部分積をたす：${terms.join("＋")}${previous ? `＋${previous}（くり上がり）` : ""}＝${sum}。`,
+            `${placeName(board.cols - col - 1)}の部分積をたす：${terms.join("＋")}${previous ? `＋${previous}（くり上がり）` : ""}＝${sum}。`,
             {
               op: "+",
               a: String(add),
@@ -1293,17 +1439,18 @@ const KZTeaching = (() => {
             },
             { intent: "partial-sum", terms, column: col },
           );
-          if (sum >= 10)
+          if (sum >= 10) {
             push(
               `${sum}は10と${sum % 10}。10を左の位の1として渡す。`,
               undefined,
               { intent: "carry-unit" },
             );
-          answer.digits[col] = String(sum % 10);
+          }
+          answerDigits[col] = String(sum % 10);
           carry = Math.floor(sum / 10);
           if (carry && col > 0) mark(partials[0], col - 1, carry);
           push(
-            `${place(board.cols - col - 1)}に${sum % 10}を書く。${carry ? "左の位へ1をくり上げ、次の列で足す。" : ""}`,
+            `${placeName(board.cols - col - 1)}に${sum % 10}を書く。${carry ? "左の位へ1をくり上げ、次の列で足す。" : ""}`,
             {
               op: "+",
               a: String(add),
@@ -1325,27 +1472,27 @@ const KZTeaching = (() => {
             : row.digits;
           row.digits = decimal(BigInt(effective), sa + sb);
         }
-        top.digits = KZ.format(av, "decimal");
-        board.rows[1].digits = KZ.format(bv, "decimal");
+        top.digits = format(av, "decimal");
+        board.rows[1].digits = format(bv, "decimal");
         answer.digits = originalProduct;
         delete board.focus;
         board.caption =
           "元の小数の式に戻した筆算。部分積も元の大きさで表している。";
         push(
-          `元の式に戻す：${KZ.format(av, "decimal")}×${KZ.format(bv, "decimal")}＝${originalProduct}。`,
+          `元の式に戻す：${format(av, "decimal")}×${format(bv, "decimal")}＝${originalProduct}。`,
         );
       }
     } else {
-      const movedA = KZ.calc("*", av, KZ.rat(10n ** BigInt(sb))),
-        divisor = coefficient(bv, sb);
+      const movedA = calc("*", av, rat(10n ** BigInt(sb)));
+      const divisor = coefficient(bv, sb);
       const integerQuotient =
-        q.answerSpec.type === "quotient" || q.integerQuotient;
+        q.answerSpec.type === "quotient" || Boolean(q.integerQuotient);
       const quotientPlaces = integerQuotient
         ? 0
         : q.roundPlaces !== undefined
           ? q.roundPlaces + 1
-          : KZ.decimalPlaces(KZ.evaluate(ast));
-      const parts = KZ.format(movedA, "decimal").split(".");
+          : decimalPlaces(evaluate(ast));
+      const parts = format(movedA, "decimal").split(".");
       const tail = (parts[1] || "")
         .padEnd(quotientPlaces, "0")
         .slice(0, quotientPlaces);
@@ -1355,42 +1502,45 @@ const KZTeaching = (() => {
         parts[0] + (tail || untouched ? "." + (tail || untouched) : "");
       board.cols = Math.max(2, source.length + untouched.length);
       const offset = board.cols - source.length - untouched.length;
-      const quotient = { digits: blank(), quotient: true };
+      const quotientDigits = blank();
+      const quotient: WrittenRow = { digits: quotientDigits, quotient: true };
       if (tail) quotient.points = [offset + parts[0].length - 1];
       board.rows = [
         quotient,
         { digits: dividend, dividend, divisor: String(divisor) },
       ];
-      if (sb)
-        board.caption = `両方を${10 ** sb}倍した筆算：${KZ.format(movedA, "decimal")}÷${divisor}。商の個数は元の式と同じ。`;
+      if (sb) {
+        board.caption = `両方を${10 ** sb}倍した筆算：${format(movedA, "decimal")}÷${divisor}。商の個数は元の式と同じ。`;
+      }
       push(
         sb
-          ? `${KZ.format(bv, "decimal")}を整数にするため、両方を${10 ** sb}倍する。同じ倍率なら何個分かは変わらない。${KZ.format(av, "decimal")}÷${KZ.format(bv, "decimal")}＝${KZ.format(movedA, "decimal")}÷${divisor}。`
+          ? `${format(bv, "decimal")}を整数にするため、両方を${10 ** sb}倍する。同じ倍率なら何個分かは変わらない。${format(av, "decimal")}÷${format(bv, "decimal")}＝${format(movedA, "decimal")}÷${divisor}。`
           : "わる数と、わられる数を書き、左の位から計算する。",
       );
       if (tail.length > (parts[1] || "").length) {
         push(
-          `${KZ.format(movedA, "decimal")}＝${dividend}。小数まで割り進めるために0を補える。数の大きさは変わらない。${q.roundPlaces !== undefined ? `小数第${q.roundPlaces}位まで丸めるには、もう1つ右の位まで求めておく。` : ""}`,
+          `${format(movedA, "decimal")}＝${dividend}。小数まで割り進めるために0を補える。数の大きさは変わらない。${q.roundPlaces !== undefined ? `小数第${q.roundPlaces}位まで丸めるには、もう1つ右の位まで求めておく。` : ""}`,
           undefined,
           { intent: "decimal-extension" },
         );
       }
-      if (tail)
+      if (tail) {
         push(
           `商の小数点は、割られる数の小数点の真上。同じ位の答えを、その位へ書く。`,
         );
-      let remainder = 0n,
-        started = false,
-        previousRow = null;
+      }
+      let remainder = 0n;
+      let started = false;
+      let previousRow: WrittenRow | null = null;
       for (let i = 0; i < source.length; i++) {
-        const partial = remainder * 10n + BigInt(source[i]),
-          digit = partial / divisor,
-          product = digit * divisor,
-          rem = partial - product;
+        const partial = remainder * 10n + BigInt(source[i]);
+        const digit = partial / divisor;
+        const product = digit * divisor;
+        const rem = partial - product;
         const trailing = source.length - i - 1 + untouched.length;
         if (started && previousRow) {
           push(
-            `${place(source.length - i, tail.length)}の余り${remainder}を、次の${place(source.length - i - 1, tail.length)}の個数へ直すと${remainder}×10＝${remainder * 10n}。次の数字${source[i]}の分を合わせる。`,
+            `${placeName(source.length - i, tail.length)}の余り${remainder}を、次の${placeName(source.length - i - 1, tail.length)}の個数へ直すと${remainder}×10＝${remainder * 10n}。次の数字${source[i]}の分を合わせる。`,
             {
               op: "*",
               a: String(remainder),
@@ -1416,8 +1566,8 @@ const KZTeaching = (() => {
         if (digit || started || i >= parts[0].length - 1) {
           started = true;
           if (divisor >= 10n && partial >= divisor) {
-            const power = 10n ** BigInt(String(divisor).length - 1),
-              leading = (divisor / power) * power;
+            const power = 10n ** BigInt(String(divisor).length - 1);
+            const leading = (divisor / power) * power;
             let trial = partial / leading;
             if (trial > 9n) trial = 9n;
             push(
@@ -1426,7 +1576,7 @@ const KZTeaching = (() => {
               { intent: "quotient-estimate" },
             );
             while (trial > digit) {
-              quotient.digits[offset + i] = String(trial);
+              quotientDigits[offset + i] = String(trial);
               push(
                 `${divisor}×${trial}＝${divisor * trial}は${partial}より大きい。試した${trial}では多い。1小さくして試そう。`,
                 {
@@ -1437,7 +1587,7 @@ const KZTeaching = (() => {
                 },
               );
               trial--;
-              quotient.digits[offset + i] = String(trial);
+              quotientDigits[offset + i] = String(trial);
               push(
                 `仮の商を${trial}に直した。次は${divisor}×${trial}を確かめる。`,
                 undefined,
@@ -1455,9 +1605,9 @@ const KZTeaching = (() => {
             },
             { intent: "quotient-choice" },
           );
-          quotient.digits[offset + i] = String(digit);
+          quotientDigits[offset + i] = String(digit);
           push(
-            `${place(source.length - i - 1, tail.length)}の商として${digit}を書く。今見ている割られる数の位の真上に立てる。`,
+            `${placeName(source.length - i - 1, tail.length)}の商として${digit}を書く。今見ている割られる数の位の真上に立てる。`,
           );
           board.rows.push({
             digits: String(product),
@@ -1480,13 +1630,14 @@ const KZTeaching = (() => {
             b: String(product),
             result: String(rem),
           });
-          if (i + 1 === source.length)
+          if (i + 1 === source.length) {
             push(
               `余り${rem}は割る数${divisor}より小さい。${integerQuotient ? "商は整数までなので、ここで止める。" : rem === 0n ? "余りが0になったので割り切れた。" : "求める位まで計算できた。"}`,
             );
+          }
         } else {
           push(
-            `${place(source.length - i - 1, tail.length)}の${partial}では、${divisor}を1組作れない。次の位まで合わせて見る。`,
+            `${placeName(source.length - i - 1, tail.length)}の${partial}では、${divisor}を1組作れない。次の位まで合わせて見る。`,
             undefined,
             { intent: "division-start-search" },
           );
@@ -1501,51 +1652,50 @@ const KZTeaching = (() => {
         );
       }
       if (q.roundPlaces !== undefined) {
-        const last = quotient.digits[offset + parts[0].length + q.roundPlaces],
-          target =
-            quotient.digits[offset + parts[0].length + q.roundPlaces - 1];
+        const last = quotientDigits[offset + parts[0].length + q.roundPlaces];
+        const target =
+          quotientDigits[offset + parts[0].length + q.roundPlaces - 1];
         push(
           `小数第${q.roundPlaces}位まで残す。1つ右の小数第${q.roundPlaces + 1}位は${last}。${Number(last) >= 5 ? `5以上なので、残す位の${target}を1増やす。9ならさらに左へくり上がる。` : "5未満なので、残す位はそのまま。"}`,
           undefined,
           { intent: "round-decision" },
         );
-        quotient.digits = KZ.format(
-          KZ.roundExact(KZ.evaluate(ast), q.roundPlaces),
+        const roundedText = format(
+          roundExact(evaluate(ast), q.roundPlaces),
           "decimal",
         );
+        quotient.digits = roundedText;
         quotient.trailing =
           quotientPlaces -
-          (quotient.digits.split(".")[1] || "").length +
+          (roundedText.split(".")[1] || "").length +
           untouched.length;
         delete quotient.points;
         // Rounding 9.99 to 10 adds a whole-number column. Keep every digit
         // visible and retain the place alignment of the earlier division rows.
         const extraColumns = Math.max(
           0,
-          quotient.digits.replace(".", "").length +
-            quotient.trailing -
-            board.cols,
+          roundedText.replace(".", "").length + quotient.trailing - board.cols,
         );
         board.cols += extraColumns;
-        board.focus += extraColumns;
+        board.focus = (board.focus ?? 0) + extraColumns;
         push(
-          `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${quotient.digits}。`,
+          `小数第${q.roundPlaces + 1}位を見て四捨五入する。商は${roundedText}。`,
         );
       }
       if (sb && integerQuotient) {
         const wholeQuotient =
-            q.answerSpec.type === "quotient"
-              ? q.expectedExactValue.quotient
-              : q.expectedExactValue.n,
-          value = KZ.calc("-", av, KZ.calc("*", bv, KZ.rat(wholeQuotient))),
-          movedRemainder = KZ.calc("*", value, 10n ** BigInt(sb));
+          q.answerSpec.type === "quotient"
+            ? expectQuotient(q.expectedExactValue).quotient
+            : expectRational(q.expectedExactValue).n;
+        const value = calc("-", av, calc("*", bv, rat(wholeQuotient)));
+        const movedRemainder = calc("*", value, 10n ** BigInt(sb));
         push(
-          `作業の余り${KZ.format(movedRemainder, "decimal")}も元の余りの${10 ** sb}倍。${KZ.format(movedRemainder, "decimal")}÷${10 ** sb}＝${KZ.format(value, "decimal")}に戻す。商の個数は変わらない。`,
+          `作業の余り${format(movedRemainder, "decimal")}も元の余りの${10 ** sb}倍。${format(movedRemainder, "decimal")}÷${10 ** sb}＝${format(value, "decimal")}に戻す。商の個数は変わらない。`,
           undefined,
           { intent: "remainder-unit" },
         );
-        const originalScale = Math.max(sa, sb),
-          originalProduct = KZ.calc("*", bv, KZ.rat(wholeQuotient));
+        const originalScale = Math.max(sa, sb);
+        const originalProduct = calc("*", bv, rat(wholeQuotient));
         const originalDividend = decimal(
           coefficient(av, originalScale),
           originalScale,
@@ -1564,7 +1714,7 @@ const KZTeaching = (() => {
           {
             digits: originalDividend,
             dividend: originalDividend,
-            divisor: KZ.format(bv, "decimal"),
+            divisor: format(bv, "decimal"),
           },
           {
             digits: decimal(
@@ -1584,15 +1734,18 @@ const KZTeaching = (() => {
         board.caption =
           "元の数で商と余りを確かめた筆算。途中の整数の計算は「もどる」で確かめられる。";
         push(
-          `元の数では、${KZ.format(av, "decimal")}−${KZ.format(originalProduct, "decimal")}＝${KZ.format(value, "decimal")}。この余りは${KZ.format(bv, "decimal")}より小さい。`,
+          `元の数では、${format(av, "decimal")}−${format(originalProduct, "decimal")}＝${format(value, "decimal")}。この余りは${format(bv, "decimal")}より小さい。`,
         );
       }
-      for (const t of q.solutionTrace || [])
-        if (t.kind === "text" && /たしかめ：|余りの小数点/.test(t.text))
+      for (const t of q.solutionTrace || []) {
+        if (t.kind === "text" && /たしかめ：|余りの小数点/.test(t.text)) {
           push(t.text);
+        }
+      }
     }
-    push(`こたえ：${KZ.answerText(q)}`);
+    push(`こたえ：${answerText(q)}`);
     return result;
   }
+
   return Object.freeze({ steps, explain, hint });
 })();

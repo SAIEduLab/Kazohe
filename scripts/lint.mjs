@@ -23,6 +23,19 @@ import {
   trackedFiles,
   verifyDocLinks,
 } from "./doc-links.mjs";
+import {
+  productScript,
+  readSource,
+  SOURCE_SIZE_LINES,
+  sourceSizes,
+} from "./product-script.mjs";
+import { typeCheck, typeIssues } from "./type-check.mjs";
+import { pageTypes, pageTypesFile, repositoryPage } from "./page-types.mjs";
+import {
+  loadRepositoryContracts,
+  verifyDataContracts,
+} from "./data-contracts.mjs";
+import { runTsBuildTests } from "../tests/unit/ts-build.mjs";
 const s = suite("lint");
 s.check("html-js-syntax", () => {
   const errors = [];
@@ -153,9 +166,19 @@ s.check("TC-D02", () => {
     ...Array.from({ length: 11 }, (_, i) => String(200 + i)),
   ].map((n) => `KZ-${n}`);
   assert.deepEqual(ownership.map((o) => o.id).sort(), required.sort());
+  const built = productScript();
+  const pieceTextByFile = new Map();
+  for (const piece of built.pieces)
+    pieceTextByFile.set(
+      piece.label,
+      (pieceTextByFile.get(piece.label) || "") +
+        built.text.slice(piece.start, piece.end),
+    );
   for (const owner of ownership) {
     assert(existsSync(owner.file), `${owner.id}: missing owner`);
-    const source = readFileSync(owner.file, "utf8");
+    const source = pieceTextByFile.has(owner.file)
+      ? pieceTextByFile.get(owner.file)
+      : readFileSync(owner.file, "utf8");
     assert(owner.symbols.length && owner.tests.length, owner.id);
     for (const symbol of owner.symbols)
       assert(source.includes(symbol), `${owner.id}: missing ${symbol}`);
@@ -167,7 +190,7 @@ s.check("TC-D02", () => {
   }
 });
 s.check("TC-D04", () => {
-  const source = JSON.parse(readFileSync("src/catalog.json", "utf8"));
+  const source = JSON.parse(readSource("src/catalog.json"));
   const oracle = JSON.parse(
     readFileSync("tests/fixtures/catalog.json", "utf8"),
   );
@@ -266,4 +289,30 @@ await s.checkAsync("audit-code", () => verifyAuditCode());
 s.check("audit-inventory", () => verifyAuditInventory());
 s.check("workflow-contract", () => verifyWorkflowContract());
 s.check("doc-links", () => verifyDocLinks(undefined, { checkAllowlist: false }));
+s.check("type-check", () => {
+  const issues = typeIssues(typeCheck());
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("page-types", () => {
+  const { html: shellHtml, sources } = repositoryPage();
+  assert.equal(pageTypes(shellHtml, sources), readSource(pageTypesFile));
+});
+s.check("data-contracts", () => {
+  const { issues } = verifyDataContracts(loadRepositoryContracts());
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("source-size", () => {
+  const { built } = productScript();
+  const sizes = sourceSizes(
+    readSource,
+    built.sources.filter((f) => f.endsWith(".ts")),
+  );
+  const tooLarge = sizes.filter((x) => x.lines > SOURCE_SIZE_LINES);
+  assert.deepEqual(
+    tooLarge,
+    [],
+    tooLarge.map((x) => `${x.file}: ${x.lines} > ${SOURCE_SIZE_LINES}`).join("\n"),
+  );
+});
+runTsBuildTests((id, fn) => s.check(id, fn));
 s.done();

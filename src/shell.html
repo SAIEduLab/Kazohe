@@ -10,7 +10,7 @@
     <meta name="color-scheme" content="light" />
     <title>かぞへ v__KAZOHE_VERSION__</title>
     <style>
-      /* STYLE */
+<!-- @include style.css -->
     </style>
   </head>
   <body>
@@ -36,10 +36,27 @@
     </dialog>
     <footer>かぞへ v__KAZOHE_VERSION__ · じぶんのペースで、なんどでも。</footer>
     <script id="kazohe-core">
-      /* CORE */
+const { KZLanguage, KZWritten, KZ, KZTeaching } = (() => {
+"use strict";
+<!-- @core ts/00-prelude.ts -->
+<!-- @core ts/01-language.ts -->
+<!-- @core ts/02-math.ts -->
+<!-- @core ts/03-written.ts -->
+<!-- @core ts/04-teaching.ts -->
+<!-- @core ts/05-solutions.ts -->
+<!-- @core ts/06-generators.ts -->
+<!-- @core ts/07-run-and-save.ts -->
+return { KZLanguage, KZWritten, KZ, KZTeaching };
+})();
     </script>
     <script id="kazohe-app">
-      /* APP */
+(() => {
+"use strict";
+<!-- @include ts/10-view.ts -->
+<!-- @include ts/11-app-helpers.ts -->
+<!-- @include ts/12-app-menu.ts -->
+<!-- @include ts/13-app-main.ts -->
+})();
     </script>
   </body>
 </html>

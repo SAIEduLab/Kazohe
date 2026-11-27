@@ -449,7 +449,7 @@ export async function runChangeGuardTests() {
           }),
         ),
         "versionIssues",
-        /must be 0\.2\.7/,
+        new RegExp("must be " + next.replaceAll(".", "\\.")),
       );
       assertFail(
         "bump-without-product-change",
@@ -465,12 +465,14 @@ export async function runChangeGuardTests() {
           derive({ ...sourceChange, ...recordAudit("version:" + appVersion) }),
         ),
         "versionIssues",
-        /must be 0\.2\.7/,
+        new RegExp("must be " + next.replaceAll(".", "\\.")),
       );
 
       assertFail(
         "two-product-htmls",
-        await guard(derive({ "Kazohe_0_2_7.html": productText })),
+        await guard(
+          derive({ [`Kazohe_${next.replaceAll(".", "_")}.html`]: productText }),
+        ),
         "releaseIssues",
         /exactly one product HTML/,
       );

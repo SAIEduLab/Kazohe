@@ -11,7 +11,7 @@ export const coreSource = html.match(
   /<script id="kazohe-core">([\s\S]*?)<\/script>/,
 )?.[1];
 if (!coreSource) throw Error("Final HTML core missing");
-const context = vm.createContext({ TextEncoder });
+const context = vm.createContext({ TextEncoder, structuredClone });
 vm.runInContext(
   coreSource +
     ";globalThis.result=KZ;globalThis.teaching=KZTeaching;globalThis.language=KZLanguage;globalThis.written=KZWritten;",
