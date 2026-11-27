@@ -19,10 +19,16 @@ const { result } = await post("Profiler.takePreciseCoverage");
 await post("Profiler.stopPreciseCoverage");
 session.disconnect();
 const { coreSource, htmlPath } = await import("./load-inline-core.mjs");
+const { productScript, lineMap } = await import("./product-script.mjs");
 const script = result.find(
   (s) => s.url === htmlPath || s.url === pathToFileURL(htmlPath).href,
 );
 if (!script) throw Error("Distribution core coverage missing");
+const { core } = productScript();
+const offsetDelta = coreSource.indexOf(core.text);
+if (offsetDelta < 0)
+  throw Error("Built #kazohe-core script does not match product HTML");
+const coreLocation = lineMap(core);
 // The gate covers all numerical, grading, scoring, metrics, clock and save code.
 const names = [
   "gcd",
@@ -63,6 +69,11 @@ const names = [
   "audit",
 ];
 const selected = script.functions.filter((f) => names.includes(f.functionName));
+const missing = names.filter(
+  (n) => !selected.some((f) => f.functionName === n),
+);
+if (missing.length)
+  throw Error("Missing core coverage functions: " + missing.join(", "));
 const allRanges = script.functions.flatMap((f) => f.ranges);
 let lines = 0,
   coveredLines = 0,
@@ -74,6 +85,7 @@ for (const f of selected) {
     nested = allRanges.filter(
       (r) => r.startOffset >= root.startOffset && r.endOffset <= root.endOffset,
     );
+  const where = coreLocation(root.startOffset - offsetDelta);
   let fl = 0,
     fc = 0;
   let offset = root.startOffset;
@@ -98,6 +110,7 @@ for (const f of selected) {
   coveredBranches += fb.filter((r) => r.count > 0).length;
   details.push({
     function: f.functionName,
+    source: where ? `${where[0]}:${where[1]}` : null,
     lines: fl,
     coveredLines: fc,
     branches: fb.length,

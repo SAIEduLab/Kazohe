@@ -1,5 +1,10 @@
 {
-  "changes": [],
+  "changes": [
+    {
+      "change": "rewritten-test:tests/unit/change-guard.mjs",
+      "reason": "Replace three remaining hardcoded 0.2.7 / Kazohe_0_2_7.html expectations in change-guard unit tests with dynamic next / filename(next) so version-bump tests remain valid after bumping to 0.2.7."
+    }
+  ],
   "allowances": [
     {
       "change": "source-read-allowance:scripts/artifact.mjs#1",

@@ -13,7 +13,7 @@
   },
   {
     "id": "KZ-010",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "CATALOG",
       "domains"
@@ -25,7 +25,7 @@
   },
   {
     "id": "KZ-011",
-    "file": "src/app.js",
+    "file": "src/ts/12-app-menu.ts",
     "symbols": [
       "menu",
       "setConfig"
@@ -37,7 +37,7 @@
   },
   {
     "id": "KZ-012",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "normalizeConfig",
       "createRun"
@@ -48,7 +48,7 @@
   },
   {
     "id": "KZ-020",
-    "file": "src/app.js",
+    "file": "src/ts/13-app-main.ts",
     "symbols": [
       "welcome",
       "menu",
@@ -63,7 +63,7 @@
   },
   {
     "id": "KZ-021",
-    "file": "src/app.js",
+    "file": "src/ts/11-app-helpers.ts",
     "symbols": [
       "modal",
       "focusFirst",
@@ -79,7 +79,7 @@
   },
   {
     "id": "KZ-022",
-    "file": "src/app.js",
+    "file": "src/ts/11-app-helpers.ts",
     "symbols": [
       "answerFields"
     ],
@@ -91,7 +91,7 @@
   },
   {
     "id": "KZ-030",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "arithmetic",
       "complete",
@@ -109,7 +109,7 @@
   },
   {
     "id": "KZ-031",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "generate",
       "validateQuestion",
@@ -129,7 +129,7 @@
   },
   {
     "id": "KZ-040",
-    "file": "src/core.js",
+    "file": "src/ts/02-math.ts",
     "symbols": [
       "rat",
       "calc",
@@ -142,7 +142,7 @@
   },
   {
     "id": "KZ-041",
-    "file": "src/core.js",
+    "file": "src/ts/02-math.ts",
     "symbols": [
       "normalizeInput",
       "judge"
@@ -153,7 +153,7 @@
   },
   {
     "id": "KZ-042",
-    "file": "src/core.js",
+    "file": "src/ts/05-solutions.ts",
     "symbols": [
       "writtenTrace",
       "buildHint",
@@ -167,7 +167,7 @@
   },
   {
     "id": "KZ-050",
-    "file": "src/core.js",
+    "file": "src/ts/06-generators.ts",
     "symbols": [
       "domains",
       "atRank",
@@ -179,7 +179,7 @@
   },
   {
     "id": "KZ-051",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "schedule",
       "present"
@@ -190,7 +190,7 @@
   },
   {
     "id": "KZ-060",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "reduceRun",
       "deriveMetrics"
@@ -202,7 +202,7 @@
   },
   {
     "id": "KZ-061",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "scoreCorrect",
       "reduceRun"
@@ -213,7 +213,7 @@
   },
   {
     "id": "KZ-062",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "deriveMetrics",
       "runMetrics"
@@ -225,7 +225,7 @@
   },
   {
     "id": "KZ-070",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "reduceRun",
       "phase",
@@ -238,7 +238,7 @@
   },
   {
     "id": "KZ-071",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "reduceRun",
       "pauseReasons",
@@ -250,7 +250,7 @@
   },
   {
     "id": "KZ-072",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "finish",
       "deriveMetrics"
@@ -262,7 +262,7 @@
   },
   {
     "id": "KZ-080",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "deriveMetrics",
       "runMetrics"
@@ -273,7 +273,7 @@
   },
   {
     "id": "KZ-081",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "eligibility"
     ],
@@ -283,7 +283,7 @@
   },
   {
     "id": "KZ-082",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "evaluateFallback"
     ],
@@ -293,7 +293,7 @@
   },
   {
     "id": "KZ-083",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "evaluateFallback",
       "conditionCount",
@@ -305,7 +305,7 @@
   },
   {
     "id": "KZ-084",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "applyResult",
       "recommendConfig",
@@ -318,7 +318,7 @@
   },
   {
     "id": "KZ-090",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "bestKey",
       "applyResult"
@@ -330,7 +330,7 @@
   },
   {
     "id": "KZ-091",
-    "file": "src/app.js",
+    "file": "src/ts/13-app-main.ts",
     "symbols": [
       "results",
       "runMetrics",
@@ -344,7 +344,7 @@
   },
   {
     "id": "KZ-100",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "STORAGE_KEY",
       "storageAdapter"
@@ -355,7 +355,7 @@
   },
   {
     "id": "KZ-101",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "checkpoint",
       "validateBackup"
@@ -366,7 +366,7 @@
   },
   {
     "id": "KZ-102",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "clearScores",
       "removeItem"
@@ -377,7 +377,7 @@
   },
   {
     "id": "KZ-103",
-    "file": "src/core.js",
+    "file": "src/ts/07-run-and-save.ts",
     "symbols": [
       "validateBackup"
     ],
@@ -400,7 +400,7 @@
   },
   {
     "id": "KZ-200",
-    "file": "src/app.js",
+    "file": "src/ts/12-app-menu.ts",
     "symbols": [
       "menu",
       "start-dock"
@@ -424,7 +424,7 @@
   },
   {
     "id": "KZ-202",
-    "file": "src/view.js",
+    "file": "src/ts/10-view.ts",
     "symbols": [
       "math-fraction",
       "divisionHook"
@@ -435,7 +435,7 @@
   },
   {
     "id": "KZ-203",
-    "file": "src/view.js",
+    "file": "src/ts/10-view.ts",
     "symbols": [
       "written",
       "written-notes"
@@ -447,7 +447,7 @@
   },
   {
     "id": "KZ-204",
-    "file": "src/core.js",
+    "file": "src/ts/05-solutions.ts",
     "symbols": [
       "buildHint",
       "buildSolution"
@@ -458,7 +458,7 @@
   },
   {
     "id": "KZ-205",
-    "file": "src/view.js",
+    "file": "src/ts/10-view.ts",
     "symbols": [
       "readable",
       "answer"
@@ -470,7 +470,7 @@
   },
   {
     "id": "KZ-206",
-    "file": "src/app.js",
+    "file": "src/ts/13-app-main.ts",
     "symbols": [
       "setRangeText",
       "next-field"
@@ -481,7 +481,7 @@
   },
   {
     "id": "KZ-207",
-    "file": "src/core.js",
+    "file": "src/ts/02-math.ts",
     "symbols": [
       "set-value",
       "normalizeInput"
@@ -493,7 +493,7 @@
   },
   {
     "id": "KZ-208",
-    "file": "src/app.js",
+    "file": "src/ts/13-app-main.ts",
     "symbols": [
       "support-panel",
       "focusFirst"
@@ -504,7 +504,7 @@
   },
   {
     "id": "KZ-209",
-    "file": "src/app.js",
+    "file": "src/ts/13-app-main.ts",
     "symbols": [
       "success-feedback",
       "achievement-ribbon"
@@ -528,7 +528,7 @@
   },
   {
     "id": "KZ-092",
-    "file": "src/language.js",
+    "file": "src/ts/01-language.ts",
     "symbols": [
       "readable",
       "forbidden",
@@ -543,7 +543,7 @@
   },
   {
     "id": "KZ-093",
-    "file": "src/written.js",
+    "file": "src/ts/03-written.ts",
     "symbols": [
       "classify",
       "available"

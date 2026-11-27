@@ -1,6 +1,6 @@
 {
   "name": "kazohe",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "lint": "node scripts/lint.mjs",
+    "type-check": "node scripts/type-check.mjs",
     "audit:catalog": "node scripts/audit-catalog.mjs",
     "test:unit": "node scripts/run-unit.mjs",
     "test:property": "node tests/property/generators.mjs",
@@ -18,6 +19,7 @@
     "build:check": "node scripts/build.mjs --check",
     "test:pedagogy": "node tests/unit/pedagogy.mjs",
     "test:change-guard": "node tests/unit/change-guard.mjs",
+    "test:ts-build": "node tests/unit/ts-build.mjs",
     "audit:visual-diff": "node scripts/visual-diff.mjs"
   },
   "devDependencies": {
@@ -29,10 +31,12 @@
     "eslint": "10.13.0",
     "eslint-plugin-sonarjs": "4.2.2",
     "globals": "17.14.0",
+    "jsdom": "26.1.0",
     "mdast-util-from-markdown": "2.0.2",
     "micromark": "4.0.3",
     "parse5": "7.3.0",
-    "prettier": "3.6.2"
+    "prettier": "3.6.2",
+    "typescript": "6.0.3"
   },
   "license": "MIT"
 }
