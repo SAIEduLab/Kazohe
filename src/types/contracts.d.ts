@@ -229,6 +229,7 @@ export interface ChallengeSpec {
   readonly id: ChallengeId;
   readonly grade: Grade;
   readonly category: Domain;
+  readonly unit: string;
   readonly title: string;
   readonly basePoints: number;
   readonly timeClass: TimeClass;

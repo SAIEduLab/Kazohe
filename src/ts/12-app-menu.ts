@@ -6,6 +6,8 @@ import {
   app,
   appState,
   button,
+  challengeAccessibleLabel,
+  challengeLabelNodes,
   challengeOf,
   confirmAction,
   el,
@@ -16,12 +18,10 @@ import {
   select,
   syncSelection,
   text,
-  uiGrade,
 } from "./11-app-helpers.ts";
 import type { ElChild } from "./11-app-helpers.ts";
 import type {
   ChallengeId,
-  Domain,
   Grade,
   RemainderMode,
   RunConfig,
@@ -38,7 +38,6 @@ export interface MenuCallbacks {
 }
 
 const GRADES: readonly Grade[] = [1, 2, 3, 4, 5, 6];
-const CATEGORIES: readonly Domain[] = ["計算", "数"];
 const SUPPORT_KINDS: readonly (readonly [SupportClass, string])[] = [
   ["independent", "じぶんで"],
   ["supported", "ヒント・たすけあり"],
@@ -85,7 +84,7 @@ export function recommendation(renderScreen: () => void): HTMLElement | null {
     [
       text("h3", "つぎの おすすめ"),
       text("p", r.reason),
-      text("strong", challengeOf(r.targetId).title),
+      el("strong", { class: "challenge-label" }, challengeLabelNodes(r.targetId)),
       el("div", { class: "actions" }, [
         button(
           "このれんしゅうを えらぶ",
@@ -470,11 +469,10 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
       class: "challenge-list" + (appState.multiGrade ? " many-grades" : ""),
       "data-testid": "challenge-select",
     },
-    KZ.CATALOG.filter(
-      (c) =>
-        (appState.multiGrade
-          ? appState.selectedGrades.has(c.grade)
-          : c.grade === appState.grade) && c.category === appState.category,
+    KZ.CATALOG.filter((c) =>
+      appState.multiGrade
+        ? appState.selectedGrades.has(c.grade)
+        : c.grade === appState.grade,
     ).map((c) =>
       el(
         "label",
@@ -487,7 +485,7 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
             type: "checkbox",
             checked: selected.has(c.id),
             "data-challenge": c.id,
-            "aria-label": KZUI.readable(c.title, uiGrade()),
+            "aria-label": challengeAccessibleLabel(c.id),
             onChange: (e) => {
               if (!(e.target instanceof HTMLInputElement)) return;
               const ids = new Set<ChallengeId>(
@@ -499,10 +497,10 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
             },
           }),
           el("span", { class: "challenge-copy" }, [
-            text(
-              "strong",
-              `${appState.multiGrade ? c.grade + "ねん・" : ""}${c.title}`,
-            ),
+            el("strong", { class: "challenge-label" }, [
+              appState.multiGrade ? `${c.grade}ねん・` : null,
+              ...challengeLabelNodes(c.id),
+            ]),
             math(KZUI.example(c.id), {
               class: "math-text challenge-example",
               "aria-label": "もんだいのれい",
@@ -528,20 +526,6 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
       [
         text("h3", "1　がくねんを えらぼう", { class: "step-label" }),
         grades,
-        el(
-          "div",
-          { class: "category-tabs" },
-          CATEGORIES.map((c) =>
-            button(
-              c === "計算" ? "＋ けいさん" : "● かず",
-              () => {
-                appState.category = c;
-                renderScreen();
-              },
-              { "aria-pressed": appState.category === c, "data-category": c },
-            ),
-          ),
-        ),
         el("div", { class: "list-heading" }, [
           text(
             "h3",
@@ -642,22 +626,21 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
         "div",
         { class: "chosen-chips", "data-testid": "selected-challenges" },
         appState.config.selectedIds.map((id) =>
-          button(
-            `${challengeOf(id).grade}ねん・${challengeOf(id).title} ×`,
-            () =>
-              updateConfig({
-                ...appState.config,
-                selectedIds: appState.config.selectedIds.filter(
-                  (x) => x !== id,
-                ),
-              }),
+          el(
+            "button",
             {
+              type: "button",
+              onClick: () =>
+                updateConfig({
+                  ...appState.config,
+                  selectedIds: appState.config.selectedIds.filter(
+                    (x) => x !== id,
+                  ),
+                }),
               "data-remove-challenge": id,
-              "aria-label": KZUI.readable(
-                challengeOf(id).title + "を はずす",
-                uiGrade(),
-              ),
+              "aria-label": challengeAccessibleLabel(id) + "を はずす",
             },
+            [`${challengeOf(id).grade}ねん・`, ...challengeLabelNodes(id), " ×"],
           ),
         ),
       ),
@@ -717,14 +700,18 @@ export function menu(callbacks: MenuCallbacks): ElChild[] {
         "div",
         { class: "start-selection", "data-testid": "selection-summary" },
         [
-          text(
-            "strong",
-            appState.config.selectedIds.length === 1
-              ? challengeOf(appState.config.selectedIds[0]).title
-              : appState.config.selectedIds.length
-                ? `${appState.config.selectedIds.length}この れんしゅう`
-                : "もんだいを えらんでね",
-          ),
+          appState.config.selectedIds.length === 1
+            ? el(
+                "strong",
+                { class: "challenge-label" },
+                challengeLabelNodes(appState.config.selectedIds[0]),
+              )
+            : text(
+                "strong",
+                appState.config.selectedIds.length
+                  ? `${appState.config.selectedIds.length}この れんしゅう`
+                  : "もんだいを えらんでね",
+              ),
           text(
             "small",
             appState.config.mode === "practice"

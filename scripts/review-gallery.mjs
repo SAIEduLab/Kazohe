@@ -37,7 +37,7 @@ try {
         const image = readFileSync(
           `reports/screens/catalog/${c.id}-solution.png`,
         ).toString("base64");
-        return `<section><h2>${c.id} ${c.title}</h2><img alt="${c.id} help" src="data:image/png;base64,${image}"></section>`;
+        return `<section><h2>${c.id} ${c.unit}（${c.title}）</h2><img alt="${c.id} help" src="data:image/png;base64,${image}"></section>`;
       })
       .join("");
     const html = `<!doctype html><html lang="ja"><meta charset="utf-8"><title>かぞへ 全技能の支援画面</title><style>body{margin:12px;font:13px system-ui;background:#e8ece9;color:#243857}main{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}section{background:white;border:1px solid #b0beb7;padding:6px;min-width:0}h1{font-size:16px}h2{font-size:13px;margin:4px 0 8px}img{width:100%;display:block}</style><h1>全技能の支援画面 / ${name}–${first + ids.length}</h1><p>HTML ${hash} / 画像生成は目視確認の代わりではありません。</p><main>${cards}</main></html>`;

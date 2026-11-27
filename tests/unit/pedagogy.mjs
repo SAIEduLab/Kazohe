@@ -498,6 +498,22 @@ s.check("TC-E12", () => {
 s.check("TC-E13", () => {
   let inspected = 0;
   const fixed = representatives(K);
+  for (const c of K.CATALOG) {
+    assert(c.unit && c.unit.trim() === c.unit, c.id);
+    const unitAllowed = new Set(
+      Language.allocations.slice(0, c.grade).join(""),
+    );
+    assert(
+      [...c.unit].every(
+        (ch) => !/\p{Script=Han}/u.test(ch) || unitAllowed.has(ch),
+      ),
+      `${c.id}: unit kanji exceeds grade ${c.grade}`,
+    );
+    assert(
+      Language.audit(c.unit, 1).valid,
+      `${c.id}: unit readable at grade 1`,
+    );
+  }
   for (const c of K.CATALOG)
     for (const q of [...samples[c.id], fixed[c.id].question]) {
       const states = Teaching.steps(q),

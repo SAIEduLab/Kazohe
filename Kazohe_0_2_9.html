@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
-      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.8。ネットにつながずに使えます。"
+      content="小学1〜6年の算数を、自分のペースで練習できる、かぞへ v0.2.9。ネットにつながずに使えます。"
     />
     <meta name="color-scheme" content="light" />
-    <title>かぞへ v0.2.8</title>
+    <title>かぞへ v0.2.9</title>
     <style>
 :root {
   font-family: "BIZ UDPGothic", "Yu Gothic", Meiryo, system-ui, sans-serif;
@@ -288,6 +288,7 @@ footer {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 9px;
+  margin-bottom: 20px;
 }
 .grade-grid button {
   border-radius: 14px;
@@ -300,26 +301,6 @@ footer {
   background: var(--teal);
   color: white;
   box-shadow: 0 3px 0 #00544e;
-}
-.category-tabs {
-  display: flex;
-  width: max-content;
-  max-width: 100%;
-  gap: 5px;
-  padding: 5px;
-  border-radius: 15px;
-  background: #e7ede6;
-  margin: 22px 0;
-}
-.category-tabs button {
-  border: 0;
-  background: transparent;
-  padding: 8px 30px;
-}
-.category-tabs button[aria-pressed="true"] {
-  background: white;
-  box-shadow: 0 2px 5px #24385716;
-  color: var(--teal);
 }
 .list-heading {
   display: flex;
@@ -375,6 +356,13 @@ footer {
 }
 .challenge-copy strong {
   font-size: 0.96rem;
+}
+.challenge-unit {
+  font-weight: 700;
+}
+.challenge-subtitle {
+  font-weight: 500;
+  font-size: 0.92em;
 }
 .challenge-copy small {
   font-size: 0.7rem;
@@ -1332,13 +1320,11 @@ dialog .actions {
   }
   .grade-grid {
     gap: 5px;
+    margin-bottom: 16px;
   }
   .grade-grid button {
     font-size: 0.85rem;
     border-radius: 11px;
-  }
-  .category-tabs {
-    margin: 18px 0;
   }
   .step-label {
     font-size: 0.88rem;
@@ -1853,7 +1839,7 @@ body[data-screen="menu"] {
       </div>
       <div>
         <h1 data-testid="app-title">
-          かぞへ <small>v0.2.8</small>
+          かぞへ <small>v0.2.9</small>
         </h1>
         <p>ひとつずつ、わかるをふやそう。</p>
       </div>
@@ -1867,13 +1853,13 @@ body[data-screen="menu"] {
       <div id="dialog-body"></div>
       <div id="dialog-actions" class="actions"></div>
     </dialog>
-    <footer>かぞへ v0.2.8 · じぶんのペースで、なんどでも。</footer>
+    <footer>かぞへ v0.2.9 · じぶんのペースで、なんどでも。</footer>
     <script id="kazohe-core">
 const { KZLanguage, KZWritten, KZ, KZTeaching } = (() => {
 "use strict";
-  const catalogJson = [{"id":"G1-N01","grade":1,"category":"数","title":"かずをくらべる","basePoints":100,"timeClass":"short","fallbackParent":null,"prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-N02","grade":1,"category":"数","title":"10のまとまり","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-N03","grade":1,"category":"数","title":"かずのならび","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-C01","grade":1,"category":"計算","title":"たして10","basePoints":100,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M1A1","M1A2"]},{"id":"G1-C02","grade":1,"category":"計算","title":"10までのたしざん","basePoints":100,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M1A2"]},{"id":"G1-C03","grade":1,"category":"計算","title":"くりあがりのあるたしざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C01","prerequisites":["G1-C02"],"sourceCodes":["M1A2"]},{"id":"G1-C04","grade":1,"category":"計算","title":"10までのひきざん","basePoints":100,"timeClass":"short","fallbackParent":"G1-C02","prerequisites":[],"sourceCodes":["M1A2"]},{"id":"G1-C05","grade":1,"category":"計算","title":"くりさがりのあるひきざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C01","prerequisites":["G1-C04"],"sourceCodes":["M1A2"]},{"id":"G1-C06","grade":1,"category":"計算","title":"おおきいかずのたしざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-N02","prerequisites":["G1-C02"],"sourceCodes":["M1A2"]},{"id":"G1-C07","grade":1,"category":"計算","title":"おおきいかずのひきざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C04","prerequisites":["G1-N02"],"sourceCodes":["M1A2"]},{"id":"G1-C08","grade":1,"category":"計算","title":"3つのかずのけいさん","basePoints":200,"timeClass":"short","fallbackParent":"G1-C03","prerequisites":["G1-C05"],"sourceCodes":["M1A2"]},{"id":"G1-C09","grade":1,"category":"計算","title":"いくつといくつ","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G2-N01","grade":2,"category":"数","title":"10000より小さい数をくらべる","basePoints":150,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G2-N02","grade":2,"category":"数","title":"十・百・千のまとまり","basePoints":150,"timeClass":"short","fallbackParent":"G1-N02","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G2-N03","grade":2,"category":"数","title":"同じ大きさに分けた1つ分","basePoints":150,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G2-C01","grade":2,"category":"計算","title":"2けたのたし算・くり上がりなし","basePoints":200,"timeClass":"long","fallbackParent":"G1-C06","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C02","grade":2,"category":"計算","title":"2けたのたし算・くり上がりあり","basePoints":250,"timeClass":"long","fallbackParent":"G2-C01","prerequisites":["G1-C03"],"sourceCodes":["M2A2"]},{"id":"G2-C03","grade":2,"category":"計算","title":"2けたのひき算・くり下がりなし","basePoints":200,"timeClass":"long","fallbackParent":"G1-C07","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C04","grade":2,"category":"計算","title":"2けたのひき算・くり下がりあり","basePoints":250,"timeClass":"long","fallbackParent":"G2-C03","prerequisites":["G1-C05"],"sourceCodes":["M2A2"]},{"id":"G2-C05","grade":2,"category":"計算","title":"3けた＋小さい数","basePoints":250,"timeClass":"long","fallbackParent":"G2-C02","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C06","grade":2,"category":"計算","title":"3けた−小さい数","basePoints":250,"timeClass":"long","fallbackParent":"G2-C04","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C07","grade":2,"category":"計算","title":"百を単位にしたたし算・ひき算","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":["G1-C03"],"sourceCodes":["M2A2"]},{"id":"G2-C08","grade":2,"category":"計算","title":"九九","basePoints":150,"timeClass":"short","fallbackParent":"G1-C08","prerequisites":[],"sourceCodes":["M2A3"]},{"id":"G2-C09","grade":2,"category":"計算","title":"簡単な2けた×1けた","basePoints":200,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":["G1-C06"],"sourceCodes":["M2A3"]},{"id":"G2-C10","grade":2,"category":"計算","title":"たし算・ひき算の□","basePoints":250,"timeClass":"short","fallbackParent":"G2-C04","prerequisites":["G2-C02"],"sourceCodes":["M2A2"]},{"id":"G3-N01","grade":3,"category":"数","title":"万を単位にした数をくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G2-N01","prerequisites":[],"sourceCodes":["M3A1"]},{"id":"G3-N02","grade":3,"category":"数","title":"10倍・100倍・1000倍・10分の1","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":[],"sourceCodes":["M3A1"]},{"id":"G3-N03","grade":3,"category":"数","title":"0.1の何こ分","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":[],"sourceCodes":["M3A5"]},{"id":"G3-N04","grade":3,"category":"数","title":"小数第1位までをくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G3-N03","prerequisites":[],"sourceCodes":["M3A5"]},{"id":"G3-N05","grade":3,"category":"数","title":"単位分数の何こ分","basePoints":200,"timeClass":"short","fallbackParent":"G2-N03","prerequisites":[],"sourceCodes":["M3A6"]},{"id":"G3-N06","grade":3,"category":"数","title":"同じ分母の分数をくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G3-N05","prerequisites":[],"sourceCodes":["M3A6"]},{"id":"G3-C01","grade":3,"category":"計算","title":"3けたのたし算","basePoints":300,"timeClass":"long","fallbackParent":"G2-C05","prerequisites":["G2-C07"],"sourceCodes":["M3A2"]},{"id":"G3-C02","grade":3,"category":"計算","title":"3けたのひき算","basePoints":300,"timeClass":"long","fallbackParent":"G2-C06","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-C03","grade":3,"category":"計算","title":"4けたのたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C01","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-C04","grade":3,"category":"計算","title":"4けたのひき算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C02","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-C05","grade":3,"category":"計算","title":"2けた×1けた","basePoints":300,"timeClass":"long","fallbackParent":"G2-C09","prerequisites":["G2-C02"],"sourceCodes":["M3A3"]},{"id":"G3-C06","grade":3,"category":"計算","title":"3けた×1けた","basePoints":350,"timeClass":"long","fallbackParent":"G3-C05","prerequisites":[],"sourceCodes":["M3A3"]},{"id":"G3-C07","grade":3,"category":"計算","title":"2けた×2けた","basePoints":400,"timeClass":"long","fallbackParent":"G3-C05","prerequisites":["G3-C01"],"sourceCodes":["M3A3"]},{"id":"G3-C08","grade":3,"category":"計算","title":"3けた×2けた","basePoints":450,"timeClass":"long","fallbackParent":"G3-C07","prerequisites":["G3-C06"],"sourceCodes":["M3A3"]},{"id":"G3-C09","grade":3,"category":"計算","title":"九九で考えるわり算","basePoints":250,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":["G1-C04"],"sourceCodes":["M3A4"]},{"id":"G3-C10","grade":3,"category":"計算","title":"簡単な2けた÷1けた","basePoints":250,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":["G2-N02"],"sourceCodes":["M3A4"]},{"id":"G3-C11","grade":3,"category":"計算","title":"小数第1位までのたし算","basePoints":250,"timeClass":"long","fallbackParent":"G3-N03","prerequisites":["G2-C02"],"sourceCodes":["M3A5"]},{"id":"G3-C12","grade":3,"category":"計算","title":"小数第1位までのひき算","basePoints":250,"timeClass":"long","fallbackParent":"G3-C11","prerequisites":["G2-C04"],"sourceCodes":["M3A5"]},{"id":"G3-C13","grade":3,"category":"計算","title":"1までの同分母のたし算","basePoints":250,"timeClass":"long","fallbackParent":"G3-N05","prerequisites":["G1-C02"],"sourceCodes":["M3A6"]},{"id":"G3-C14","grade":3,"category":"計算","title":"1までの同分母のひき算","basePoints":250,"timeClass":"long","fallbackParent":"G3-C13","prerequisites":["G1-C04"],"sourceCodes":["M3A6"]},{"id":"G3-C15","grade":3,"category":"計算","title":"かけ算・わり算の□","basePoints":300,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":["G2-C10"],"sourceCodes":["M3A7"]},{"id":"G4-N01","grade":4,"category":"数","title":"億・兆までの数をくらべる","basePoints":250,"timeClass":"short","fallbackParent":"G3-N01","prerequisites":[],"sourceCodes":["M4A1"]},{"id":"G4-N02","grade":4,"category":"数","title":"万・億・兆のまとまり","basePoints":250,"timeClass":"short","fallbackParent":"G3-N02","prerequisites":[],"sourceCodes":["M4A1"]},{"id":"G4-N03","grade":4,"category":"数","title":"0.01・0.001の何個分","basePoints":250,"timeClass":"short","fallbackParent":"G3-N03","prerequisites":[],"sourceCodes":["M4A4"]},{"id":"G4-N04","grade":4,"category":"数","title":"小数第3位までをくらべる","basePoints":250,"timeClass":"short","fallbackParent":"G3-N04","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-N05","grade":4,"category":"数","title":"大きさの等しい分数","basePoints":250,"timeClass":"short","fallbackParent":"G3-N05","prerequisites":[],"sourceCodes":["M4A5"]},{"id":"G4-N06","grade":4,"category":"数","title":"仮分数と帯分数","basePoints":300,"timeClass":"long","fallbackParent":"G3-N05","prerequisites":["G3-C09"],"sourceCodes":["M4A5"]},{"id":"G4-C01","grade":4,"category":"計算","title":"四捨五入で概数","basePoints":250,"timeClass":"short","fallbackParent":"G3-N02","prerequisites":[],"sourceCodes":["M4A2"]},{"id":"G4-C02","grade":4,"category":"計算","title":"たし算・ひき算の見積もり","basePoints":300,"timeClass":"short","fallbackParent":"G4-C01","prerequisites":["G3-C01"],"sourceCodes":["M4A2"]},{"id":"G4-C03","grade":4,"category":"計算","title":"かけ算・わり算の見積もり","basePoints":300,"timeClass":"short","fallbackParent":"G4-C01","prerequisites":["G3-C09"],"sourceCodes":["M4A2"]},{"id":"G4-C04","grade":4,"category":"計算","title":"2けた÷1けた","basePoints":350,"timeClass":"long","fallbackParent":"G3-C10","prerequisites":["G3-C09"],"sourceCodes":["M4A3"]},{"id":"G4-C05","grade":4,"category":"計算","title":"3けた÷1けた","basePoints":400,"timeClass":"long","fallbackParent":"G4-C04","prerequisites":[],"sourceCodes":["M4A3"]},{"id":"G4-C06","grade":4,"category":"計算","title":"2けた÷2けた","basePoints":400,"timeClass":"long","fallbackParent":"G4-C04","prerequisites":["G4-C03"],"sourceCodes":["M4A3"]},{"id":"G4-C07","grade":4,"category":"計算","title":"3けた÷2けた","basePoints":450,"timeClass":"long","fallbackParent":"G4-C06","prerequisites":["G4-C05"],"sourceCodes":["M4A3"]},{"id":"G4-C08","grade":4,"category":"計算","title":"小数第3位までのたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C11","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C09","grade":4,"category":"計算","title":"小数第3位までのひき算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C12","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C10","grade":4,"category":"計算","title":"小数×整数","basePoints":400,"timeClass":"long","fallbackParent":"G3-C06","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C11","grade":4,"category":"計算","title":"小数÷整数・割り切れる","basePoints":450,"timeClass":"long","fallbackParent":"G4-C05","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C12","grade":4,"category":"計算","title":"整数÷整数で小数の商","basePoints":450,"timeClass":"long","fallbackParent":"G4-C11","prerequisites":[],"sourceCodes":["M4A4"]},{"id":"G4-C13","grade":4,"category":"計算","title":"1をこえる同分母のたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C13","prerequisites":["G4-N06"],"sourceCodes":["M4A5"]},{"id":"G4-C14","grade":4,"category":"計算","title":"同分母のひき算・帯分数も","basePoints":350,"timeClass":"long","fallbackParent":"G3-C14","prerequisites":["G4-N06"],"sourceCodes":["M4A5"]},{"id":"G4-C15","grade":4,"category":"計算","title":"四則のまじった式","basePoints":350,"timeClass":"long","fallbackParent":"G3-C09","prerequisites":["G1-C08"],"sourceCodes":["M4A6"]},{"id":"G4-C16","grade":4,"category":"計算","title":"かっこのある式","basePoints":400,"timeClass":"long","fallbackParent":"G4-C15","prerequisites":[],"sourceCodes":["M4A6"]},{"id":"G4-C17","grade":4,"category":"計算","title":"計算のきまりを使う□","basePoints":350,"timeClass":"long","fallbackParent":"G4-C16","prerequisites":["G3-C15"],"sourceCodes":["M4A7"]},{"id":"G5-N01","grade":5,"category":"数","title":"偶数と奇数","basePoints":300,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N02","grade":5,"category":"数","title":"約数を全部見つける","basePoints":350,"timeClass":"long","fallbackParent":"G3-C09","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N03","grade":5,"category":"数","title":"指定された順の倍数","basePoints":300,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N04","grade":5,"category":"数","title":"最大公約数","basePoints":350,"timeClass":"long","fallbackParent":"G5-N02","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N05","grade":5,"category":"数","title":"最小公倍数","basePoints":350,"timeClass":"long","fallbackParent":"G5-N03","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N06","grade":5,"category":"数","title":"整数・小数の10倍と10分の1","basePoints":300,"timeClass":"short","fallbackParent":"G4-N03","prerequisites":["G3-N02"],"sourceCodes":["M5A2"]},{"id":"G5-N07","grade":5,"category":"数","title":"約分","basePoints":350,"timeClass":"long","fallbackParent":"G5-N04","prerequisites":["G4-N05"],"sourceCodes":["M5A4"]},{"id":"G5-N08","grade":5,"category":"数","title":"最小公倍数で通分","basePoints":400,"timeClass":"long","fallbackParent":"G5-N05","prerequisites":["G4-N05"],"sourceCodes":["M5A4"]},{"id":"G5-N09","grade":5,"category":"数","title":"異分母の分数をくらべる","basePoints":350,"timeClass":"long","fallbackParent":"G5-N08","prerequisites":["G3-N06"],"sourceCodes":["M5A4"]},{"id":"G5-N10","grade":5,"category":"数","title":"整数・小数を分数へ","basePoints":350,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-N03"],"sourceCodes":["M5A4"]},{"id":"G5-N11","grade":5,"category":"数","title":"分数を小数へ","basePoints":350,"timeClass":"long","fallbackParent":"G4-C12","prerequisites":["G5-N10"],"sourceCodes":["M5A4"]},{"id":"G5-N12","grade":5,"category":"数","title":"わり算の答えを分数で","basePoints":350,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-C12"],"sourceCodes":["M5A4"]},{"id":"G5-N13","grade":5,"category":"数","title":"式に数を当てはめる","basePoints":400,"timeClass":"long","fallbackParent":"G4-C16","prerequisites":[],"sourceCodes":["M5A6"]},{"id":"G5-C01","grade":5,"category":"計算","title":"整数×小数","basePoints":450,"timeClass":"long","fallbackParent":"G4-C10","prerequisites":["G5-N06"],"sourceCodes":["M5A3"]},{"id":"G5-C02","grade":5,"category":"計算","title":"小数×小数","basePoints":500,"timeClass":"long","fallbackParent":"G5-C01","prerequisites":[],"sourceCodes":["M5A3"]},{"id":"G5-C03","grade":5,"category":"計算","title":"小数でわる・割り切れる","basePoints":550,"timeClass":"long","fallbackParent":"G4-C11","prerequisites":["G5-N06"],"sourceCodes":["M5A3"]},{"id":"G5-C04","grade":5,"category":"計算","title":"整数の商と小数のあまり","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G4-C07"],"sourceCodes":["M5A3"]},{"id":"G5-C05","grade":5,"category":"計算","title":"商を四捨五入する","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G4-C01"],"sourceCodes":["M5A3"]},{"id":"G5-C06","grade":5,"category":"計算","title":"異分母のたし算","basePoints":500,"timeClass":"long","fallbackParent":"G5-N08","prerequisites":["G5-N07","G4-C13"],"sourceCodes":["M5A5"]},{"id":"G5-C07","grade":5,"category":"計算","title":"異分母のひき算","basePoints":500,"timeClass":"long","fallbackParent":"G5-C06","prerequisites":["G4-C14"],"sourceCodes":["M5A5"]},{"id":"G5-C08","grade":5,"category":"計算","title":"帯分数をふくむ異分母の加減","basePoints":550,"timeClass":"long","fallbackParent":"G5-C07","prerequisites":["G4-N06"],"sourceCodes":["M5A5"]},{"id":"G5-C09","grade":5,"category":"計算","title":"小数をふくむ計算の順序","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G5-C02","G4-C16"],"sourceCodes":["M5A3"]},{"id":"G6-N01","grade":6,"category":"数","title":"逆数を求める","basePoints":400,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-N06"],"sourceCodes":["M6A1"]},{"id":"G6-N02","grade":6,"category":"数","title":"文字に数を当てはめる","basePoints":500,"timeClass":"long","fallbackParent":"G5-N13","prerequisites":["G5-N10"],"sourceCodes":["M6A2"]},{"id":"G6-C01","grade":6,"category":"計算","title":"分数×整数","basePoints":550,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G2-C08"],"sourceCodes":["M6A1"]},{"id":"G6-C02","grade":6,"category":"計算","title":"分数÷整数","basePoints":550,"timeClass":"long","fallbackParent":"G6-C01","prerequisites":["G6-N01"],"sourceCodes":["M6A1"]},{"id":"G6-C03","grade":6,"category":"計算","title":"分数×分数","basePoints":600,"timeClass":"long","fallbackParent":"G6-C01","prerequisites":["G5-N07"],"sourceCodes":["M6A1"]},{"id":"G6-C04","grade":6,"category":"計算","title":"分数÷分数","basePoints":650,"timeClass":"long","fallbackParent":"G6-C03","prerequisites":["G6-N01"],"sourceCodes":["M6A1"]},{"id":"G6-C05","grade":6,"category":"計算","title":"帯分数をふくむかけ算","basePoints":650,"timeClass":"long","fallbackParent":"G6-C03","prerequisites":["G4-N06"],"sourceCodes":["M6A1"]},{"id":"G6-C06","grade":6,"category":"計算","title":"帯分数をふくむわり算","basePoints":700,"timeClass":"long","fallbackParent":"G6-C04","prerequisites":["G6-C05"],"sourceCodes":["M6A1"]},{"id":"G6-C07","grade":6,"category":"計算","title":"分数の四則・かっこ","basePoints":750,"timeClass":"long","fallbackParent":"G6-C04","prerequisites":["G5-C08","G4-C16"],"sourceCodes":["M6A1"]},{"id":"G6-C08","grade":6,"category":"計算","title":"整数・小数・分数の混合計算","basePoints":800,"timeClass":"long","fallbackParent":"G6-C07","prerequisites":["G5-N10"],"sourceCodes":["M6A1"]}];
+  const catalogJson = [{"id":"G1-C09","grade":1,"category":"計算","unit":"いくつと いくつ","title":"9までの いくつといくつ","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-C01","grade":1,"category":"計算","unit":"いくつと いくつ","title":"たして10","basePoints":100,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M1A1","M1A2"]},{"id":"G1-C02","grade":1,"category":"計算","unit":"たしざん(1)","title":"10までのたしざん","basePoints":100,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M1A2"]},{"id":"G1-C04","grade":1,"category":"計算","unit":"ひきざん(1)","title":"10までのひきざん","basePoints":100,"timeClass":"short","fallbackParent":"G1-C02","prerequisites":[],"sourceCodes":["M1A2"]},{"id":"G1-C08","grade":1,"category":"計算","unit":"3つの かずの けいさん","title":"たしざん・ひきざんの 3つのかず","basePoints":200,"timeClass":"short","fallbackParent":"G1-C03","prerequisites":["G1-C05"],"sourceCodes":["M1A2"]},{"id":"G1-C03","grade":1,"category":"計算","unit":"たしざん(2)","title":"くりあがりのあるたしざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C01","prerequisites":["G1-C02"],"sourceCodes":["M1A2"]},{"id":"G1-C05","grade":1,"category":"計算","unit":"ひきざん(2)","title":"くりさがりのあるひきざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C01","prerequisites":["G1-C04"],"sourceCodes":["M1A2"]},{"id":"G1-N02","grade":1,"category":"数","unit":"大きい かず","title":"10のまとまり","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-N03","grade":1,"category":"数","unit":"大きい かず","title":"かずのならび","basePoints":100,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-N01","grade":1,"category":"数","unit":"大きい かず","title":"かずをくらべる","basePoints":100,"timeClass":"short","fallbackParent":null,"prerequisites":[],"sourceCodes":["M1A1"]},{"id":"G1-C06","grade":1,"category":"計算","unit":"100までの かずの けいさん","title":"おおきいかずのたしざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-N02","prerequisites":["G1-C02"],"sourceCodes":["M1A2"]},{"id":"G1-C07","grade":1,"category":"計算","unit":"100までの かずの けいさん","title":"おおきいかずのひきざん","basePoints":150,"timeClass":"short","fallbackParent":"G1-C04","prerequisites":["G1-N02"],"sourceCodes":["M1A2"]},{"id":"G2-C01","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(1)","title":"2けたのたし算・くり上がりなし","basePoints":200,"timeClass":"long","fallbackParent":"G1-C06","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C02","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(1)","title":"2けたのたし算・くり上がりあり","basePoints":250,"timeClass":"long","fallbackParent":"G2-C01","prerequisites":["G1-C03"],"sourceCodes":["M2A2"]},{"id":"G2-C03","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(1)","title":"2けたのひき算・くり下がりなし","basePoints":200,"timeClass":"long","fallbackParent":"G1-C07","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C04","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(1)","title":"2けたのひき算・くり下がりあり","basePoints":250,"timeClass":"long","fallbackParent":"G2-C03","prerequisites":["G1-C05"],"sourceCodes":["M2A2"]},{"id":"G2-C07","grade":2,"category":"計算","unit":"100を こえる 数","title":"百を単位にしたたし算・ひき算","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":["G1-C03"],"sourceCodes":["M2A2"]},{"id":"G2-C05","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(2)","title":"3けた＋小さい数","basePoints":250,"timeClass":"long","fallbackParent":"G2-C02","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C06","grade":2,"category":"計算","unit":"たし算と ひき算の ひっ算(2)","title":"3けた−小さい数","basePoints":250,"timeClass":"long","fallbackParent":"G2-C04","prerequisites":[],"sourceCodes":["M2A2"]},{"id":"G2-C08","grade":2,"category":"計算","unit":"かけ算(1)・(2)","title":"九九","basePoints":150,"timeClass":"short","fallbackParent":"G1-C08","prerequisites":[],"sourceCodes":["M2A3"]},{"id":"G2-C10","grade":2,"category":"計算","unit":"見方・考え方を ふかめよう","title":"たし算・ひき算の□","basePoints":250,"timeClass":"short","fallbackParent":"G2-C04","prerequisites":["G2-C02"],"sourceCodes":["M2A2"]},{"id":"G2-C09","grade":2,"category":"計算","unit":"かけ算の きまり","title":"簡単な2けた×1けた","basePoints":200,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":["G1-C06"],"sourceCodes":["M2A3"]},{"id":"G2-N02","grade":2,"category":"数","unit":"1000を こえる 数","title":"十・百・千のまとまり","basePoints":150,"timeClass":"short","fallbackParent":"G1-N02","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G2-N01","grade":2,"category":"数","unit":"1000を こえる 数","title":"10000より小さい数をくらべる","basePoints":150,"timeClass":"short","fallbackParent":"G1-N01","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G2-N03","grade":2,"category":"数","unit":"分数","title":"同じ大きさに分けた1つ分","basePoints":150,"timeClass":"short","fallbackParent":"G1-C09","prerequisites":[],"sourceCodes":["M2A1"]},{"id":"G3-C09","grade":3,"category":"計算","unit":"わり算・あまりのあるわり算","title":"九九で考えるわり算","basePoints":250,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":["G1-C04"],"sourceCodes":["M3A4"]},{"id":"G3-C10","grade":3,"category":"計算","unit":"わり算","title":"簡単な2けた÷1けた","basePoints":250,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":["G2-N02"],"sourceCodes":["M3A4"]},{"id":"G3-C01","grade":3,"category":"計算","unit":"たし算とひき算の筆算","title":"3けたのたし算","basePoints":300,"timeClass":"long","fallbackParent":"G2-C05","prerequisites":["G2-C07"],"sourceCodes":["M3A2"]},{"id":"G3-C02","grade":3,"category":"計算","unit":"たし算とひき算の筆算","title":"3けたのひき算","basePoints":300,"timeClass":"long","fallbackParent":"G2-C06","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-C03","grade":3,"category":"計算","unit":"たし算とひき算の筆算","title":"4けたのたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C01","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-C04","grade":3,"category":"計算","unit":"たし算とひき算の筆算","title":"4けたのひき算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C02","prerequisites":[],"sourceCodes":["M3A2"]},{"id":"G3-N01","grade":3,"category":"数","unit":"一万をこえる数","title":"万を単位にした数をくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G2-N01","prerequisites":[],"sourceCodes":["M3A1"]},{"id":"G3-N02","grade":3,"category":"数","unit":"一万をこえる数","title":"10倍・100倍・1000倍・10分の1","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":[],"sourceCodes":["M3A1"]},{"id":"G3-C05","grade":3,"category":"計算","unit":"1けたをかけるかけ算の筆算","title":"2けた×1けた","basePoints":300,"timeClass":"long","fallbackParent":"G2-C09","prerequisites":["G2-C02"],"sourceCodes":["M3A3"]},{"id":"G3-C06","grade":3,"category":"計算","unit":"1けたをかけるかけ算の筆算","title":"3けた×1けた","basePoints":350,"timeClass":"long","fallbackParent":"G3-C05","prerequisites":[],"sourceCodes":["M3A3"]},{"id":"G3-N05","grade":3,"category":"数","unit":"分数","title":"単位分数の何こ分","basePoints":200,"timeClass":"short","fallbackParent":"G2-N03","prerequisites":[],"sourceCodes":["M3A6"]},{"id":"G3-N06","grade":3,"category":"数","unit":"分数","title":"同じ分母の分数をくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G3-N05","prerequisites":[],"sourceCodes":["M3A6"]},{"id":"G3-C13","grade":3,"category":"計算","unit":"分数","title":"1までの同分母のたし算","basePoints":250,"timeClass":"long","fallbackParent":"G3-N05","prerequisites":["G1-C02"],"sourceCodes":["M3A6"]},{"id":"G3-C14","grade":3,"category":"計算","unit":"分数","title":"1までの同分母のひき算","basePoints":250,"timeClass":"long","fallbackParent":"G3-C13","prerequisites":["G1-C04"],"sourceCodes":["M3A6"]},{"id":"G3-N03","grade":3,"category":"数","unit":"小数","title":"0.1の何こ分","basePoints":200,"timeClass":"short","fallbackParent":"G2-N02","prerequisites":[],"sourceCodes":["M3A5"]},{"id":"G3-N04","grade":3,"category":"数","unit":"小数","title":"小数第1位までをくらべる","basePoints":200,"timeClass":"short","fallbackParent":"G3-N03","prerequisites":[],"sourceCodes":["M3A5"]},{"id":"G3-C11","grade":3,"category":"計算","unit":"小数","title":"小数第1位までのたし算","basePoints":250,"timeClass":"long","fallbackParent":"G3-N03","prerequisites":["G2-C02"],"sourceCodes":["M3A5"]},{"id":"G3-C12","grade":3,"category":"計算","unit":"小数","title":"小数第1位までのひき算","basePoints":250,"timeClass":"long","fallbackParent":"G3-C11","prerequisites":["G2-C04"],"sourceCodes":["M3A5"]},{"id":"G3-C07","grade":3,"category":"計算","unit":"2けたをかけるかけ算の筆算","title":"2けた×2けた","basePoints":400,"timeClass":"long","fallbackParent":"G3-C05","prerequisites":["G3-C01"],"sourceCodes":["M3A3"]},{"id":"G3-C08","grade":3,"category":"計算","unit":"2けたをかけるかけ算の筆算","title":"3けた×2けた","basePoints":450,"timeClass":"long","fallbackParent":"G3-C07","prerequisites":["G3-C06"],"sourceCodes":["M3A3"]},{"id":"G3-C15","grade":3,"category":"計算","unit":"□を使った式","title":"かけ算・わり算の□","basePoints":300,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":["G2-C10"],"sourceCodes":["M3A7"]},{"id":"G4-N02","grade":4,"category":"数","unit":"一億をこえる数","title":"万・億・兆のまとまり","basePoints":250,"timeClass":"short","fallbackParent":"G3-N02","prerequisites":[],"sourceCodes":["M4A1"]},{"id":"G4-N01","grade":4,"category":"数","unit":"一億をこえる数","title":"億・兆までの数をくらべる","basePoints":250,"timeClass":"short","fallbackParent":"G3-N01","prerequisites":[],"sourceCodes":["M4A1"]},{"id":"G4-C04","grade":4,"category":"計算","unit":"1けたでわるわり算の筆算","title":"2けた÷1けた","basePoints":350,"timeClass":"long","fallbackParent":"G3-C10","prerequisites":["G3-C09"],"sourceCodes":["M4A3"]},{"id":"G4-C05","grade":4,"category":"計算","unit":"1けたでわるわり算の筆算","title":"3けた÷1けた","basePoints":400,"timeClass":"long","fallbackParent":"G4-C04","prerequisites":[],"sourceCodes":["M4A3"]},{"id":"G4-N03","grade":4,"category":"数","unit":"小数","title":"0.01・0.001の何個分","basePoints":250,"timeClass":"short","fallbackParent":"G3-N03","prerequisites":[],"sourceCodes":["M4A4"]},{"id":"G4-N04","grade":4,"category":"数","unit":"小数","title":"小数第3位までをくらべる","basePoints":250,"timeClass":"short","fallbackParent":"G3-N04","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C08","grade":4,"category":"計算","unit":"小数","title":"小数第3位までのたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C11","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C09","grade":4,"category":"計算","unit":"小数","title":"小数第3位までのひき算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C12","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C06","grade":4,"category":"計算","unit":"2けたでわるわり算の筆算","title":"2けた÷2けた","basePoints":400,"timeClass":"long","fallbackParent":"G4-C04","prerequisites":["G4-C03"],"sourceCodes":["M4A3"]},{"id":"G4-C07","grade":4,"category":"計算","unit":"2けたでわるわり算の筆算","title":"3けた÷2けた","basePoints":450,"timeClass":"long","fallbackParent":"G4-C06","prerequisites":["G4-C05"],"sourceCodes":["M4A3"]},{"id":"G4-C16","grade":4,"category":"計算","unit":"式と計算の順じょ","title":"かっこのある式","basePoints":400,"timeClass":"long","fallbackParent":"G4-C15","prerequisites":[],"sourceCodes":["M4A6"]},{"id":"G4-C15","grade":4,"category":"計算","unit":"式と計算の順じょ","title":"四則のまじった式","basePoints":350,"timeClass":"long","fallbackParent":"G3-C09","prerequisites":["G1-C08"],"sourceCodes":["M4A6"]},{"id":"G4-C17","grade":4,"category":"計算","unit":"式と計算の順じょ","title":"計算のきまりを使う□","basePoints":350,"timeClass":"long","fallbackParent":"G4-C16","prerequisites":["G3-C15"],"sourceCodes":["M4A7"]},{"id":"G4-C01","grade":4,"category":"計算","unit":"がい数とその計算","title":"四捨五入で概数","basePoints":250,"timeClass":"short","fallbackParent":"G3-N02","prerequisites":[],"sourceCodes":["M4A2"]},{"id":"G4-C02","grade":4,"category":"計算","unit":"がい数とその計算","title":"たし算・ひき算の見積もり","basePoints":300,"timeClass":"short","fallbackParent":"G4-C01","prerequisites":["G3-C01"],"sourceCodes":["M4A2"]},{"id":"G4-C03","grade":4,"category":"計算","unit":"がい数とその計算","title":"かけ算・わり算の見積もり","basePoints":300,"timeClass":"short","fallbackParent":"G4-C01","prerequisites":["G3-C09"],"sourceCodes":["M4A2"]},{"id":"G4-C10","grade":4,"category":"計算","unit":"小数のかけ算とわり算","title":"小数×整数","basePoints":400,"timeClass":"long","fallbackParent":"G3-C06","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C11","grade":4,"category":"計算","unit":"小数のかけ算とわり算","title":"小数÷整数・割り切れる","basePoints":450,"timeClass":"long","fallbackParent":"G4-C05","prerequisites":["G4-N03"],"sourceCodes":["M4A4"]},{"id":"G4-C12","grade":4,"category":"計算","unit":"小数のかけ算とわり算","title":"整数÷整数で小数の商","basePoints":450,"timeClass":"long","fallbackParent":"G4-C11","prerequisites":[],"sourceCodes":["M4A4"]},{"id":"G4-N06","grade":4,"category":"数","unit":"分数","title":"仮分数と帯分数","basePoints":300,"timeClass":"long","fallbackParent":"G3-N05","prerequisites":["G3-C09"],"sourceCodes":["M4A5"]},{"id":"G4-C13","grade":4,"category":"計算","unit":"分数","title":"1をこえる同分母のたし算","basePoints":350,"timeClass":"long","fallbackParent":"G3-C13","prerequisites":["G4-N06"],"sourceCodes":["M4A5"]},{"id":"G4-C14","grade":4,"category":"計算","unit":"分数","title":"同分母のひき算・帯分数も","basePoints":350,"timeClass":"long","fallbackParent":"G3-C14","prerequisites":["G4-N06"],"sourceCodes":["M4A5"]},{"id":"G4-N05","grade":4,"category":"数","unit":"分数","title":"大きさの等しい分数","basePoints":250,"timeClass":"short","fallbackParent":"G3-N05","prerequisites":[],"sourceCodes":["M4A5"]},{"id":"G5-N06","grade":5,"category":"数","unit":"整数と小数","title":"整数・小数の10倍と10分の1","basePoints":300,"timeClass":"short","fallbackParent":"G4-N03","prerequisites":["G3-N02"],"sourceCodes":["M5A2"]},{"id":"G5-C01","grade":5,"category":"計算","unit":"小数のかけ算","title":"整数×小数","basePoints":450,"timeClass":"long","fallbackParent":"G4-C10","prerequisites":["G5-N06"],"sourceCodes":["M5A3"]},{"id":"G5-C02","grade":5,"category":"計算","unit":"小数のかけ算","title":"小数×小数","basePoints":500,"timeClass":"long","fallbackParent":"G5-C01","prerequisites":[],"sourceCodes":["M5A3"]},{"id":"G5-C03","grade":5,"category":"計算","unit":"小数のわり算","title":"小数でわる・割り切れる","basePoints":550,"timeClass":"long","fallbackParent":"G4-C11","prerequisites":["G5-N06"],"sourceCodes":["M5A3"]},{"id":"G5-C04","grade":5,"category":"計算","unit":"小数のわり算","title":"整数の商と小数のあまり","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G4-C07"],"sourceCodes":["M5A3"]},{"id":"G5-C05","grade":5,"category":"計算","unit":"小数のわり算","title":"商を四捨五入する","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G4-C01"],"sourceCodes":["M5A3"]},{"id":"G5-C09","grade":5,"category":"計算","unit":"小数のわり算","title":"小数をふくむ計算の順序","basePoints":550,"timeClass":"long","fallbackParent":"G5-C03","prerequisites":["G5-C02","G4-C16"],"sourceCodes":["M5A3"]},{"id":"G5-N01","grade":5,"category":"数","unit":"整数","title":"偶数と奇数","basePoints":300,"timeClass":"short","fallbackParent":"G3-C09","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N03","grade":5,"category":"数","unit":"整数","title":"指定された順の倍数","basePoints":300,"timeClass":"short","fallbackParent":"G2-C08","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N05","grade":5,"category":"数","unit":"整数","title":"最小公倍数","basePoints":350,"timeClass":"long","fallbackParent":"G5-N03","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N02","grade":5,"category":"数","unit":"整数","title":"約数を全部見つける","basePoints":350,"timeClass":"long","fallbackParent":"G3-C09","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N04","grade":5,"category":"数","unit":"整数","title":"最大公約数","basePoints":350,"timeClass":"long","fallbackParent":"G5-N02","prerequisites":[],"sourceCodes":["M5A1"]},{"id":"G5-N07","grade":5,"category":"数","unit":"分数","title":"約分","basePoints":350,"timeClass":"long","fallbackParent":"G5-N04","prerequisites":["G4-N05"],"sourceCodes":["M5A4"]},{"id":"G5-N08","grade":5,"category":"数","unit":"分数","title":"最小公倍数で通分","basePoints":400,"timeClass":"long","fallbackParent":"G5-N05","prerequisites":["G4-N05"],"sourceCodes":["M5A4"]},{"id":"G5-N09","grade":5,"category":"数","unit":"分数","title":"異分母の分数をくらべる","basePoints":350,"timeClass":"long","fallbackParent":"G5-N08","prerequisites":["G3-N06"],"sourceCodes":["M5A4"]},{"id":"G5-C06","grade":5,"category":"計算","unit":"分数","title":"異分母のたし算","basePoints":500,"timeClass":"long","fallbackParent":"G5-N08","prerequisites":["G5-N07","G4-C13"],"sourceCodes":["M5A5"]},{"id":"G5-C07","grade":5,"category":"計算","unit":"分数","title":"異分母のひき算","basePoints":500,"timeClass":"long","fallbackParent":"G5-C06","prerequisites":["G4-C14"],"sourceCodes":["M5A5"]},{"id":"G5-C08","grade":5,"category":"計算","unit":"分数","title":"帯分数をふくむ異分母の加減","basePoints":550,"timeClass":"long","fallbackParent":"G5-C07","prerequisites":["G4-N06"],"sourceCodes":["M5A5"]},{"id":"G5-N12","grade":5,"category":"数","unit":"分数","title":"わり算の答えを分数で","basePoints":350,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-C12"],"sourceCodes":["M5A4"]},{"id":"G5-N11","grade":5,"category":"数","unit":"分数","title":"分数を小数へ","basePoints":350,"timeClass":"long","fallbackParent":"G4-C12","prerequisites":["G5-N10"],"sourceCodes":["M5A4"]},{"id":"G5-N10","grade":5,"category":"数","unit":"分数","title":"整数・小数を分数へ","basePoints":350,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-N03"],"sourceCodes":["M5A4"]},{"id":"G5-N13","grade":5,"category":"数","unit":"変わり方","title":"式に数を当てはめる","basePoints":400,"timeClass":"long","fallbackParent":"G4-C16","prerequisites":[],"sourceCodes":["M5A6"]},{"id":"G6-N02","grade":6,"category":"数","unit":"文字と式","title":"文字に数を当てはめる","basePoints":500,"timeClass":"long","fallbackParent":"G5-N13","prerequisites":["G5-N10"],"sourceCodes":["M6A2"]},{"id":"G6-C01","grade":6,"category":"計算","unit":"分数×整数、分数÷整数","title":"分数×整数","basePoints":550,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G2-C08"],"sourceCodes":["M6A1"]},{"id":"G6-C02","grade":6,"category":"計算","unit":"分数×整数、分数÷整数","title":"分数÷整数","basePoints":550,"timeClass":"long","fallbackParent":"G6-C01","prerequisites":["G6-N01"],"sourceCodes":["M6A1"]},{"id":"G6-C03","grade":6,"category":"計算","unit":"分数×分数","title":"真分数・仮分数のかけ算","basePoints":600,"timeClass":"long","fallbackParent":"G6-C01","prerequisites":["G5-N07"],"sourceCodes":["M6A1"]},{"id":"G6-C05","grade":6,"category":"計算","unit":"分数×分数","title":"帯分数をふくむかけ算","basePoints":650,"timeClass":"long","fallbackParent":"G6-C03","prerequisites":["G4-N06"],"sourceCodes":["M6A1"]},{"id":"G6-N01","grade":6,"category":"数","unit":"分数×分数","title":"逆数を求める","basePoints":400,"timeClass":"long","fallbackParent":"G5-N07","prerequisites":["G4-N06"],"sourceCodes":["M6A1"]},{"id":"G6-C04","grade":6,"category":"計算","unit":"分数÷分数","title":"真分数・仮分数のわり算","basePoints":650,"timeClass":"long","fallbackParent":"G6-C03","prerequisites":["G6-N01"],"sourceCodes":["M6A1"]},{"id":"G6-C06","grade":6,"category":"計算","unit":"分数÷分数","title":"帯分数をふくむわり算","basePoints":700,"timeClass":"long","fallbackParent":"G6-C04","prerequisites":["G6-C05"],"sourceCodes":["M6A1"]},{"id":"G6-C07","grade":6,"category":"計算","unit":"分数÷分数","title":"分数の四則・かっこ","basePoints":750,"timeClass":"long","fallbackParent":"G6-C04","prerequisites":["G5-C08","G4-C16"],"sourceCodes":["M6A1"]},{"id":"G6-C08","grade":6,"category":"計算","unit":"分数÷分数","title":"整数・小数・分数の混合計算","basePoints":800,"timeClass":"long","fallbackParent":"G6-C07","prerequisites":["G5-N10"],"sourceCodes":["M6A1"]}];
 
-  const APP_VERSION = "0.2.8";
+  const APP_VERSION = "0.2.9";
   // Compatibility of saved learning records is independent of the product release.
   const VERSION = "0.2";
   const STORAGE_KEY = "kazohe:v0.2:state";
@@ -2053,6 +2039,10 @@ const { KZLanguage, KZWritten, KZ, KZTeaching } = (() => {
       !isChallengeId(raw.id) ||
       !isGrade(raw.grade) ||
       !isDomain(raw.category) ||
+      typeof raw.unit !== "string" ||
+      !raw.unit.trim() ||
+      typeof raw.title !== "string" ||
+      !raw.title.trim() ||
       !isTimeClass(raw.timeClass)
     ) {
       throw Error("Catalog entry is invalid");
@@ -2078,6 +2068,7 @@ const { KZLanguage, KZWritten, KZ, KZTeaching } = (() => {
       id: raw.id,
       grade: raw.grade,
       category: raw.category,
+      unit: raw.unit,
       title: raw.title,
       basePoints: raw.basePoints,
       timeClass: raw.timeClass,
@@ -2103,7 +2094,7 @@ const { KZLanguage, KZWritten, KZ, KZTeaching } = (() => {
     return structuredClone(x);
   }
   /* Official grade allocation and whole-word readings, embedded for offline use. */
-  const languageJson = {"source":{"title":"小学校学習指導要領（平成29年告示）学年別漢字配当表","url":"https://www.mext.go.jp/content/20230120-mxt_kyoiku02-100002604_01.pdf","pages":"42–45","counts":[80,160,200,202,193,191]},"allocations":["一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六","引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万明鳴毛門夜野友用曜来里理話","悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和","愛案以衣位茨印英栄媛塩岡億加果貨課芽賀改械害街各覚潟完官管関観願岐希季旗器機議求泣給挙漁共協鏡競極熊訓軍郡群径景芸欠結建健験固功好香候康佐差菜最埼材崎昨札刷察参産散残氏司試児治滋辞鹿失借種周祝順初松笑唱焼照城縄臣信井成省清静席積折節説浅戦選然争倉巣束側続卒孫帯隊達単置仲沖兆低底的典伝徒努灯働特徳栃奈梨熱念敗梅博阪飯飛必票標不夫付府阜富副兵別辺変便包法望牧末満未民無約勇要養浴利陸良料量輪類令冷例連老労録","圧囲移因永営衛易益液演応往桜可仮価河過快解格確額刊幹慣眼紀基寄規喜技義逆久旧救居許境均禁句型経潔件険検限現減故個護効厚耕航鉱構興講告混査再災妻採際在財罪殺雑酸賛士支史志枝師資飼示似識質舎謝授修述術準序招証象賞条状常情織職制性政勢精製税責績接設絶祖素総造像増則測属率損貸態団断築貯張停提程適統堂銅導得毒独任燃能破犯判版比肥非費備評貧布婦武復複仏粉編弁保墓報豊防貿暴脈務夢迷綿輸余容略留領歴","胃異遺域宇映延沿恩我灰拡革閣割株干巻看簡危机揮貴疑吸供胸郷勤筋系敬警劇激穴券絹権憲源厳己呼誤后孝皇紅降鋼刻穀骨困砂座済裁策冊蚕至私姿視詞誌磁射捨尺若樹収宗就衆従縦縮熟純処署諸除承将傷障蒸針仁垂推寸盛聖誠舌宣専泉洗染銭善奏窓創装層操蔵臓存尊退宅担探誕段暖値宙忠著庁頂腸潮賃痛敵展討党糖届難乳認納脳派拝背肺俳班晩否批秘俵腹奮並陛閉片補暮宝訪亡忘棒枚幕密盟模訳郵優預幼欲翌乱卵覧裏律臨朗論"],"readings":{"判定するには問題数が足りません。":"もうすこし とくと、おすすめが わかるよ。","この回のScoreをたしかめよう。":"こんかいの とくてんを みてみよう。","このあそびかたはScoreを表示し、ベストは保存しません。":"とくてんは みられるよ。いちばんの きろくには のこさないよ。","自然な時間切れの最後の問題は、無答率の判定から除いています。誤答がなければ正解率の判定からも除いています。":"じかんぎれで こたえられなかった さいごの もんだいは、「こたえなかった わりあい」には いれないよ。まちがえていなければ、「せいかいの わりあい」にも いれないよ。","判定対象外":"おすすめを きめるには もんだいが たりなかったもの","ヒント後":"ヒントを みたあと","この回":"こんかい","今回":"こんかい","正確":"せいかく","問題数":"もんだいの かず","筆算":"ひっさん","点線":"てんせん","帯分数":"たいぶんすう","回答回数ベース正答率":"こたえた かいすうのうち、せいかいした わりあい","最終自力正解率":"さいごに じぶんで できた わりあい","初回正解率":"はじめにこたえてせいかいしたわりあい","自己ベスト":"いちばんの きろく","最初の誤答":"はじめの こたえ","未出題のまま終了":"まだ といていない もんだい","正の約数":"せいのやくすう","同じ大きさ":"おなじ おおきさ","繰り上がった数":"くりあがった かず","繰り上がり":"くりあがり","繰り下がり":"くりさがり","全部":"ぜんぶ","最初から":"はじめから","一の位":"いちのくらい","十の位":"じゅうのくらい","百の位":"ひゃくのくらい","千の位":"せんの くらい","下の数":"ひく かず","部分積":"かけて でた かず","入力":"いれる ところ","選択":"えらんだ","演出":"うごき","Score":"とくてん","数字":"すうじ","正解":"せいかい","正答":"こたえ","誤答":"まちがい","未回答":"まだ こたえていない","無答":"まだ こたえていない","学年":"がくねん","複数":"いくつか","最大コンボ":"いちばん れんぞくで できた","コンボ":"れんぞく","分子":"ぶんし","分母":"ぶんぼ","分数":"ぶんすう","整数":"せいすう","練習":"れんしゅう","記録":"きろく","名前":"なまえ","保存":"ほぞん","追加":"ついか","計算":"けいさん","説明":"せつめい","確認":"かくにん","方法":"やりかた","途中":"とちゅう","借り":"かり","場合":"とき","左":"ひだり","右":"みぎ","同じ":"おなじ","大きい":"おおきい","小さい":"ちいさい","数":"かず","位":"くらい","順":"じゅん","足す":"たす","書く":"かく","見る":"みる","消す":"けす","戻す":"もどす","残り":"のこり","残る":"のこる","入れ":"いれ","答え":"こたえ","解き直し":"ときなおし","含む":"ふくむ","問題":"もんだい","数える":"かぞえる","数えて":"かぞえて","数えよう":"かぞえよう","数え":"かぞえ","個数":"こすう","個":"こ","初め":"はじめ","合わせ":"あわせ","合わ":"あわ","取っ":"とっ","取る":"とる","取れ":"とれ","取った":"とった","引け":"ひけ","引い":"ひい","引く":"ひく","引こう":"ひこう","引か":"ひか","引き":"ひき","足し":"たし","確かめ":"たしかめ","確か":"たしか","考える":"かんがえる","考え":"かんがえ","作る":"つくる","作れ":"つくれ","作っ":"つくっ","分け":"わけ","分か":"わか","分の":"ぶんの","組分":"くみぶん","個分":"こぶん","何個":"なんこ","何組":"なんくみ","最後":"さいご","最初":"さいしょ","全体":"ぜんたい","等分":"とうぶん","以上":"いじょう","以下":"いか","元から":"もとから","元の":"もとの","元に":"もとに","元へ":"もとへ","元":"もと","残った":"のこった","残す":"のこす","残せ":"のこせ","区別":"くべつ","必要":"ひつよう","理由":"りゆう","現在値":"いまのかず","隣":"となり","左端":"ひだりはし","右端":"みぎはし","十分":"じゅうぶん","不足":"たりない","不足分":"たりないぶん","途中結果":"とちゅうのけっか","結果":"けっか","受け取る":"うけとる","受け取っ":"うけとっ","受け":"うけ","借りる":"かりる","借りられる":"かりられる","借りられ":"かりられ","借り元":"かりもと","借り先":"かりさき","貸す":"かす","渡す":"わたす","渡し":"わたし","渡っ":"わたっ","交換":"こうかん","まとまり":"まとまり","表す":"あらわす","表し":"あらわし","表せ":"あらわせ","直す":"なおす","直し":"なおし","小数点":"しょうすうてん","小数":"しょうすう","小数第":"しょうすうだい","第":"だい","整数部分":"せいすうぶぶん","小数部分":"しょうすうぶぶん","部分":"ぶぶん","倍率":"ばいりつ","倍":"ばい","単位":"たんい","桁":"けた","各位":"それぞれのくらい","各":"それぞれの","対応":"たいおう","同じ位":"おなじくらい","位取り":"くらいどり","位置":"いち","場所":"ばしょ","場所へ":"ばしょへ","示す":"しめす","示し":"しめし","手順":"てじゅん","一手":"いって","操作":"そうさ","手前":"てまえ","次":"つぎ","上":"うえ","下":"した","並べ":"ならべ","並ぶ":"ならぶ","そろえ":"そろえ","順序":"じゅんじょ","順番":"じゅんばん","戻る":"もどる","戻し":"もどし","戻せ":"もどせ","進む":"すすむ","進め":"すすめ","進もう":"すすもう","求め":"もとめ","見て":"みて","見よ":"みよ","見つけ":"みつけ","見える":"みえる","見当":"けんとう","見ている":"みている","多い":"おおい","多く":"おおく","大きさ":"おおきさ","大きく":"おおきく","小さく":"ちいさく","小さ":"ちいさ","保つ":"たもつ","保ち":"たもち","変わ":"かわ","変える":"かえる","変え":"かえ","増や":"ふや","減ら":"へら","超え":"こえ","超える":"こえる","足り":"たり","止め":"とめ","止ま":"とま","割り切れる":"わりきれる","割り切れ":"わりきれ","割られる":"わられる","割る":"わる","割り":"わり","割っ":"わっ","掛ける":"かける","掛け":"かけ","乗法":"じょうほう","除法":"じょほう","余り":"あまり","余る":"あまる","余っ":"あまっ","商":"しょう","積":"せき","加算":"たしざん","減算":"ひきざん","加減":"たしざんとひきざん","四捨五入":"ししゃごにゅう","丸め":"まるめ","丸い":"まるい","仮分数":"かぶんすう","仮の":"かりの","真分数":"しんぶんすう","約分":"やくぶん","通分":"つうぶん","約数":"やくすう","倍数":"ばいすう","最大公約数":"さいだいこうやくすう","最小公倍数":"さいしょうこうばいすう","共通":"きょうつう","逆数":"ぎゃくすう","偶数":"ぐうすう","奇数":"きすう","法則":"ほうそく","規則":"きそく","最小":"さいしょう","最大":"さいだい","最":"さい","正の":"せいの","正しく":"ただしく","正しい":"ただしい","指定":"してい","置き換え":"おきかえ","書き換え":"かきかえ","書い":"かい","書こ":"かこ","実際":"じっさい","試した":"ためした","試す":"ためす","試そ":"ためそ","試し":"ためし","実行":"じっこう","省い":"はぶい","省く":"はぶく","表して":"あらわして","表示":"ひょうじ","対応する":"たいおうする","選ぶ":"えらぶ","選ぼ":"えらぼ","選び":"えらび","選ん":"えらん","条件":"じょうけん","組合せ":"くみあわせ","正答率":"せいかいしたわりあい","正解率":"せいかいしたわりあい","無答率":"こたえなかったわりあい","率":"わりあい","回数":"かいすう","回目":"かいめ","回答":"こたえ","答える":"こたえる","答えた":"こたえた","終了":"おしまい","中断":"ちゅうだん","再開":"さいかい","時間":"じかん","時間切れ":"じかんぎれ","秒":"びょう","制限":"せいげん","限定":"げんてい","無制限":"むせいげん","自然":"しぜん","対象":"たいしょう","対象外":"たいしょうがい","除いて":"のぞいて","除く":"のぞく","含め":"ふくめ","含ま":"ふくま","両方":"りょうほう","全":"ぜん","全問":"ぜんもん","復元":"ふくげん","読込み":"よみこみ","読みこむ":"よみこむ","読み":"よみ","読め":"よめ","削除":"さくじょ","消し":"けし","消え":"きえ","文字":"もじ","失敗":"しっぱい","不正":"ただしくない","形式":"かたち","変更":"へんこう","設定":"せってい","音量":"おんりょう","音":"おと","効果":"こうか","強制":"きょうせい","推薦":"おすすめ","単体":"たんたい","端末":"たんまつ","本体":"ほんたい","利用":"つかうこと","利用者":"つかうひと","検証":"けんしょう","読み込め":"よみこめ","読み込む":"よみこむ","氏名":"なまえ","新しい":"あたらしい","同時":"どうじ","禁止":"きんし","英字":"えいじ","正方形":"せいほうけい","絵":"え","図":"ず","矢印":"やじるし","分":"ぶん","組":"くみ","人":"ひと","枚":"まい","一":"いち","二":"に","三":"さん","四":"よん","五":"ご","六":"ろく","七":"なな","八":"はち","九":"きゅう","十":"じゅう","百":"ひゃく","千":"せん","万":"まん","億":"おく","兆":"ちょう","年":"ねん","点":"てん","目":"め","元気":"げんき","くり上がり":"くりあがり","くり上がる":"くりあがる","くり上がった":"くりあがった","くり上げ":"くりあげ","くり下がり":"くりさがり","くり下がる":"くりさがる","くり下げ":"くりさげ","切り上げ":"きりあげ","切り下げ":"きりさげ","たし算":"たしざん","ひき算":"ひきざん","かけ算":"かけざん","わり算":"わりざん","四則":"しそく","混合計算":"こんごうけいさん","何個分":"なんこぶん","一番":"いちばん","番目":"ばんめ","番":"ばん","何":"なん","何を":"なにを","何倍":"なんばい","式":"しき","先に":"さきに","先":"さき","今":"いま","真上":"まうえ","立て":"たて","探す":"さがす","探そ":"さがそ","探し":"さがし","取ります":"とります","取り":"とり","作り":"つくり","作業用":"さぎょうよう","作業":"さぎょう","書き":"かき","書け":"かけ","書こう":"かこう","使い":"つかい","使え":"つかえ","使う":"つかう","使っ":"つかっ","使わ":"つかわ","使お":"つかお","中":"なか","一度":"いちど","何度":"なんど","度":"ど","回":"かい","割れる":"われる","割れば":"われば","切れる":"きれる","付け":"つけ","違い":"ちがい","違う":"ちがう","違って":"ちがって","比べ":"くらべ","比較":"くらべること","列":"れつ","出す":"だす","出し":"だし","出て":"でて","欄":"らん","移す":"うつす","移し":"うつし","移る":"うつる","移そう":"うつそう","決め":"きめ","決ま":"きま","動く":"うごく","動か":"うごか","向き":"むき","逆":"ぎゃく","補っ":"おぎなっ","補え":"おぎなえ","未満":"みまん","大小":"だいしょう","値":"あたい","重複":"じゅうふく","除い":"のぞい","来た":"きた","戻そう":"もどそう","表そう":"あらわそう","基準":"きじゅん","空いて":"あいて","入る":"はいる","間":"あいだ","外し":"はずし","末尾":"さいご","形":"かたち","段":"だん","取り組ん":"とりくん","少し":"すこし","助け":"たすけ","方":"かた","道筋":"みちすじ","道すじ":"みちすじ","大きすぎ":"おおきすぎ","長すぎ":"ながすぎ","替え":"かえ","集ま":"あつま","集め":"あつめ","調べ":"しらべ","示され":"しめされ","前":"まえ","後":"あと","続く":"つづく","埋め":"うめ","行う":"おこなう","範囲":"はんい","並び":"ならび","別":"べつ","残し":"のこし","忘れ":"わすれ","渡せ":"わたせ","置きかえ":"おきかえ","置きかわ":"おきかわ","問":"もん","初期化":"しょきか","根拠":"こんきょ","制作":"せいさく","開発":"かいはつ","小学":"しょうがく","小学校":"しょうがっこう","中心":"ちゅうしん","文部科学省":"もんぶかがくしょう","学習指導要領":"がくしゅうしどうようりょう","内容":"ないよう","出題範囲":"しゅつだいはんい","独自":"どくじ","設計":"せっけい","能力":"のうりょく","診断":"しんだん","検査":"けんさ","解説":"かいせつ","送信":"そうしん","閉じ":"とじ","簡単":"かんたん","同分母":"どうぶんぼ","異分母":"いぶんぼ","等しい":"ひとしい","概数":"がいすう","見積もり":"みつもり","当てはめ":"あてはめ","確認する":"たしかめる","三角":"さんかく","四角":"しかく","漢字":"かんじ","配当":"はいとう","学習":"がくしゅう","係数":"けいすう","直そう":"なおそう","起こら":"おこら","見積もる":"みつもる","見積も":"みつも"}};
+  const languageJson = {"source":{"title":"小学校学習指導要領（平成29年告示）学年別漢字配当表","url":"https://www.mext.go.jp/content/20230120-mxt_kyoiku02-100002604_01.pdf","pages":"42–45","counts":[80,160,200,202,193,191]},"allocations":["一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六","引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万明鳴毛門夜野友用曜来里理話","悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和","愛案以衣位茨印英栄媛塩岡億加果貨課芽賀改械害街各覚潟完官管関観願岐希季旗器機議求泣給挙漁共協鏡競極熊訓軍郡群径景芸欠結建健験固功好香候康佐差菜最埼材崎昨札刷察参産散残氏司試児治滋辞鹿失借種周祝順初松笑唱焼照城縄臣信井成省清静席積折節説浅戦選然争倉巣束側続卒孫帯隊達単置仲沖兆低底的典伝徒努灯働特徳栃奈梨熱念敗梅博阪飯飛必票標不夫付府阜富副兵別辺変便包法望牧末満未民無約勇要養浴利陸良料量輪類令冷例連老労録","圧囲移因永営衛易益液演応往桜可仮価河過快解格確額刊幹慣眼紀基寄規喜技義逆久旧救居許境均禁句型経潔件険検限現減故個護効厚耕航鉱構興講告混査再災妻採際在財罪殺雑酸賛士支史志枝師資飼示似識質舎謝授修述術準序招証象賞条状常情織職制性政勢精製税責績接設絶祖素総造像増則測属率損貸態団断築貯張停提程適統堂銅導得毒独任燃能破犯判版比肥非費備評貧布婦武復複仏粉編弁保墓報豊防貿暴脈務夢迷綿輸余容略留領歴","胃異遺域宇映延沿恩我灰拡革閣割株干巻看簡危机揮貴疑吸供胸郷勤筋系敬警劇激穴券絹権憲源厳己呼誤后孝皇紅降鋼刻穀骨困砂座済裁策冊蚕至私姿視詞誌磁射捨尺若樹収宗就衆従縦縮熟純処署諸除承将傷障蒸針仁垂推寸盛聖誠舌宣専泉洗染銭善奏窓創装層操蔵臓存尊退宅担探誕段暖値宙忠著庁頂腸潮賃痛敵展討党糖届難乳認納脳派拝背肺俳班晩否批秘俵腹奮並陛閉片補暮宝訪亡忘棒枚幕密盟模訳郵優預幼欲翌乱卵覧裏律臨朗論"],"readings":{"判定するには問題数が足りません。":"もうすこし とくと、おすすめが わかるよ。","この回のScoreをたしかめよう。":"こんかいの とくてんを みてみよう。","このあそびかたはScoreを表示し、ベストは保存しません。":"とくてんは みられるよ。いちばんの きろくには のこさないよ。","自然な時間切れの最後の問題は、無答率の判定から除いています。誤答がなければ正解率の判定からも除いています。":"じかんぎれで こたえられなかった さいごの もんだいは、「こたえなかった わりあい」には いれないよ。まちがえていなければ、「せいかいの わりあい」にも いれないよ。","判定対象外":"おすすめを きめるには もんだいが たりなかったもの","ヒント後":"ヒントを みたあと","この回":"こんかい","今回":"こんかい","正確":"せいかく","問題数":"もんだいの かず","筆算":"ひっさん","点線":"てんせん","帯分数":"たいぶんすう","回答回数ベース正答率":"こたえた かいすうのうち、せいかいした わりあい","最終自力正解率":"さいごに じぶんで できた わりあい","初回正解率":"はじめにこたえてせいかいしたわりあい","自己ベスト":"いちばんの きろく","最初の誤答":"はじめの こたえ","未出題のまま終了":"まだ といていない もんだい","正の約数":"せいのやくすう","同じ大きさ":"おなじ おおきさ","繰り上がった数":"くりあがった かず","繰り上がり":"くりあがり","繰り下がり":"くりさがり","全部":"ぜんぶ","最初から":"はじめから","一の位":"いちのくらい","十の位":"じゅうのくらい","百の位":"ひゃくのくらい","千の位":"せんの くらい","下の数":"ひく かず","部分積":"かけて でた かず","入力":"いれる ところ","選択":"えらんだ","演出":"うごき","Score":"とくてん","数字":"すうじ","正解":"せいかい","正答":"こたえ","誤答":"まちがい","未回答":"まだ こたえていない","無答":"まだ こたえていない","学年":"がくねん","複数":"いくつか","最大コンボ":"いちばん れんぞくで できた","コンボ":"れんぞく","分子":"ぶんし","分母":"ぶんぼ","分数":"ぶんすう","整数":"せいすう","練習":"れんしゅう","記録":"きろく","名前":"なまえ","保存":"ほぞん","追加":"ついか","計算":"けいさん","説明":"せつめい","確認":"かくにん","方法":"やりかた","途中":"とちゅう","借り":"かり","場合":"とき","左":"ひだり","右":"みぎ","同じ":"おなじ","大きい":"おおきい","小さい":"ちいさい","数":"かず","位":"くらい","順":"じゅん","足す":"たす","書く":"かく","見る":"みる","消す":"けす","戻す":"もどす","残り":"のこり","残る":"のこる","入れ":"いれ","答え":"こたえ","解き直し":"ときなおし","含む":"ふくむ","問題":"もんだい","数える":"かぞえる","数えて":"かぞえて","数えよう":"かぞえよう","数え":"かぞえ","個数":"こすう","個":"こ","初め":"はじめ","合わせ":"あわせ","合わ":"あわ","取っ":"とっ","取る":"とる","取れ":"とれ","取った":"とった","引け":"ひけ","引い":"ひい","引く":"ひく","引こう":"ひこう","引か":"ひか","引き":"ひき","足し":"たし","確かめ":"たしかめ","確か":"たしか","考える":"かんがえる","考え":"かんがえ","作る":"つくる","作れ":"つくれ","作っ":"つくっ","分け":"わけ","分か":"わか","分の":"ぶんの","組分":"くみぶん","個分":"こぶん","何個":"なんこ","何組":"なんくみ","最後":"さいご","最初":"さいしょ","全体":"ぜんたい","等分":"とうぶん","以上":"いじょう","以下":"いか","元から":"もとから","元の":"もとの","元に":"もとに","元へ":"もとへ","元":"もと","残った":"のこった","残す":"のこす","残せ":"のこせ","区別":"くべつ","必要":"ひつよう","理由":"りゆう","現在値":"いまのかず","隣":"となり","左端":"ひだりはし","右端":"みぎはし","十分":"じゅうぶん","不足":"たりない","不足分":"たりないぶん","途中結果":"とちゅうのけっか","結果":"けっか","受け取る":"うけとる","受け取っ":"うけとっ","受け":"うけ","借りる":"かりる","借りられる":"かりられる","借りられ":"かりられ","借り元":"かりもと","借り先":"かりさき","貸す":"かす","渡す":"わたす","渡し":"わたし","渡っ":"わたっ","交換":"こうかん","まとまり":"まとまり","表す":"あらわす","表し":"あらわし","表せ":"あらわせ","直す":"なおす","直し":"なおし","小数点":"しょうすうてん","小数":"しょうすう","小数第":"しょうすうだい","第":"だい","整数部分":"せいすうぶぶん","小数部分":"しょうすうぶぶん","部分":"ぶぶん","倍率":"ばいりつ","倍":"ばい","単位":"たんい","桁":"けた","各位":"それぞれのくらい","各":"それぞれの","対応":"たいおう","同じ位":"おなじくらい","位取り":"くらいどり","位置":"いち","場所":"ばしょ","場所へ":"ばしょへ","示す":"しめす","示し":"しめし","手順":"てじゅん","一手":"いって","操作":"そうさ","手前":"てまえ","次":"つぎ","上":"うえ","下":"した","並べ":"ならべ","並ぶ":"ならぶ","そろえ":"そろえ","順序":"じゅんじょ","順番":"じゅんばん","戻る":"もどる","戻し":"もどし","戻せ":"もどせ","進む":"すすむ","進め":"すすめ","進もう":"すすもう","求め":"もとめ","見て":"みて","見よ":"みよ","見つけ":"みつけ","見える":"みえる","見当":"けんとう","見ている":"みている","多い":"おおい","多く":"おおく","大きさ":"おおきさ","大きく":"おおきく","小さく":"ちいさく","小さ":"ちいさ","保つ":"たもつ","保ち":"たもち","変わ":"かわ","変える":"かえる","変え":"かえ","増や":"ふや","減ら":"へら","超え":"こえ","超える":"こえる","足り":"たり","止め":"とめ","止ま":"とま","割り切れる":"わりきれる","割り切れ":"わりきれ","割られる":"わられる","割る":"わる","割り":"わり","割っ":"わっ","掛ける":"かける","掛け":"かけ","乗法":"じょうほう","除法":"じょほう","余り":"あまり","余る":"あまる","余っ":"あまっ","商":"しょう","積":"せき","加算":"たしざん","減算":"ひきざん","加減":"たしざんとひきざん","四捨五入":"ししゃごにゅう","丸め":"まるめ","丸い":"まるい","仮分数":"かぶんすう","仮の":"かりの","真分数":"しんぶんすう","約分":"やくぶん","通分":"つうぶん","約数":"やくすう","倍数":"ばいすう","最大公約数":"さいだいこうやくすう","最小公倍数":"さいしょうこうばいすう","共通":"きょうつう","逆数":"ぎゃくすう","偶数":"ぐうすう","奇数":"きすう","法則":"ほうそく","規則":"きそく","最小":"さいしょう","最大":"さいだい","最":"さい","正の":"せいの","正しく":"ただしく","正しい":"ただしい","指定":"してい","置き換え":"おきかえ","書き換え":"かきかえ","書い":"かい","書こ":"かこ","実際":"じっさい","試した":"ためした","試す":"ためす","試そ":"ためそ","試し":"ためし","実行":"じっこう","省い":"はぶい","省く":"はぶく","表して":"あらわして","表示":"ひょうじ","対応する":"たいおうする","選ぶ":"えらぶ","選ぼ":"えらぼ","選び":"えらび","選ん":"えらん","条件":"じょうけん","組合せ":"くみあわせ","正答率":"せいかいしたわりあい","正解率":"せいかいしたわりあい","無答率":"こたえなかったわりあい","率":"わりあい","回数":"かいすう","回目":"かいめ","回答":"こたえ","答える":"こたえる","答えた":"こたえた","終了":"おしまい","中断":"ちゅうだん","再開":"さいかい","時間":"じかん","時間切れ":"じかんぎれ","秒":"びょう","制限":"せいげん","限定":"げんてい","無制限":"むせいげん","自然":"しぜん","対象":"たいしょう","対象外":"たいしょうがい","除いて":"のぞいて","除く":"のぞく","含め":"ふくめ","含ま":"ふくま","両方":"りょうほう","全":"ぜん","全問":"ぜんもん","復元":"ふくげん","読込み":"よみこみ","読みこむ":"よみこむ","読み":"よみ","読め":"よめ","削除":"さくじょ","消し":"けし","消え":"きえ","文字":"もじ","失敗":"しっぱい","不正":"ただしくない","形式":"かたち","変更":"へんこう","設定":"せってい","音量":"おんりょう","音":"おと","効果":"こうか","強制":"きょうせい","推薦":"おすすめ","単体":"たんたい","端末":"たんまつ","本体":"ほんたい","利用":"つかうこと","利用者":"つかうひと","検証":"けんしょう","読み込め":"よみこめ","読み込む":"よみこむ","氏名":"なまえ","新しい":"あたらしい","同時":"どうじ","禁止":"きんし","英字":"えいじ","正方形":"せいほうけい","絵":"え","図":"ず","矢印":"やじるし","分":"ぶん","組":"くみ","人":"ひと","枚":"まい","一":"いち","二":"に","三":"さん","四":"よん","五":"ご","六":"ろく","七":"なな","八":"はち","九":"きゅう","十":"じゅう","百":"ひゃく","千":"せん","万":"まん","億":"おく","兆":"ちょう","年":"ねん","点":"てん","目":"め","元気":"げんき","くり上がり":"くりあがり","くり上がる":"くりあがる","くり上がった":"くりあがった","くり上げ":"くりあげ","くり下がり":"くりさがり","くり下がる":"くりさがる","くり下げ":"くりさげ","切り上げ":"きりあげ","切り下げ":"きりさげ","たし算":"たしざん","ひき算":"ひきざん","かけ算":"かけざん","わり算":"わりざん","四則":"しそく","混合計算":"こんごうけいさん","何個分":"なんこぶん","一番":"いちばん","番目":"ばんめ","番":"ばん","何":"なん","何を":"なにを","何倍":"なんばい","式":"しき","先に":"さきに","先":"さき","今":"いま","真上":"まうえ","立て":"たて","探す":"さがす","探そ":"さがそ","探し":"さがし","取ります":"とります","取り":"とり","作り":"つくり","作業用":"さぎょうよう","作業":"さぎょう","書き":"かき","書け":"かけ","書こう":"かこう","使い":"つかい","使え":"つかえ","使う":"つかう","使っ":"つかっ","使わ":"つかわ","使お":"つかお","中":"なか","一度":"いちど","何度":"なんど","度":"ど","回":"かい","割れる":"われる","割れば":"われば","切れる":"きれる","付け":"つけ","違い":"ちがい","違う":"ちがう","違って":"ちがって","比べ":"くらべ","比較":"くらべること","列":"れつ","出す":"だす","出し":"だし","出て":"でて","欄":"らん","移す":"うつす","移し":"うつし","移る":"うつる","移そう":"うつそう","決め":"きめ","決ま":"きま","動く":"うごく","動か":"うごか","向き":"むき","逆":"ぎゃく","補っ":"おぎなっ","補え":"おぎなえ","未満":"みまん","大小":"だいしょう","値":"あたい","重複":"じゅうふく","除い":"のぞい","来た":"きた","戻そう":"もどそう","表そう":"あらわそう","基準":"きじゅん","空いて":"あいて","入る":"はいる","間":"あいだ","外し":"はずし","末尾":"さいご","形":"かたち","段":"だん","取り組ん":"とりくん","少し":"すこし","助け":"たすけ","方":"かた","道筋":"みちすじ","道すじ":"みちすじ","大きすぎ":"おおきすぎ","長すぎ":"ながすぎ","替え":"かえ","集ま":"あつま","集め":"あつめ","調べ":"しらべ","示され":"しめされ","前":"まえ","後":"あと","続く":"つづく","埋め":"うめ","行う":"おこなう","範囲":"はんい","並び":"ならび","別":"べつ","残し":"のこし","忘れ":"わすれ","渡せ":"わたせ","置きかえ":"おきかえ","置きかわ":"おきかわ","問":"もん","初期化":"しょきか","根拠":"こんきょ","制作":"せいさく","開発":"かいはつ","小学":"しょうがく","小学校":"しょうがっこう","中心":"ちゅうしん","文部科学省":"もんぶかがくしょう","学習指導要領":"がくしゅうしどうようりょう","内容":"ないよう","出題範囲":"しゅつだいはんい","独自":"どくじ","設計":"せっけい","能力":"のうりょく","診断":"しんだん","検査":"けんさ","解説":"かいせつ","送信":"そうしん","閉じ":"とじ","簡単":"かんたん","同分母":"どうぶんぼ","異分母":"いぶんぼ","等しい":"ひとしい","概数":"がいすう","見積もり":"みつもり","当てはめ":"あてはめ","確認する":"たしかめる","三角":"さんかく","四角":"しかく","漢字":"かんじ","配当":"はいとう","学習":"がくしゅう","係数":"けいすう","直そう":"なおそう","起こら":"おこら","見積もる":"みつもる","見積も":"みつも","ひっ算":"ひっさん","見方":"みかた","がい数":"がいすう","九九":"くく"}};
 
   const KZLanguage = (() => {
     const data = languageJson;
@@ -8925,7 +8916,6 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
     result: null,
     activeScreen: initialSaved.settings.onboarded ? "menu" : "welcome",
     grade: initialFirst.grade,
-    category: initialFirst.category,
     multiGrade: false,
     multiSelect: initialConfig.selectedIds.length > 1,
     selectedGrades: new Set(
@@ -8947,11 +8937,10 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
   };
 
   // A restored/recommended configuration replaces every selection control.
-  // Browsing a grade or category still remains independent during menu edits.
+  // Browsing grades still remains independent during menu edits.
   function syncSelection() {
     const first = challengeOf(appState.config.selectedIds[0]);
     appState.grade = first.grade;
-    appState.category = first.category;
     appState.selectedGrades = new Set(
       appState.config.selectedIds.map((id) => challengeOf(id).grade),
     );
@@ -8982,9 +8971,10 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
       } else if (typeof value === "function") {
         continue;
       } else if (key === "text") {
-        n.textContent = attrs["data-user-text"]
-          ? String(value)
-          : KZUI.readable(String(value), uiGrade());
+        n.textContent =
+          attrs["data-user-text"] || attrs["data-unit-text"]
+            ? String(value)
+            : KZUI.readable(String(value), uiGrade());
       } else if (key === "class") {
         n.className = String(value);
       } else if (key === "checked") {
@@ -9050,9 +9040,39 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
     attrs = {},
   ) =>
     el(tag, {
-      text: attrs["data-user-text"] ? s : KZUI.readable(s, uiGrade()),
+      text:
+        attrs["data-user-text"] || attrs["data-unit-text"]
+          ? s
+          : KZUI.readable(s, uiGrade()),
       ...attrs,
     });
+
+  function challengeLabelNodes(
+    id,
+    grade = uiGrade(),
+  ) {
+    const c = challengeOf(id);
+    return [
+      el("span", {
+        class: "challenge-unit",
+        "data-unit-text": "true",
+        "data-unit-grade": String(c.grade),
+        text: c.unit,
+      }),
+      el("span", {
+        class: "challenge-subtitle",
+        text: `（${KZUI.readable(c.title, grade)}）`,
+      }),
+    ];
+  }
+
+  function challengeAccessibleLabel(
+    id,
+    grade = uiGrade(),
+  ) {
+    const c = challengeOf(id);
+    return KZUI.readable(`${c.unit}（${c.title}）`, grade);
+  }
 
   const math = (
     s,
@@ -9625,7 +9645,6 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
 
 
   const GRADES = [1, 2, 3, 4, 5, 6];
-  const CATEGORIES = ["計算", "数"];
   const SUPPORT_KINDS = [
     ["independent", "じぶんで"],
     ["supported", "ヒント・たすけあり"],
@@ -9672,7 +9691,7 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
       [
         text("h3", "つぎの おすすめ"),
         text("p", r.reason),
-        text("strong", challengeOf(r.targetId).title),
+        el("strong", { class: "challenge-label" }, challengeLabelNodes(r.targetId)),
         el("div", { class: "actions" }, [
           button(
             "このれんしゅうを えらぶ",
@@ -10057,11 +10076,10 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
         class: "challenge-list" + (appState.multiGrade ? " many-grades" : ""),
         "data-testid": "challenge-select",
       },
-      KZ.CATALOG.filter(
-        (c) =>
-          (appState.multiGrade
-            ? appState.selectedGrades.has(c.grade)
-            : c.grade === appState.grade) && c.category === appState.category,
+      KZ.CATALOG.filter((c) =>
+        appState.multiGrade
+          ? appState.selectedGrades.has(c.grade)
+          : c.grade === appState.grade,
       ).map((c) =>
         el(
           "label",
@@ -10074,7 +10092,7 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
               type: "checkbox",
               checked: selected.has(c.id),
               "data-challenge": c.id,
-              "aria-label": KZUI.readable(c.title, uiGrade()),
+              "aria-label": challengeAccessibleLabel(c.id),
               onChange: (e) => {
                 if (!(e.target instanceof HTMLInputElement)) return;
                 const ids = new Set(
@@ -10086,10 +10104,10 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
               },
             }),
             el("span", { class: "challenge-copy" }, [
-              text(
-                "strong",
-                `${appState.multiGrade ? c.grade + "ねん・" : ""}${c.title}`,
-              ),
+              el("strong", { class: "challenge-label" }, [
+                appState.multiGrade ? `${c.grade}ねん・` : null,
+                ...challengeLabelNodes(c.id),
+              ]),
               math(KZUI.example(c.id), {
                 class: "math-text challenge-example",
                 "aria-label": "もんだいのれい",
@@ -10115,20 +10133,6 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
         [
           text("h3", "1　がくねんを えらぼう", { class: "step-label" }),
           grades,
-          el(
-            "div",
-            { class: "category-tabs" },
-            CATEGORIES.map((c) =>
-              button(
-                c === "計算" ? "＋ けいさん" : "● かず",
-                () => {
-                  appState.category = c;
-                  renderScreen();
-                },
-                { "aria-pressed": appState.category === c, "data-category": c },
-              ),
-            ),
-          ),
           el("div", { class: "list-heading" }, [
             text(
               "h3",
@@ -10229,22 +10233,21 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
           "div",
           { class: "chosen-chips", "data-testid": "selected-challenges" },
           appState.config.selectedIds.map((id) =>
-            button(
-              `${challengeOf(id).grade}ねん・${challengeOf(id).title} ×`,
-              () =>
-                updateConfig({
-                  ...appState.config,
-                  selectedIds: appState.config.selectedIds.filter(
-                    (x) => x !== id,
-                  ),
-                }),
+            el(
+              "button",
               {
+                type: "button",
+                onClick: () =>
+                  updateConfig({
+                    ...appState.config,
+                    selectedIds: appState.config.selectedIds.filter(
+                      (x) => x !== id,
+                    ),
+                  }),
                 "data-remove-challenge": id,
-                "aria-label": KZUI.readable(
-                  challengeOf(id).title + "を はずす",
-                  uiGrade(),
-                ),
+                "aria-label": challengeAccessibleLabel(id) + "を はずす",
               },
+              [`${challengeOf(id).grade}ねん・`, ...challengeLabelNodes(id), " ×"],
             ),
           ),
         ),
@@ -10304,14 +10307,18 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
           "div",
           { class: "start-selection", "data-testid": "selection-summary" },
           [
-            text(
-              "strong",
-              appState.config.selectedIds.length === 1
-                ? challengeOf(appState.config.selectedIds[0]).title
-                : appState.config.selectedIds.length
-                  ? `${appState.config.selectedIds.length}この れんしゅう`
-                  : "もんだいを えらんでね",
-            ),
+            appState.config.selectedIds.length === 1
+              ? el(
+                  "strong",
+                  { class: "challenge-label" },
+                  challengeLabelNodes(appState.config.selectedIds[0]),
+                )
+              : text(
+                  "strong",
+                  appState.config.selectedIds.length
+                    ? `${appState.config.selectedIds.length}この れんしゅう`
+                    : "もんだいを えらんでね",
+                ),
             text(
               "small",
               appState.config.mode === "practice"
@@ -10563,7 +10570,11 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
           text("p", `${challengeOf(q.challengeId).grade}ねんの れんしゅう`, {
             class: "eyebrow",
           }),
-          text("h2", challengeOf(q.challengeId).title),
+          el(
+            "h2",
+            { class: "challenge-heading" },
+            challengeLabelNodes(q.challengeId),
+          ),
         ]),
         el("div", { class: "actions" }, [
           button("ひとやすみ", () => dispatch({ type: "PAUSE" }), {
@@ -10954,11 +10965,13 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
             )
           : null,
         result.excluded.length
-          ? text(
-              "p",
-              "判定対象外：" +
-                result.excluded.map((id) => challengeOf(id).title).join("、"),
-            )
+          ? el("p", {}, [
+              "判定対象外：",
+              ...result.excluded.flatMap((id, i) => [
+                ...(i ? ["、"] : []),
+                ...challengeLabelNodes(id),
+              ]),
+            ])
           : null,
         m.unshown ? text("p", `未出題のまま終了：${m.unshown}問`) : null,
         ...run.records
@@ -11266,12 +11279,7 @@ return { KZLanguage, KZWritten, KZ, KZTeaching };
     const previousScreen = app.dataset.screen;
     const focused = document.activeElement;
     let identity = undefined;
-    for (const key of [
-      "data-testid",
-      "data-challenge",
-      "data-grade",
-      "data-category",
-    ]) {
+    for (const key of ["data-testid", "data-challenge", "data-grade"]) {
       const v = focused?.getAttribute(key);
       if (v) {
         identity = [key, v];

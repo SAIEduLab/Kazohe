@@ -480,7 +480,6 @@ test("TC-U15 start remains actionable in short viewports, zoom and transformed c
       app.style.overflow = "hidden";
       document.documentElement.style.fontSize = "24px";
     });
-    await page.locator('[data-category="計算"]').click();
     await page.locator('[data-challenge="G1-C03"]').check();
     await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
     await expect(page.getByTestId("start")).toBeInViewport({ ratio: 1 });
@@ -524,42 +523,71 @@ test("TC-U17 mixed grade final explanations, diagram labels and menus use the lo
         encodeURIComponent(JSON.stringify(options)),
     );
     await page.getByTestId("skip").click();
-    const menuErrors = await page.evaluate(() =>
-      [...document.querySelectorAll("#app, #start-dock-root")].flatMap(
-        (root) => {
+    const menuCheck = await page.evaluate((allocations) => {
+      const unitErrors = [];
+      const hanErrors = [];
+      for (const root of document.querySelectorAll("#app, #start-dock-root")) {
+        for (const el of root.querySelectorAll("[data-unit-text]")) {
+          const grade = Number(el.getAttribute("data-unit-grade"));
+          const allowed = new Set(allocations.slice(0, grade).join(""));
+          const txt = el.textContent || "";
+          for (const ch of txt) {
+            if (/\p{Script=Han}/u.test(ch) && !allowed.has(ch)) {
+              unitErrors.push({ grade, ch, txt });
+            }
+          }
+        }
+        const clone = root.cloneNode(true);
+        for (const el of clone.querySelectorAll("[data-unit-text]"))
+          el.remove();
+        const strings = [
+          clone.textContent || "",
+          ...[...root.querySelectorAll("[aria-label]")].map((n) =>
+            n.getAttribute("aria-label"),
+          ),
+        ];
+        for (const s of strings)
+          if (/\p{Script=Han}/u.test(s)) hanErrors.push(s);
+      }
+      return { unitErrors, hanErrors };
+    }, [...Language.allocations]);
+    expect(menuCheck.unitErrors, c.id + " unit").toEqual([]);
+    expect(menuCheck.hanErrors, c.id + " menu").toEqual([]);
+    await page.getByTestId("start").click();
+    await page.getByTestId("help").click();
+    const errors = await page.evaluate((allocations) => {
+      const errors = [];
+      for (let step = 0; step < 500; step++) {
+        for (const root of document.querySelectorAll("#app, #announcer")) {
+          for (const el of root.querySelectorAll("[data-unit-text]")) {
+            const grade = Number(el.getAttribute("data-unit-grade"));
+            const allowed = new Set(allocations.slice(0, grade).join(""));
+            const txt = el.textContent || "";
+            for (const ch of txt) {
+              if (/\p{Script=Han}/u.test(ch) && !allowed.has(ch)) {
+                errors.push({ step, grade, ch, txt });
+              }
+            }
+          }
+          const clone = root.cloneNode(true);
+          for (const el of clone.querySelectorAll("[data-unit-text]"))
+            el.remove();
           const strings = [
-            root.textContent,
+            clone.textContent || "",
             ...[...root.querySelectorAll("[aria-label]")].map((n) =>
               n.getAttribute("aria-label"),
             ),
           ];
-          return strings.filter((s) => /\p{Script=Han}/u.test(s));
-        },
-      ),
-    );
-    expect(menuErrors, c.id + " menu").toEqual([]);
-    await page.getByTestId("start").click();
-    await page.getByTestId("help").click();
-    const errors = await page.evaluate(() => {
-      const errors = [];
-      for (let step = 0; step < 500; step++) {
-        const strings = [
-          ...document.querySelectorAll("#app, #announcer"),
-        ].flatMap((root) => [
-          root.textContent,
-          ...[...root.querySelectorAll("[aria-label]")].map((n) =>
-            n.getAttribute("aria-label"),
-          ),
-        ]);
-        for (const text of strings)
-          if (/\p{Script=Han}|かずえ|くりうえ|くりした/u.test(text))
-            errors.push({ step, text });
+          for (const text of strings)
+            if (/\p{Script=Han}|かずえ|くりうえ|くりした/u.test(text))
+              errors.push({ step, text });
+        }
         const next = document.querySelector('[data-testid="solution-forward"]');
         if (next.disabled) return errors;
         next.click();
       }
       throw Error("solution did not terminate");
-    });
+    }, [...Language.allocations]);
     expect(errors, c.id).toEqual([]);
     evidence.push(c.id);
     if (

@@ -6,7 +6,6 @@ import type {
   ApplyResultOutput,
   ChallengeId,
   ChallengeSpec,
-  Domain,
   Grade,
   Question,
   RawAnswerObject,
@@ -37,7 +36,6 @@ export interface AppState {
   result: ApplyResultOutput | null;
   activeScreen: ScreenName;
   grade: Grade;
-  category: Domain;
   multiGrade: boolean;
   multiSelect: boolean;
   selectedGrades: Set<Grade>;
@@ -136,7 +134,6 @@ export const appState: AppState = {
   result: null,
   activeScreen: initialSaved.settings.onboarded ? "menu" : "welcome",
   grade: initialFirst.grade,
-  category: initialFirst.category,
   multiGrade: false,
   multiSelect: initialConfig.selectedIds.length > 1,
   selectedGrades: new Set<Grade>(
@@ -158,11 +155,10 @@ export const appState: AppState = {
 };
 
 // A restored/recommended configuration replaces every selection control.
-// Browsing a grade or category still remains independent during menu edits.
+// Browsing grades still remains independent during menu edits.
 export function syncSelection(): void {
   const first = challengeOf(appState.config.selectedIds[0]);
   appState.grade = first.grade;
-  appState.category = first.category;
   appState.selectedGrades = new Set<Grade>(
     appState.config.selectedIds.map((id) => challengeOf(id).grade),
   );
@@ -193,9 +189,10 @@ export function el<K extends keyof HTMLElementTagNameMap>(
     } else if (typeof value === "function") {
       continue;
     } else if (key === "text") {
-      n.textContent = attrs["data-user-text"]
-        ? String(value)
-        : KZUI.readable(String(value), uiGrade());
+      n.textContent =
+        attrs["data-user-text"] || attrs["data-unit-text"]
+          ? String(value)
+          : KZUI.readable(String(value), uiGrade());
     } else if (key === "class") {
       n.className = String(value);
     } else if (key === "checked") {
@@ -261,9 +258,39 @@ export const text = <K extends keyof HTMLElementTagNameMap>(
   attrs: ElAttrs = {},
 ): HTMLElementTagNameMap[K] =>
   el(tag, {
-    text: attrs["data-user-text"] ? s : KZUI.readable(s, uiGrade()),
+    text:
+      attrs["data-user-text"] || attrs["data-unit-text"]
+        ? s
+        : KZUI.readable(s, uiGrade()),
     ...attrs,
   });
+
+export function challengeLabelNodes(
+  id: ChallengeId,
+  grade = uiGrade(),
+): [HTMLSpanElement, HTMLSpanElement] {
+  const c = challengeOf(id);
+  return [
+    el("span", {
+      class: "challenge-unit",
+      "data-unit-text": "true",
+      "data-unit-grade": String(c.grade),
+      text: c.unit,
+    }),
+    el("span", {
+      class: "challenge-subtitle",
+      text: `（${KZUI.readable(c.title, grade)}）`,
+    }),
+  ];
+}
+
+export function challengeAccessibleLabel(
+  id: ChallengeId,
+  grade = uiGrade(),
+): string {
+  const c = challengeOf(id);
+  return KZUI.readable(`${c.unit}（${c.title}）`, grade);
+}
 
 export const math = (
   s: unknown,

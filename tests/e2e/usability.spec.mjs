@@ -154,7 +154,15 @@ test("TC-U01 simple menu selection and visible start at four widths", async ({
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("start")).toBeInViewport({ ratio: 1 });
     await expect(page.locator('[data-testid="mode"]')).toBeHidden();
-    await page.locator('[data-category="計算"]').click();
+    const grade1Ids = await page
+      .locator('[data-testid="challenge-select"] [data-challenge]')
+      .evaluateAll((ns) => ns.map((n) => n.getAttribute("data-challenge")));
+    expect(grade1Ids).toEqual(
+      K.CATALOG.filter((c) => c.grade === 1).map((c) => c.id),
+    );
+    await expect(
+      page.locator('[data-testid="challenge-select"] .challenge').first(),
+    ).toContainText("いくつと いくつ（9までの いくつといくつ）");
     await page.locator('[data-challenge="G1-C03"]').check();
     expect((await snap(page)).config.selectedIds).toEqual(["G1-C03"]);
     await expect(page.getByTestId("selection-summary")).toContainText(
@@ -171,7 +179,6 @@ test("TC-U02 multiple grades, explicit selected contents, scroll and keyboard fo
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page);
   await page.locator('[data-grade="3"]').click();
-  await page.locator('[data-category="計算"]').click();
   await page.locator('[data-menu-details="selection"]>summary').click();
   await page.getByTestId("multiple-select").click();
   const item = page.locator('[data-challenge="G3-C08"]');
@@ -704,7 +711,6 @@ test("TC-U12 effects off, sound off and reduced motion retain clear feedback", a
     "true"
   )
     await page.getByTestId("effects-toggle").click();
-  await page.locator('[data-category="計算"]').click();
   await page.locator('[data-challenge="G1-C03"]').check();
   await page.getByTestId("start").click();
   let q = (await snap(page)).run.currentQuestion;
