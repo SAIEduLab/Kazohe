@@ -347,7 +347,7 @@ export async function runChangeGuardTests() {
         "product-changed-no-bump",
         await guard(derive({ [htmlName]: productText + "\n" })),
         "versionIssues",
-        /must be 0\.2\.7/,
+        new RegExp("must be " + next.replaceAll(".", "\\.")),
       );
       assertPass(
         "patch-bump-accepted",
@@ -1042,9 +1042,10 @@ export async function runChangeGuardTests() {
           `const APP_VERSION = "${next}"; // patch bump`,
         )
         .replace(
-          "function gcd(a, b) {",
-          "function gcd(a, b) {\n    void (1 + 1);",
+          /function gcd\s*\([^)]*\)\s*\{/,
+          (m) => `${m}\n    void (1 + 1);`,
         );
+      assert.notEqual(versionBumped, productText);
       const refactored = await guard(
         derive(
           release(next, { changeSource: true, productBytes: versionBumped }),
@@ -1152,9 +1153,10 @@ export async function runChangeGuardTests() {
 
       // Timeout enforcement cleans up child process and temp snapshot folders.
       const endless = productText.replace(
-        "function gcd(a, b) {",
-        "function gcd(a, b) { for (;;) {}",
+        /function gcd\s*\([^)]*\)\s*\{/,
+        (m) => `${m} for (;;) {}`,
       );
+      assert.notEqual(endless, productText);
       assertFail(
         "snapshot-timeout",
         await guard(
