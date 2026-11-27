@@ -64,28 +64,39 @@ export function report(suite, cases, extra = {}) {
 }
 export function suite(name) {
   const cases = [];
+  const pass = (id, actual) =>
+    cases.push({
+      id,
+      method: name,
+      status: "PASS",
+      expected: "assertions satisfied",
+      actual: actual ?? "assertions satisfied",
+      evidence: `reports/${name}.json`,
+    });
+  const fail = (id, e) => {
+    cases.push({
+      id,
+      method: name,
+      status: "FAIL",
+      actual: e.stack,
+      evidence: `reports/${name}.json`,
+    });
+    console.error(id, e);
+  };
   return {
     cases,
     check(id, fn) {
       try {
-        const actual = fn();
-        cases.push({
-          id,
-          method: name,
-          status: "PASS",
-          expected: "assertions satisfied",
-          actual: actual ?? "assertions satisfied",
-          evidence: `reports/${name}.json`,
-        });
+        pass(id, fn());
       } catch (e) {
-        cases.push({
-          id,
-          method: name,
-          status: "FAIL",
-          actual: e.stack,
-          evidence: `reports/${name}.json`,
-        });
-        console.error(id, e);
+        fail(id, e);
+      }
+    },
+    async checkAsync(id, fn) {
+      try {
+        pass(id, await fn());
+      } catch (e) {
+        fail(id, e);
       }
     },
     done(extra = {}) {
@@ -107,6 +118,7 @@ export const machineSuites = [
   "coverage",
   "property",
   "pedagogy",
+  "change-guard-unit",
   "single-html",
 ];
 export function summaryRows(inputs, expected, names) {

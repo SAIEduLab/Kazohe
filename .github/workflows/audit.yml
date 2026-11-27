@@ -15,7 +15,7 @@ permissions:
   contents: read
 concurrency:
   group: kazohe-audit-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   CI: "true"
   AUDIT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -26,17 +26,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Resolve versioned product and verify checkout against PR head
-        run: node scripts/artifact.mjs --github-env --verify-head
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
+      - name: Resolve versioned product and verify checkout against PR head
+        run: node scripts/artifact.mjs --github-env --verify-head
+      - run: npm ci --ignore-scripts
       - name: Check final HTML, catalog, mathematics and learning explanations
         run: |
           npm run build:check
@@ -46,6 +46,7 @@ jobs:
           npm run test:unit
           npm run test:property
           npm run test:pedagogy
+          npm run test:change-guard
       - name: Summarize mathematics reports
         if: ${{ !cancelled() }}
         run: node scripts/report.mjs --summary math
@@ -53,7 +54,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve mathematics evidence
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kazohe-math-${{ github.sha }}
           path: |
@@ -70,17 +71,17 @@ jobs:
       matrix:
         engine: [chromium, firefox, webkit]
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Resolve versioned product and verify checkout against PR head
-        run: node scripts/artifact.mjs --github-env --verify-head
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
+      - name: Resolve versioned product and verify checkout against PR head
+        run: node scripts/artifact.mjs --github-env --verify-head
+      - run: npm ci --ignore-scripts
       - run: npm run build:check
       - run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Offline interaction, all skills and four-width geometry
@@ -101,7 +102,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve browser evidence even when assertions fail
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kazohe-browser-${{ matrix.engine }}-${{ github.sha }}
           path: |
@@ -115,17 +116,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Resolve versioned product and verify checkout against PR head
-        run: node scripts/artifact.mjs --github-env --verify-head --full
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
+      - name: Resolve versioned product and verify checkout against PR head
+        run: node scripts/artifact.mjs --github-env --verify-head --full
+      - run: npm ci --ignore-scripts
       - run: npm run build:check
       - run: npx playwright install --with-deps chromium
       - name: Compare base and candidate in the same browser
@@ -139,7 +140,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Preserve comparison images for visual review
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kazohe-visual-${{ github.sha }}
           path: reports/
@@ -152,18 +153,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Resolve versioned product and verify checkout against PR head
-        run: node scripts/artifact.mjs --github-env --verify-head
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - name: Resolve versioned product and verify checkout against PR head
+        run: node scripts/artifact.mjs --github-env --verify-head
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: kazohe-*-${{ github.sha }}
           path: .artifacts
@@ -178,7 +179,7 @@ jobs:
           AUDIT_JOB_STATUS: ${{ job.status }}
       - name: Upload aggregate evidence
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kazohe-aggregate-${{ github.sha }}
           path: reports/
@@ -186,7 +187,7 @@ jobs:
           retention-days: 3
       - name: Upload automatically checked candidate (not a release)
         if: ${{ success() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kazohe-checked-candidate-${{ github.sha }}
           path: ${{ env.APP_HTML }}

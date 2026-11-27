@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { writtenCases, writtenOracle } from "../fixtures/written-oracle.mjs";
 import { suite } from "../../scripts/report.mjs";
+import { refusedWith } from "../../scripts/refusal.mjs";
 import { rawAnswer, eq } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";
 const s = suite("unit"),
@@ -218,16 +219,18 @@ for (let i = 1; i <= 70; i++)
         wrong(x, { form: "integer", whole: "3" });
         break;
       case 65:
-        assert.throws(() =>
-          K.complete(
-            K.special(
-              "G6-N01",
-              "reciprocal",
-              [K.rat(0)],
-              { type: "fraction" },
-              { labels: ["0"] },
+        assert.throws(
+          () =>
+            K.complete(
+              K.special(
+                "G6-N01",
+                "reciprocal",
+                [K.rat(0)],
+                { type: "fraction" },
+                { labels: ["0"] },
+              ),
             ),
-          ),
+          refusedWith({ message: /分母は0にできません/ }),
         );
         break;
       case 66:
@@ -873,28 +876,50 @@ const persistenceTests = [
     for (const key of ["appVersion", "schemaVersion"]) {
       const x = K.emptySave();
       x[key] = key === "appVersion" ? "0.1" : 2;
-      assert.throws(() => K.validateBackup(JSON.stringify(x)));
+      assert.throws(
+        () => K.validateBackup(JSON.stringify(x)),
+        refusedWith({ message: /対応していないバージョンです/ }),
+      );
     }
   },
   () => {
-    assert.throws(() => K.validateBackup("{"));
+    assert.throws(() => K.validateBackup("{"), {
+      name: "SyntaxError",
+      message: /Expected|Unexpected|JSON/,
+    });
     const a = completed();
     Object.values(a.bestRecords)[0].score = -1;
-    assert.throws(() => K.validateBackup(JSON.stringify(a)));
+    assert.throws(
+      () => K.validateBackup(JSON.stringify(a)),
+      refusedWith({ message: /不正な数値です/ }),
+    );
     const b = K.emptySave();
     b.settings.config.selectedIds = ["unknown"];
-    assert.throws(() => K.validateBackup(JSON.stringify(b)));
+    assert.throws(
+      () => K.validateBackup(JSON.stringify(b)),
+      refusedWith({ message: /チャレンジをえらんでね/ }),
+    );
     const c = K.emptySave();
     c.recommendation = {
       sourceId: "G4-C07",
       targetId: "G1-C01",
       reason: "bad",
     };
-    assert.throws(() => K.validateBackup(JSON.stringify(c)));
+    assert.throws(
+      () => K.validateBackup(JSON.stringify(c)),
+      refusedWith({ message: /バックアップの形式が正しくありません/ }),
+    );
   },
-  () => assert.throws(() => K.validateBackup(" ".repeat(16 * 1024 * 1024 + 1))),
+  () =>
+    assert.throws(
+      () => K.validateBackup(" ".repeat(16 * 1024 * 1024 + 1)),
+      refusedWith({ message: /JSONは16 MiBまでです/ }),
+    ),
   () => {
-    assert.throws(() => K.validateBackup('{"__proto__":{}}'));
+    assert.throws(
+      () => K.validateBackup('{"__proto__":{}}'),
+      refusedWith({ message: /不正なキーです/ }),
+    );
     const x = K.emptySave();
     x.settings.name = "<img src=x onerror=alert(1)>";
     assert.equal(
@@ -958,10 +983,19 @@ for (const [id, x] of Object.entries(f))
   s.check("representative-" + id, () => correct(x.question));
 s.check("defensive-number-and-input-boundaries", () => {
   same(K.rat(-2, -4), { n: "1", d: "2" });
-  assert.throws(() => K.number("1e3"));
-  assert.throws(() => K.calc("?", 1, 2));
+  assert.throws(
+    () => K.number("1e3"),
+    refusedWith({ message: /数字をたしかめてね/ }),
+  );
+  assert.throws(
+    () => K.calc("?", 1, 2),
+    refusedWith({ message: /Unknown operation/ }),
+  );
   assert.equal(K.decimalPlaces(K.rat(1, 3)), Infinity);
-  assert.throws(() => K.format(K.rat(1, 3), "decimal"));
+  assert.throws(
+    () => K.format(K.rat(1, 3), "decimal"),
+    refusedWith({ message: /Non-terminating decimal/ }),
+  );
   for (const [spec, raw] of [
     [
       { type: "fraction" },
@@ -999,23 +1033,35 @@ s.check("defensive-number-and-input-boundaries", () => {
   assert(event(make(), "SUBMIT", { raw: { value: "" } }).notice);
 });
 s.check("configuration-boundaries", () => {
-  for (const cfg of [
-    {},
-    { selectedIds: ["G1-C01"], mode: "invalid" },
-    { selectedIds: ["G1-C01"], mode: "practice", quantity: 9 },
-    { selectedIds: ["G1-C01"], mode: "time", timeLimitMs: 120000 },
-    {
-      selectedIds: ["G2-C08"],
-      mode: "practice",
-      optionsById: { "G2-C08": { table: 10 } },
-    },
-    {
-      selectedIds: ["G4-C07"],
-      mode: "practice",
-      optionsById: { "G4-C07": { remainder: "invalid" } },
-    },
+  for (const [cfg, reason] of [
+    [{}, /チャレンジをえらんでね/],
+    [{ selectedIds: ["G1-C01"], mode: "invalid" }, /モードが不正です/],
+    [
+      { selectedIds: ["G1-C01"], mode: "practice", quantity: 9 },
+      /問題数が不正です/,
+    ],
+    [
+      { selectedIds: ["G1-C01"], mode: "time", timeLimitMs: 120000 },
+      /時間が不正です/,
+    ],
+    [
+      {
+        selectedIds: ["G2-C08"],
+        mode: "practice",
+        optionsById: { "G2-C08": { table: 10 } },
+      },
+      /段が不正です/,
+    ],
+    [
+      {
+        selectedIds: ["G4-C07"],
+        mode: "practice",
+        optionsById: { "G4-C07": { remainder: "invalid" } },
+      },
+      /余り条件が不正です/,
+    ],
   ])
-    assert.throws(() => K.normalizeConfig(cfg));
+    assert.throws(() => K.normalizeConfig(cfg), refusedWith({ message: reason }));
   assert.equal(
     K.normalizeConfig({ selectedIds: ["G1-C01"], mode: "practice" }).quantity,
     10,
@@ -1044,7 +1090,10 @@ s.check("untrusted-backup-shapes-and-completion", () => {
   const mutate = (fn) => {
     const v = completed();
     fn(v);
-    assert.throws(() => K.validateBackup(JSON.stringify(v)));
+    assert.throws(
+      () => K.validateBackup(JSON.stringify(v)),
+      refusedWith({ message: /バックアップの形式が正しくありません/ }),
+    );
   };
   mutate((v) => (v.settings.name = "x".repeat(31)));
   mutate((v) => (v.settings.sound = "yes"));
@@ -1076,7 +1125,10 @@ s.check("untrusted-backup-shapes-and-completion", () => {
   ]) {
     const v = K.clone(valid);
     fn(v);
-    assert.throws(() => K.validateBackup(JSON.stringify(v)));
+    assert.throws(
+      () => K.validateBackup(JSON.stringify(v)),
+      refusedWith({ message: /バックアップの形式が正しくありません/ }),
+    );
   }
   const all = K.emptySave();
   all.practiceCheckpoint = K.checkpoint(runAnswers(10));
@@ -1085,7 +1137,10 @@ s.check("untrusted-backup-shapes-and-completion", () => {
   nested.extra = {};
   let p = nested.extra;
   for (let i = 0; i < 85; i++) p = p.a = {};
-  assert.throws(() => K.validateBackup(JSON.stringify(nested)));
+  assert.throws(
+    () => K.validateBackup(JSON.stringify(nested)),
+    refusedWith({ message: /データが大きすぎます/ }),
+  );
 });
 s.check("every-challenge-checkpoint-and-idempotent-question", () => {
   for (const c of K.CATALOG) {
@@ -1141,9 +1196,22 @@ s.check("TC-M71", () => {
       assert.equal(actual.partialProductCarry, product);
     if (sum !== undefined) assert.equal(actual.partialSumCarry, sum);
   }
-  assert.throws(() => Written.classify({ challengeId: "G1-C01" }));
-  assert.throws(() =>
-    Written.classify(K.arithmetic("G3-C01", K.op("?", K.lit(1), K.lit(1)))),
+  assert.throws(
+    () => Written.classify({ challengeId: "G1-C01" }),
+    refusedWith({ message: /筆算の条件をたしかめてね/ }),
+  );
+  assert.throws(
+    () =>
+      Written.classify(K.arithmetic("G3-C01", K.op("?", K.lit(1), K.lit(1)))),
+    refusedWith({ message: /Unknown operation/ }),
+  );
+  assert.throws(
+    () =>
+      Written.classify({
+        challengeId: "G3-C01",
+        expressionAST: K.op("?", K.lit(1), K.lit(1)),
+      }),
+    refusedWith({ message: /筆算の条件をたしかめてね/ }),
   );
   const a = K.generate("G4-C12", { written: "none" });
   assert.equal(Written.classify(a).divisionBorrow, false);
@@ -1157,10 +1225,17 @@ s.check("TC-M71", () => {
       assert.equal(Written.classify(question).has, writtenOracle(question).has);
     }
   }
-  assert.throws(() => K.generate("G3-C01", { written: "invalid" }));
-  assert.throws(() => K.generate("G2-C01", { written: "some" }));
-  assert.throws(() =>
-    K.generate("G4-C06", { written: "some", remainder: "none" }),
+  assert.throws(
+    () => K.generate("G3-C01", { written: "invalid" }),
+    refusedWith({ message: /筆算の条件をたしかめてね/ }),
+  );
+  assert.throws(
+    () => K.generate("G2-C01", { written: "some" }),
+    refusedWith({ message: /この組合せでは問題を作れません/ }),
+  );
+  assert.throws(
+    () => K.generate("G4-C06", { written: "some", remainder: "none" }),
+    refusedWith({ message: /この組合せでは問題を作れません/ }),
   );
 });
 s.check("TC-M72", () => {
@@ -1230,7 +1305,10 @@ s.check("TC-M72", () => {
     ["G2-C01", { written: "some" }],
     ["G4-C04", { remainder: "none", written: "some" }],
   ])
-    assert.throws(() => makeConfig(id, options));
+    assert.throws(
+      () => makeConfig(id, options),
+      refusedWith({ message: /筆算の条件をたしかめてね/ }),
+    );
 });
 s.check("TC-M73", () => {
   assert.equal(
@@ -1261,7 +1339,10 @@ s.check("TC-M73", () => {
   assert.equal(Language.readable("くり下がり", 1), "くりさがり");
   assert.equal(Language.readable("左", 2), "左");
   assert.equal(Language.readable("小数", 3), "小数");
-  assert.throws(() => Language.forbidden("小", 0));
+  assert.throws(
+    () => Language.forbidden("小", 0),
+    refusedWith({ message: /学年をたしかめてね/ }),
+  );
   assert.equal(Language.readable(null, 1), "");
 });
 s.check("recommendation-with-empty-selection", () => {

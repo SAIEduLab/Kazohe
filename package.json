@@ -17,13 +17,20 @@
     "build": "node scripts/build.mjs",
     "build:check": "node scripts/build.mjs --check",
     "test:pedagogy": "node tests/unit/pedagogy.mjs",
+    "test:change-guard": "node tests/unit/change-guard.mjs",
     "audit:visual-diff": "node scripts/visual-diff.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "7.28.4",
     "@playwright/test": "1.55.1",
     "acorn": "8.15.0",
     "axe-core": "4.10.3",
     "css-tree": "3.1.0",
+    "eslint": "10.13.0",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "globals": "17.14.0",
+    "mdast-util-from-markdown": "2.0.2",
+    "micromark": "4.0.3",
     "parse5": "7.3.0",
     "prettier": "3.6.2"
   },

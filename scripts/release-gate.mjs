@@ -15,6 +15,7 @@ export function validateEvidence(
     "coverage",
     "property",
     "pedagogy",
+    "change-guard-unit",
     "single-html",
     "e2e",
     "visual-diff",

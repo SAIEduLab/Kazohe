@@ -5,6 +5,7 @@ import * as css from "css-tree";
 import { parse as parseJS } from "acorn";
 import { html, htmlPath } from "./load-inline-core.mjs";
 import { suite } from "./report.mjs";
+import { refusedWith } from "./refusal.mjs";
 const s = suite("single-html");
 const walk = (n, fn) => {
   fn(n);
@@ -97,13 +98,19 @@ s.check("TC-B18", () => {
   assert(!/\/\* (?:STYLE|CORE|APP|CATALOG) \*\//.test(html));
 });
 s.check("single-html-negative-control", () => {
-  assert.throws(() =>
-    assertSingle(
-      html.replace("</head>", '<script src="external.js"></script></head>'),
-    ),
+  assert.throws(
+    () =>
+      assertSingle(
+        html.replace("</head>", '<script src="external.js"></script></head>'),
+      ),
+    refusedWith({ code: "ERR_ASSERTION", message: /script external source/ }),
   );
-  assert.throws(() =>
-    assertSingle(html.replace("</style>", "a{background:url(x.png)}</style>")),
+  assert.throws(
+    () =>
+      assertSingle(
+        html.replace("</style>", "a{background:url(x.png)}</style>"),
+      ),
+    refusedWith({ code: "ERR_ASSERTION", message: /CSS URL dependency/ }),
   );
 });
 s.done();

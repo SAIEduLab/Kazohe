@@ -1,0 +1,18 @@
+# Changes to the audit guard, workflows, and ownership list require the owner
+# (verified by scripts/workflow-contract.mjs unownedGuardFiles).
+/.github/CODEOWNERS @SAIEduLab
+/.github/workflows/audit.yml @SAIEduLab
+/.github/workflows/change-guard.yml @SAIEduLab
+/scripts/artifact.mjs @SAIEduLab
+/scripts/assertion-counts.mjs @SAIEduLab
+/scripts/audit-code.mjs @SAIEduLab
+/scripts/audit-inventory.mjs @SAIEduLab
+/scripts/behaviour-snapshot.mjs @SAIEduLab
+/scripts/change-guard.mjs @SAIEduLab
+/scripts/doc-links.mjs @SAIEduLab
+/scripts/manifest.mjs @SAIEduLab
+/scripts/refusal.mjs @SAIEduLab
+/scripts/workflow-contract.mjs @SAIEduLab
+/tests/manifests/intended-audit-changes.json @SAIEduLab
+/tests/manifests/intended-behaviour-changes.json @SAIEduLab
+/tests/unit/change-guard.mjs @SAIEduLab

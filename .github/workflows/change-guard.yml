@@ -1,0 +1,51 @@
+name: Kazohe change guard
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths: [.github/workflows/change-guard.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: change-guard-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ startsWith(github.event_name, 'pull_request') }}
+
+jobs:
+  change-guard:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use the guard scripts and lockfile of the base commit
+        if: ${{ github.event_name == 'pull_request_target' }}
+        env:
+          KAZOHE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git checkout "$KAZOHE_BASE_SHA" -- package.json package-lock.json scripts/change-guard.mjs scripts/behaviour-snapshot.mjs scripts/assertion-counts.mjs
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check the change and list what the owner reads before the merge
+        env:
+          KAZOHE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          KAZOHE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/change-guard.mjs "$KAZOHE_BASE_SHA" "$KAZOHE_HEAD_SHA" reports/change-guard.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: kazohe-change-guard-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/change-guard.json
+          if-no-files-found: error
+          retention-days: 3
