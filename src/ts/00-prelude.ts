@@ -8,7 +8,7 @@ import type {
   TimeClass,
 } from "../types/contracts.d.ts";
 
-export const APP_VERSION = "0.2.8";
+export const APP_VERSION = "0.2.9";
 // Compatibility of saved learning records is independent of the product release.
 export const VERSION = "0.2";
 export const STORAGE_KEY = "kazohe:v0.2:state";
@@ -187,6 +187,7 @@ function parseCatalogEntry(raw: {
   id: string;
   grade: number;
   category: string;
+  unit: string;
   title: string;
   basePoints: number;
   timeClass: string;
@@ -198,6 +199,10 @@ function parseCatalogEntry(raw: {
     !isChallengeId(raw.id) ||
     !isGrade(raw.grade) ||
     !isDomain(raw.category) ||
+    typeof raw.unit !== "string" ||
+    !raw.unit.trim() ||
+    typeof raw.title !== "string" ||
+    !raw.title.trim() ||
     !isTimeClass(raw.timeClass)
   ) {
     throw Error("Catalog entry is invalid");
@@ -223,6 +228,7 @@ function parseCatalogEntry(raw: {
     id: raw.id,
     grade: raw.grade,
     category: raw.category,
+    unit: raw.unit,
     title: raw.title,
     basePoints: raw.basePoints,
     timeClass: raw.timeClass,

@@ -51,6 +51,38 @@ async function importBackup(page, data) {
   });
   await page.getByTestId("confirm-accept").click();
 }
+async function expectGradeOneLanguage(page) {
+  const { bodyText, unitItems, ariaLabels } = await page.evaluate(() => {
+    const app = document.querySelector("#app");
+    const clone = app.cloneNode(true);
+    for (const el of clone.querySelectorAll("[data-unit-text]")) el.remove();
+    return {
+      bodyText: clone.textContent || "",
+      unitItems: [...app.querySelectorAll("[data-unit-text]")].map((el) => ({
+        text: el.textContent || "",
+        grade: Number(el.getAttribute("data-unit-grade")),
+      })),
+      ariaLabels: [...app.querySelectorAll("[aria-label]")].map(
+        (el) => el.getAttribute("aria-label") || "",
+      ),
+    };
+  });
+  expect(Language.forbidden(bodyText, 1)).toEqual([]);
+  for (const label of ariaLabels) {
+    expect(Language.forbidden(label, 1)).toEqual([]);
+  }
+  for (const item of unitItems) {
+    expect(
+      K.CATALOG.some((c) => c.unit === item.text && c.grade === item.grade),
+    ).toBe(true);
+    const allowed = new Set(Language.allocations.slice(0, item.grade).join(""));
+    expect(
+      [...item.text].filter(
+        (ch) => /\p{Script=Han}/u.test(ch) && !allowed.has(ch),
+      ),
+    ).toEqual([]);
+  }
+}
 async function expectSelection(page, expected) {
   const grades = [
     ...new Set(expected.selectedIds.map((id) => K.BY_ID[id].grade)),
@@ -72,14 +104,8 @@ async function expectSelection(page, expected) {
     "aria-pressed",
     String(expected.selectedIds.length > 1),
   );
-  const category = K.BY_ID[expected.selectedIds[0]].category;
-  await expect(page.locator(`[data-category="${category}"]`)).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  for (const id of expected.selectedIds.filter(
-    (id) => K.BY_ID[id].category === category,
-  ))
+  await expect(page.locator("[data-category]")).toHaveCount(0);
+  for (const id of expected.selectedIds)
     await expect(page.locator(`[data-challenge="${id}"]`)).toBeChecked();
 }
 async function fill(page, q, raw = rawAnswer(q), touch = false) {
@@ -910,9 +936,7 @@ test("TC-U06 TC-U17 fraction forms follow the question grade in a mixed-grade pr
     expect(
       await form.locator("option").evaluateAll((ns) => ns.map((n) => n.value)),
     ).toEqual(["fraction", "mixed", "integer"]);
-    expect(
-      Language.forbidden(await page.locator("#app").innerText(), 1),
-    ).toEqual([]);
+    await expectGradeOneLanguage(page);
     await fill(page, q, raw);
     await page.getByTestId("submit").click();
     expect((await snapshot(page)).run.phase).toBe("CORRECT_FEEDBACK");
@@ -955,22 +979,17 @@ test("TC-U17 mixed-grade menu language remains at the lowest selected grade when
   await page.locator('[data-menu-details="selection"] summary').click();
   await page.getByTestId("multiple-grades").click();
   await page.locator('[data-grade="1"]').click();
-  await page.locator('[data-category="数"]').click();
   expect((await snapshot(page)).config.selectedIds).toEqual([
     "G6-C01",
     "G6-C02",
   ]);
-  expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(
-    [],
-  );
+  await expectGradeOneLanguage(page);
   await page.locator('[data-challenge="G1-N01"]').check();
   const before = (await snapshot(page)).config;
   expect(before.selectedIds).toEqual(["G1-N01", "G6-C01", "G6-C02"]);
   await page.getByTestId("multiple-grades").click();
   expect((await snapshot(page)).config).toEqual(before);
-  expect(Language.forbidden(await page.locator("#app").innerText(), 1)).toEqual(
-    [],
-  );
+  await expectGradeOneLanguage(page);
 });
 
 test("TC-P14 TC-P15 TC-P25 TC-P26 TC-B03 persistence and rejected storage", async ({

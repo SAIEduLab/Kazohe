@@ -10,6 +10,7 @@ import {
   app,
   appState,
   button,
+  challengeLabelNodes,
   challengeOf,
   confirmAction,
   dismiss,
@@ -280,7 +281,11 @@ function play(): ElChild[] {
         text("p", `${challengeOf(q.challengeId).grade}ねんの れんしゅう`, {
           class: "eyebrow",
         }),
-        text("h2", challengeOf(q.challengeId).title),
+        el(
+          "h2",
+          { class: "challenge-heading" },
+          challengeLabelNodes(q.challengeId),
+        ),
       ]),
       el("div", { class: "actions" }, [
         button("ひとやすみ", () => dispatch({ type: "PAUSE" }), {
@@ -671,11 +676,13 @@ function results(): ElChild[] {
           )
         : null,
       result.excluded.length
-        ? text(
-            "p",
-            "判定対象外：" +
-              result.excluded.map((id) => challengeOf(id).title).join("、"),
-          )
+        ? el("p", {}, [
+            "判定対象外：",
+            ...result.excluded.flatMap((id, i) => [
+              ...(i ? ["、"] : []),
+              ...challengeLabelNodes(id),
+            ]),
+          ])
         : null,
       m.unshown ? text("p", `未出題のまま終了：${m.unshown}問`) : null,
       ...run.records
@@ -983,12 +990,7 @@ function render(): void {
   const previousScreen = app.dataset.screen;
   const focused = document.activeElement;
   let identity: [string, string] | undefined = undefined;
-  for (const key of [
-    "data-testid",
-    "data-challenge",
-    "data-grade",
-    "data-category",
-  ]) {
+  for (const key of ["data-testid", "data-challenge", "data-grade"]) {
     const v = focused?.getAttribute(key);
     if (v) {
       identity = [key, v];

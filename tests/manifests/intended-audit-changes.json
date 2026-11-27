@@ -3,6 +3,18 @@
     {
       "change": "rewritten-test:tests/unit/change-guard.mjs",
       "reason": "Replace three remaining hardcoded 0.2.7 / Kazohe_0_2_7.html expectations in change-guard unit tests with dynamic next / filename(next) so version-bump tests remain valid after bumping to 0.2.7."
+    },
+    {
+      "change": "rewritten-test:tests/e2e/app.spec.mjs",
+      "reason": "Update selection assertions for removal of category tabs and extend grade-1 mixed-grade language check to verify unit titles against data-unit-grade while keeping all other text kanji-free."
+    },
+    {
+      "change": "rewritten-test:tests/e2e/teaching.spec.mjs",
+      "reason": "Update menu navigation for removal of category tabs and extend TC-U17 mixed-grade menu and help checks to verify unit titles against data-unit-grade."
+    },
+    {
+      "change": "rewritten-test:tests/e2e/usability.spec.mjs",
+      "reason": "Update menu navigation for removal of category tabs and verify grade-1 learning order and unit-first display format."
     }
   ],
   "allowances": [

@@ -1,3 +1,8 @@
 {
-  "changes": []
+  "changes": [
+    {
+      "case": "meta/core",
+      "reason": "Order K.CATALOG challenges in textbook unit learning order within each grade (all 101 challenge IDs and question generators unchanged)."
+    }
+  ]
 }

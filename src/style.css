@@ -276,6 +276,7 @@ footer {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 9px;
+  margin-bottom: 20px;
 }
 .grade-grid button {
   border-radius: 14px;
@@ -288,26 +289,6 @@ footer {
   background: var(--teal);
   color: white;
   box-shadow: 0 3px 0 #00544e;
-}
-.category-tabs {
-  display: flex;
-  width: max-content;
-  max-width: 100%;
-  gap: 5px;
-  padding: 5px;
-  border-radius: 15px;
-  background: #e7ede6;
-  margin: 22px 0;
-}
-.category-tabs button {
-  border: 0;
-  background: transparent;
-  padding: 8px 30px;
-}
-.category-tabs button[aria-pressed="true"] {
-  background: white;
-  box-shadow: 0 2px 5px #24385716;
-  color: var(--teal);
 }
 .list-heading {
   display: flex;
@@ -363,6 +344,13 @@ footer {
 }
 .challenge-copy strong {
   font-size: 0.96rem;
+}
+.challenge-unit {
+  font-weight: 700;
+}
+.challenge-subtitle {
+  font-weight: 500;
+  font-size: 0.92em;
 }
 .challenge-copy small {
   font-size: 0.7rem;
@@ -1320,13 +1308,11 @@ dialog .actions {
   }
   .grade-grid {
     gap: 5px;
+    margin-bottom: 16px;
   }
   .grade-grid button {
     font-size: 0.85rem;
     border-radius: 11px;
-  }
-  .category-tabs {
-    margin: 18px 0;
   }
   .step-label {
     font-size: 0.88rem;
