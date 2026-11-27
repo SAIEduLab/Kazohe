@@ -194,8 +194,9 @@ function extractSuiteChecks(file, text) {
   let ast;
   try {
     ast = parseModuleAst(text);
-  } catch {
-    return [];
+  } catch (error) {
+    if (error instanceof SyntaxError) return [];
+    throw error;
   }
   const base = path.basename(file, path.extname(file));
   const found = [];
@@ -207,7 +208,8 @@ function extractSuiteChecks(file, text) {
       node.callee.type === "MemberExpression" &&
       !node.callee.computed &&
       node.callee.property.type === "Identifier" &&
-      node.callee.property.name === "check" &&
+      (node.callee.property.name === "check" ||
+        node.callee.property.name === "checkAsync") &&
       node.arguments.length >= 2
     ) {
       const arg = node.arguments[0];

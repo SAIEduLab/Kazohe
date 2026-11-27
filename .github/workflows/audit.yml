@@ -46,6 +46,7 @@ jobs:
           npm run test:unit
           npm run test:property
           npm run test:pedagogy
+          npm run test:change-guard
       - name: Summarize mathematics reports
         if: ${{ !cancelled() }}
         run: node scripts/report.mjs --summary math

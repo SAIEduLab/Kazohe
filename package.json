@@ -17,6 +17,7 @@
     "build": "node scripts/build.mjs",
     "build:check": "node scripts/build.mjs --check",
     "test:pedagogy": "node tests/unit/pedagogy.mjs",
+    "test:change-guard": "node tests/unit/change-guard.mjs",
     "audit:visual-diff": "node scripts/visual-diff.mjs"
   },
   "devDependencies": {

@@ -12,6 +12,7 @@
 | `npm run test:unit`                       | 固定例、数値・入力・得点・時計・評価・保存。対象純粋関数の行・分岐カバレッジ各90%以上                                                                                                                                     |
 | `npm run test:property`                   | 101技能×1,000問、独立オラクル、途中式、有限集合の一巡、seed、配分、範囲境界                                                                                                                                               |
 | `npm run test:pedagogy`                   | 101技能×40問、ヒントの逆演算・学年・単位、図の値、筆算途中値、未確定の約数、旧版JSON拒否                                                                                                                                  |
+| `npm run test:change-guard`               | 変更ガード（版規則・TC/検査削除・アサーション数非減少・テスト行書換・縮小専用ベースライン・決定的挙動スナップショット）の正例・負例                                                                                           |
 | `npm run audit:single-html`               | HTML/CSS/JSの構造解析、実行時参照、ファイル名・版                                                                                                                                                                         |
 | `npm run test:e2e`                        | Chromium/Firefox/WebKitのfile://操作、全101入力と解答、9入力形式、104例×4画面幅の問題/支援、数字列・線・行高、キーボード、保存、axe。GitHub Pages用 `index.html` も3画面幅、主要導線、キーボード、axe、外部通信なしを確認 |
 | `npm run audit:visual-diff`               | Publicの別commitにある基点と候補を同一ブラウザで18組撮影し、比較画像を出力。視覚合否は付けない                                                                                                                            |

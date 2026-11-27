@@ -249,6 +249,7 @@ export const workflowNodeVersion = "24";
 export const allowedCancelExpressions = new Set([
   "${{ github.event_name == 'pull_request' }}",
   "${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}",
+  "${{ startsWith(github.event_name, 'pull_request') }}",
   "false",
 ]);
 
