@@ -6,7 +6,6 @@ import {
 } from "./artifact.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
 import { parse } from "parse5";
 import { parse as parseJS } from "acorn";
 import { html } from "./load-inline-core.mjs";
@@ -14,6 +13,16 @@ import { suite } from "./report.mjs";
 import { manifest, tcIds } from "./manifest.mjs";
 import { K } from "./load-inline-core.mjs";
 import { registerGateCheck } from "./lint-gate.mjs";
+import { refusedWith } from "./refusal.mjs";
+import { verifyAuditCode } from "./audit-code.mjs";
+import { verifyAuditInventory } from "./audit-inventory.mjs";
+import { verifyWorkflowContract } from "./workflow-contract.mjs";
+import {
+  allowedPublicFiles,
+  assertTrackedFilesMatch,
+  trackedFiles,
+  verifyDocLinks,
+} from "./doc-links.mjs";
 const s = suite("lint");
 s.check("html-js-syntax", () => {
   const errors = [];
@@ -210,77 +219,8 @@ s.check("TC-D07", () => {
     assert(!/\.skip\s*\(/.test(readFileSync(path, "utf8")));
 });
 s.check("public-boundary-and-secrets", () => {
-  const allowed = new Set([
-    ".gitattributes",
-    ".gitignore",
-    ".github/workflows/audit.yml",
-    "CHANGELOG.md",
-    htmlName,
-    "LICENSE",
-    "README.md",
-    "index.html",
-    "docs/verification.md",
-    "package.json",
-    "package-lock.json",
-    "playwright.config.mjs",
-    ...[
-      "app.js",
-      "catalog.json",
-      "core.js",
-      "shell.html",
-      "style.css",
-      "view.js",
-      "teaching.js",
-      "language.js",
-      "language.json",
-      "written.js",
-    ].map((name) => `src/${name}`),
-    ...[
-      "artifact",
-      "aggregate-evidence",
-      "audit-catalog",
-      "audit-release",
-      "audit-single-html",
-      "build",
-      "coverage",
-      "independent-math-oracle",
-      "lint",
-      "lint-gate",
-      "load-inline-core",
-      "manifest",
-      "release-gate",
-      "report",
-      "review-gallery",
-      "run-unit",
-      "test-reporter",
-      "visual-diff",
-    ].map((name) => `scripts/${name}.mjs`),
-    ...[
-      "e2e/app.spec.mjs",
-      "e2e/site.spec.mjs",
-      "e2e/usability.spec.mjs",
-      "e2e/teaching.spec.mjs",
-      "evidence/visual-review.json",
-      "fixtures/catalog.json",
-      "fixtures/implementation-map.json",
-      "fixtures/representatives.mjs",
-      "fixtures/support-navigation.mjs",
-      "fixtures/written-oracle.mjs",
-      "fixtures/v0.2.4-backup.json",
-      "property/domain-contracts.mjs",
-      "property/generators.mjs",
-      "unit/core.mjs",
-      "unit/pedagogy.mjs",
-    ].map((name) => `tests/${name}`),
-  ]);
-  const tracked = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
-    .split("\0")
-    .filter(Boolean);
-  assert.deepEqual(
-    [...tracked].sort(),
-    [...allowed].sort(),
-    "Public tracked-file allowlist mismatch",
-  );
+  const tracked = trackedFiles();
+  assertTrackedFilesMatch(allowedPublicFiles(htmlName), tracked);
   for (const path of tracked) {
     const content = readFileSync(path, "utf8");
     assert(
@@ -300,11 +240,30 @@ s.check("versioned-product-contract", () => {
   assertCurrentArtifact();
   assert.equal(K.APP_VERSION, appVersion);
   assert.equal(filename("12.3.45"), "Kazohe_12_3_45.html");
-  assert.throws(() => filename("0.2"));
-  assert.throws(() => filename("../0.2.3"));
-  assert.throws(() => assertCurrentArtifact([htmlName, "Kazohe.html"]));
-  assert.throws(() => assertCurrentArtifact([htmlName, filename("99.0.0")]));
-  assert.throws(() => assertCurrentArtifact([filename("99.0.0")]));
+  assert.throws(
+    () => filename("0.2"),
+    refusedWith({ message: /Product version must be major\.minor\.patch/ }),
+  );
+  assert.throws(
+    () => filename("../0.2.3"),
+    refusedWith({ message: /Product version must be major\.minor\.patch/ }),
+  );
+  assert.throws(
+    () => assertCurrentArtifact([htmlName, "Kazohe.html"]),
+    refusedWith({ message: /Expected only Kazohe_/ }),
+  );
+  assert.throws(
+    () => assertCurrentArtifact([htmlName, filename("99.0.0")]),
+    refusedWith({ message: /Expected only Kazohe_/ }),
+  );
+  assert.throws(
+    () => assertCurrentArtifact([filename("99.0.0")]),
+    refusedWith({ message: /Expected only Kazohe_/ }),
+  );
   assertCurrentArtifact([htmlName, "index.html", "src/shell.html"]);
 });
+await s.checkAsync("audit-code", () => verifyAuditCode());
+s.check("audit-inventory", () => verifyAuditInventory());
+s.check("workflow-contract", () => verifyWorkflowContract());
+s.check("doc-links", () => verifyDocLinks(undefined, { checkAllowlist: false }));
 s.done();

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { K, Written } from "../../scripts/load-inline-core.mjs";
 import { writtenOracle } from "../fixtures/written-oracle.mjs";
 import { suite } from "../../scripts/report.mjs";
+import { refusedWith } from "../../scripts/refusal.mjs";
 import {
   expected,
   eq,
@@ -231,8 +232,9 @@ s.check("TC-G17", () => {
 });
 s.check("TC-G18", () => {
   deck("G2-N03", {}, 4);
-  assert.throws(() =>
-    K.normalizeConfig({ selectedIds: [], mode: "practice", quantity: 10 }),
+  assert.throws(
+    () => K.normalizeConfig({ selectedIds: [], mode: "practice", quantity: 10 }),
+    refusedWith({ message: /チャレンジをえらんでね/ }),
   );
 });
 s.check("TC-G19", () => {
@@ -247,7 +249,10 @@ s.check("TC-G19", () => {
         const options = { ...(remainder ? { remainder } : {}), written };
         const available = Written.available(id, remainder);
         if (written !== "mixed" && !available.includes(written)) {
-          assert.throws(() => K.generate(id, options));
+          assert.throws(
+            () => K.generate(id, options),
+            refusedWith({ message: /この組合せでは問題を作れません/ }),
+          );
           continue;
         }
         const state = K.createGenerator(seed + 25),

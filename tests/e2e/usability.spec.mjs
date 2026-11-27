@@ -2,7 +2,7 @@ import { completeSolution } from "../fixtures/support-navigation.mjs";
 import { test, expect } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { K, Written, htmlPath } from "../../scripts/load-inline-core.mjs";
+import { K, htmlPath } from "../../scripts/load-inline-core.mjs";
 import { hash } from "../../scripts/report.mjs";
 import { rawAnswer } from "../../scripts/independent-math-oracle.mjs";
 import { representatives } from "../fixtures/representatives.mjs";

@@ -4,7 +4,6 @@ import { test, expect } from "@playwright/test";
 import {
   mkdtempSync,
   copyFileSync,
-  writeFileSync,
   readFileSync,
   mkdirSync,
 } from "node:fs";
@@ -324,7 +323,7 @@ test("TC-B05 TC-B02 TC-B17 all 101 examples: real inputs, judging and complete s
     );
     await page.getByTestId("skip").click();
     await page.getByTestId("start").click();
-    const q = (await snapshot(page)).run.currentQuestion;
+    expect((await snapshot(page)).run.currentQuestion.challengeId).toBe(id);
     await expect(page.getByTestId("problem")).not.toBeEmpty();
     if (info.project.name === "chromium") {
       mkdirSync("reports/screens/catalog", { recursive: true });

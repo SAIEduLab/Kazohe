@@ -1,9 +1,9 @@
 import { completeSolution } from "../tests/fixtures/support-navigation.mjs";
 import { artifactAt } from "./artifact.mjs";
 // Compare base and candidate in the same browser. A changed image is evidence, not an approval.
-import { chromium } from "playwright";
+import { chromium } from "@playwright/test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";

@@ -6,6 +6,7 @@ import {
   Written,
 } from "../../scripts/load-inline-core.mjs";
 import { suite } from "../../scripts/report.mjs";
+import { refusedWith } from "../../scripts/refusal.mjs";
 import {
   eq,
   operation,
@@ -209,7 +210,10 @@ s.check("TC-E08", () => {
   const old = K.emptySave();
   old.appVersion = "0.1";
   const before = JSON.stringify(old);
-  assert.throws(() => K.validateBackup(before));
+  assert.throws(
+    () => K.validateBackup(before),
+    refusedWith({ message: /対応していないバージョンです/ }),
+  );
   assert.equal(JSON.stringify(old), before);
   const current = K.emptySave();
   assert.equal(
@@ -399,11 +403,16 @@ s.check("TC-E11", () => {
     /分母も.*6÷3＝2/,
   ];
   ordered(plus, plusExpected);
-  assert.throws(() =>
-    ordered(
-      plus.filter((f) => !f.text.includes("2＋1＝3")),
-      plusExpected,
-    ),
+  assert.throws(
+    () =>
+      ordered(
+        plus.filter((f) => !f.text.includes("2＋1＝3")),
+        plusExpected,
+      ),
+    refusedWith({
+      code: "ERR_ASSERTION",
+      message: /missing intermediate operation/,
+    }),
   );
   ordered(product, [
     /分子どうし：2×9＝18/,
