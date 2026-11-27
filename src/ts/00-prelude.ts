@@ -8,7 +8,7 @@ import type {
   TimeClass,
 } from "../types/contracts.d.ts";
 
-export const APP_VERSION = "0.2.7";
+export const APP_VERSION = "0.2.8";
 // Compatibility of saved learning records is independent of the product release.
 export const VERSION = "0.2";
 export const STORAGE_KEY = "kazohe:v0.2:state";

@@ -1,5 +1,6 @@
 /* Written traces, solution builders, hints, and question completion. */
 import {
+  alignWrittenDigits,
   answerText,
   calc,
   cmp,
@@ -56,12 +57,7 @@ export function writtenTrace(q: Question): SolutionStep[] {
     extra: Partial<SolutionStep> = {},
   ): number => trace.push({ kind: "digits", digits: String(digits), text, ...extra });
   if (ast.op === "+" || ast.op === "-") {
-    const scale = Math.max(sa, sb);
-    const a = coefficient(av, scale);
-    const b = coefficient(bv, scale);
-    const size = Math.max(String(a).length, String(b).length, scale + 1);
-    const aa = String(a).padStart(size, "0").split("").map(Number);
-    const bb = String(b).padStart(size, "0").split("").map(Number);
+    const { scale, a, b, size, aa, bb } = alignWrittenDigits(av, bv, sa, sb);
     row(decimal(a, scale), scale ? "位と小数点をそろえる" : "同じ位をそろえる");
     row(decimal(b, scale), "下の数", {
       sign: ast.op === "+" ? "＋" : "−",

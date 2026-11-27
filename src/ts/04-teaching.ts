@@ -2,6 +2,7 @@
 import { clone } from "./00-prelude.ts";
 import {
   OP_SIGNS,
+  alignWrittenDigits,
   answerText,
   calc,
   coefficient,
@@ -1160,12 +1161,7 @@ export const KZTeaching: KZTeachingApi = (() => {
       row.annotations[column] = { value: String(value), crossed };
     };
     if (["+", "-"].includes(ast.op)) {
-      const scale = Math.max(sa, sb);
-      const a = coefficient(av, scale);
-      const b = coefficient(bv, scale);
-      const size = Math.max(String(a).length, String(b).length, scale + 1);
-      const aa = String(a).padStart(size, "0").split("").map(Number);
-      const bb = String(b).padStart(size, "0").split("").map(Number);
+      const { scale, a, b, size, aa, bb } = alignWrittenDigits(av, bv, sa, sb);
       board.cols =
         size + (ast.op === "+" && String(a + b).length > size ? 1 : 0);
       const offset = board.cols - size;

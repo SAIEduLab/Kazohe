@@ -435,36 +435,13 @@ export const KZUI: KZUIApi = (() => {
       math(current.text, grade),
     );
     if (current.kind === "counters") li.append(counters(current, grade));
-    if (current.kind === "dots") {
-      const count = current.count ?? 0;
-      li.append(
-        counters(
-          { kind: "counters", operation: "+", a: count, b: 0, text: `${count}こ` },
-          grade,
-        ),
-      );
-    }
     list.append(li);
-    if (!q.written && !["counters", "dots"].includes(current.kind)) {
+    if (!q.written && current.kind !== "counters") {
       const picture = steps
         .slice(0, index + 1)
-        .findLast((t) => ["counters", "dots"].includes(t.kind));
+        .findLast((t) => t.kind === "counters");
       if (picture) {
-        const count = picture.count ?? 0;
-        content.append(
-          counters(
-            picture.kind === "dots"
-              ? {
-                  kind: "counters",
-                  operation: "+",
-                  a: count,
-                  b: 0,
-                  text: `${count}こ`,
-                }
-              : picture,
-            grade,
-          ),
-        );
+        content.append(counters(picture, grade));
       }
     }
     content.append(

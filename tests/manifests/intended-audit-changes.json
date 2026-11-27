@@ -61,6 +61,34 @@
     {
       "change": "source-read-allowance:scripts/load-inline-core.mjs#1",
       "reason": "Initial shrink-only SOURCE_READ_BASELINE when introducing audit-code.mjs: canonical shared reader loads the built product HTML."
+    },
+    {
+      "change": "unnamed-code:Borrow underflow",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable internal defensive subtraction guard (generators guarantee a >= b)."
+    },
+    {
+      "change": "unnamed-code:Catalog entry is invalid",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable startup invariant over embedded src/catalog.json."
+    },
+    {
+      "change": "unnamed-code:Catalog fallbackParent is invalid",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable startup invariant over embedded src/catalog.json."
+    },
+    {
+      "change": "unnamed-code:Catalog prerequisite is invalid",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable startup invariant over embedded src/catalog.json."
+    },
+    {
+      "change": "unnamed-code:Catalog sourceCode is invalid",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable startup invariant over embedded src/catalog.json."
+    },
+    {
+      "change": "unnamed-code:Teaching borrow underflow",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: unreachable internal defensive teaching subtraction guard."
+    },
+    {
+      "change": "unnamed-code:筆算の式をたしかめてね。",
+      "reason": "Initial shrink-only UNNAMED_CODES baseline when introducing source-consistency.mjs: browser-only defensive guard in KZUI.written when expressionAST.op is absent."
     }
   ]
 }

@@ -2,6 +2,11 @@
 
 「かぞへ」の現行版の変更要点です。過去の版はGit履歴とPRを参照してください。
 
+## v0.2.8 開発版
+
+- 製品ソース整合性検査（ディスパッチ値・DOM参照・未書込みプロパティ・表示文言分岐・診断コード・児童向け語彙）、製品ESLint（`eslint`・`eslint-plugin-unicorn`・`eslint-plugin-sonarjs`、`noInlineConfig`、全31ルールのプローブ）、トークンクローン検出、リリースポリシーAST検査、版非依存の形式互換テスト、並列PR向け安全再採番ツール `renumber-release`、V8カバレッジ対応 `test-map` を追加。
+- 筆算桁そろえの重複計算を共通ヘルパ `alignWrittenDigits` へ集約し、未使用の `dots` 分岐を整理。既存の101課題・採点・解説・保存互換・決定的挙動スナップショットを無変更で維持。
+
 ## v0.2.7 開発版
 
 - 製品ソース（`#kazohe-core`・`#kazohe-app`）を `src/ts/*.ts` へモジュール分割してTypeScript化（各ファイル2,000行以下、`erasableSyntaxOnly`、厳格ゼロ`any`検査・DOMページ型生成・データ契約検証・Node 24型消去一致検査・文字精度逆行マップ付きビルドを導入）。
