@@ -118,6 +118,7 @@ export const machineSuites = [
   "coverage",
   "property",
   "pedagogy",
+  "change-guard-unit",
   "single-html",
 ];
 export function summaryRows(inputs, expected, names) {

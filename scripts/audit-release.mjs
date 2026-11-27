@@ -15,6 +15,7 @@ for (const s of [
   "coverage",
   "property",
   "pedagogy",
+  "change-guard-unit",
   "single-html",
   "e2e",
   "visual-diff",

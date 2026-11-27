@@ -13,6 +13,7 @@ const names = [
   "coverage",
   "property",
   "pedagogy",
+  "change-guard-unit",
   "single-html",
   "visual-diff",
 ];

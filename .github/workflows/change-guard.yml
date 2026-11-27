@@ -27,16 +27,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Use the guard scripts and lockfile of the base commit
+        if: ${{ github.event_name == 'pull_request_target' }}
+        env:
+          KAZOHE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git checkout "$KAZOHE_BASE_SHA" -- package.json package-lock.json scripts/change-guard.mjs scripts/behaviour-snapshot.mjs scripts/assertion-counts.mjs
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Use the guard scripts of the base commit
-        if: ${{ github.event_name == 'pull_request_target' }}
-        env:
-          KAZOHE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: git checkout "$KAZOHE_BASE_SHA" -- scripts/change-guard.mjs scripts/behaviour-snapshot.mjs scripts/assertion-counts.mjs
       - name: Check the change and list what the owner reads before the merge
         env:
           KAZOHE_BASE_SHA: ${{ github.event.pull_request.base.sha }}

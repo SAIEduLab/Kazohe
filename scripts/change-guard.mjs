@@ -166,7 +166,11 @@ function materialize(repo, commit, workDir) {
         e.mode !== "120000",
         "symbolic link in the audit tree: " + e.path,
       );
-      if (!e.path.startsWith("scripts/")) continue;
+      if (
+        !e.path.startsWith("scripts/") &&
+        !e.path.startsWith("tests/unit/")
+      )
+        continue;
       const file = path.join(partial, ...e.path.split("/"));
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, blobs.get(e.oid));
@@ -366,11 +370,12 @@ export async function identitySets(dir) {
       ? manifestMod.gateCheckIds
       : []),
   ];
-  const scriptsDir = path.join(dir, "scripts");
-  if (fs.existsSync(scriptsDir)) {
-    for (const name of fs.readdirSync(scriptsDir).sort()) {
+  for (const rel of ["scripts", "tests/unit"]) {
+    const scanDir = path.join(dir, ...rel.split("/"));
+    if (!fs.existsSync(scanDir)) continue;
+    for (const name of fs.readdirSync(scanDir).sort()) {
       if (!name.endsWith(".mjs")) continue;
-      const full = path.join(scriptsDir, name);
+      const full = path.join(scanDir, name);
       if (!fs.statSync(full).isFile()) continue;
       gateCase.push(...extractSuiteChecks(name, fs.readFileSync(full, "utf8")));
     }

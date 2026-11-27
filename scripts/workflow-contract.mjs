@@ -788,6 +788,59 @@ export function unownedGuardFiles(files, ownersText, reach) {
   return [...guarded].filter((file) => !listed.has(file)).sort();
 }
 
+export function lockfileIssues(packageJson, lockJson) {
+  const issues = [];
+  if (!lockJson || typeof lockJson !== "object" || lockJson.lockfileVersion !== 3) {
+    issues.push("package-lock.json must be lockfileVersion 3");
+    return issues;
+  }
+  if (lockJson.version !== packageJson.version) {
+    issues.push(
+      `package-lock.json version (${lockJson.version}) differs from package.json (${packageJson.version})`,
+    );
+  }
+  const rootPkg = lockJson.packages?.[""];
+  if (!rootPkg || typeof rootPkg !== "object") {
+    issues.push("package-lock.json missing root package entry");
+    return issues;
+  }
+  if (rootPkg.version !== packageJson.version) {
+    issues.push(
+      `package-lock.json root entry version (${rootPkg.version}) differs from package.json (${packageJson.version})`,
+    );
+  }
+  for (const field of ["dependencies", "devDependencies"]) {
+    if (
+      JSON.stringify(rootPkg[field] || {}) !==
+      JSON.stringify(packageJson[field] || {})
+    ) {
+      issues.push(
+        `package-lock.json root ${field} differs from package.json`,
+      );
+    }
+  }
+  for (const [at, entry] of Object.entries(lockJson.packages || {})) {
+    if (!at || entry?.link) continue;
+    if (
+      typeof entry?.resolved !== "string" ||
+      !/^https:\/\/registry\.npmjs\.org\//.test(entry.resolved)
+    ) {
+      issues.push(
+        `package-lock.json entry ${at} must resolve from https://registry.npmjs.org/`,
+      );
+    }
+    if (
+      typeof entry?.integrity !== "string" ||
+      !/^sha512-/.test(entry.integrity)
+    ) {
+      issues.push(
+        `package-lock.json entry ${at} is missing a sha512 integrity hash`,
+      );
+    }
+  }
+  return issues;
+}
+
 export function runWorkflowContractNegativeControls() {
   // 1. YAML subset negative controls
   for (const [label, badYaml, reason] of [
@@ -990,6 +1043,65 @@ export function runWorkflowContractNegativeControls() {
     ),
     ["scripts/behaviour-snapshot.mjs"],
   );
+
+  // 4. Lockfile integrity negative controls
+  const validLock = {
+    name: "kazohe",
+    version: "0.2.6",
+    lockfileVersion: 3,
+    packages: {
+      "": {
+        name: "kazohe",
+        version: "0.2.6",
+        devDependencies: { acorn: "8.15.0" },
+      },
+      "node_modules/acorn": {
+        version: "8.15.0",
+        resolved: "https://registry.npmjs.org/acorn/-/acorn-8.15.0.tgz",
+        integrity: "sha512-fakehash",
+      },
+    },
+  };
+  const lockPkg = { version: "0.2.6", devDependencies: { acorn: "8.15.0" } };
+  assert.deepEqual(lockfileIssues(lockPkg, validLock), []);
+  for (const [label, mutate, expected] of [
+    [
+      "version mismatch",
+      (l) => {
+        l.version = "0.2.5";
+      },
+      /version \(0\.2\.5\) differs/,
+    ],
+    [
+      "devDependencies mismatch",
+      (l) => {
+        l.packages[""].devDependencies = {};
+      },
+      /root devDependencies differs/,
+    ],
+    [
+      "non-registry URL",
+      (l) => {
+        l.packages["node_modules/acorn"].resolved = "https://evil.example/a.tgz";
+      },
+      /must resolve from https:\/\/registry\.npmjs\.org\//,
+    ],
+    [
+      "missing sha512 integrity",
+      (l) => {
+        l.packages["node_modules/acorn"].integrity = "sha1-weak";
+      },
+      /missing a sha512 integrity hash/,
+    ],
+  ]) {
+    const mutated = structuredClone(validLock);
+    mutate(mutated);
+    const found = lockfileIssues(lockPkg, mutated);
+    assert(
+      found.some((msg) => expected.test(msg)),
+      `lockfileIssues must reject ${label}: got ${JSON.stringify(found)}`,
+    );
+  }
 }
 
 export function verifyWorkflowContract(root = rootDir) {
@@ -1002,6 +1114,15 @@ export function verifyWorkflowContract(root = rootDir) {
   }
   const pkg = JSON.parse(
     fs.readFileSync(path.join(root, "package.json"), "utf8"),
+  );
+  const lock = JSON.parse(
+    fs.readFileSync(path.join(root, "package-lock.json"), "utf8"),
+  );
+  const lockIssues = lockfileIssues(pkg, lock);
+  assert.deepEqual(
+    lockIssues,
+    [],
+    `Lockfile integrity violations:\n${lockIssues.join("\n")}`,
   );
   const declared = declaredLaunches(root);
   const reachCache = new Map();

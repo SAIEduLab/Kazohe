@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { appVersion, htmlName } from "../../scripts/artifact.mjs";
 import { html as productText } from "../../scripts/load-inline-core.mjs";
 import { tcIds, manifest } from "../../scripts/manifest.mjs";
-import { report as writeSuiteReport } from "../../scripts/report.mjs";
+import { suite } from "../../scripts/report.mjs";
 import {
   assertionCount,
   weakenedFiles,
@@ -156,29 +156,7 @@ function createSyntheticRepo(tmp) {
 }
 
 export async function runChangeGuardTests() {
-  const cases = [];
-  const check = async (id, fn) => {
-    try {
-      const actual = await fn();
-      cases.push({
-        id,
-        method: "change-guard",
-        status: "PASS",
-        expected: "assertions satisfied",
-        actual: actual ?? "assertions satisfied",
-        evidence: "reports/change-guard.json",
-      });
-    } catch (error) {
-      cases.push({
-        id,
-        method: "change-guard",
-        status: "FAIL",
-        actual: error.stack || String(error),
-        evidence: "reports/change-guard.json",
-      });
-      console.error(id, error);
-    }
-  };
+  const s = suite("change-guard-unit");
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "kazohe-guard-test-"));
   const prevTmp = {
@@ -287,7 +265,7 @@ export async function runChangeGuardTests() {
       );
     };
 
-    await check("identity-and-controls", async () => {
+    await s.checkAsync("identity-and-controls", async () => {
       const id = await treeIdentity(repo, base, trees);
       assert.deepEqual(id.sets.tc, tcIds);
       assert.deepEqual(
@@ -354,7 +332,7 @@ export async function runChangeGuardTests() {
       assertPass("base-advanced-after-branch", advanced);
     });
 
-    await check("version-and-product-file-rules", async () => {
+    await s.checkAsync("version-and-product-file-rules", async () => {
       const next = nextPatch(appVersion);
       const afterNext = nextPatch(next);
       const [major, minor, patch] = appVersion.split(".").map(Number);
@@ -512,7 +490,7 @@ export async function runChangeGuardTests() {
       );
     });
 
-    await check("audit-id-and-pin-rules", async () => {
+    await s.checkAsync("audit-id-and-pin-rules", async () => {
       const removedTc = {
         "scripts/manifest.mjs": replaced(
           "scripts/manifest.mjs",
@@ -570,6 +548,31 @@ export async function runChangeGuardTests() {
           }),
         ),
         { "gate-case": ["lint/html-js-syntax"] },
+      );
+
+      // Removing a named check in tests/unit/*.mjs must also be flagged as gate-case:...
+      const removedUnitGate = {
+        "tests/unit/core.mjs": replaced(
+          "tests/unit/core.mjs",
+          's.check("configuration-boundaries",',
+          's.check("renamed-configuration-boundaries",',
+        ),
+      };
+      assertFail(
+        "unit-gate-deleted",
+        await guard(derive(removedUnitGate)),
+        "auditChangeIssues",
+        /gate-case:core\/configuration-boundaries is not recorded/,
+      );
+      assertPass(
+        "unit-gate-deleted-recorded",
+        await guard(
+          derive({
+            ...removedUnitGate,
+            ...recordAudit("gate-case:core/configuration-boundaries"),
+          }),
+        ),
+        { "gate-case": ["core/configuration-boundaries"] },
       );
 
       // Weakening audit together with src/ or product HTML change is FORBIDDEN even when recorded.
@@ -688,7 +691,7 @@ export async function runChangeGuardTests() {
       );
     });
 
-    await check("assertion-counts-rules", async () => {
+    await s.checkAsync("assertion-counts-rules", async () => {
       const sample = [
         "assert(a);",
         "assert.equal(a, b);",
@@ -757,7 +760,7 @@ export async function runChangeGuardTests() {
       );
     });
 
-    await check("rewritten-test-lines-rules", async () => {
+    await s.checkAsync("rewritten-test-lines-rules", async () => {
       assert.deepEqual(
         [
           "tests/unit/core.mjs",
@@ -877,7 +880,7 @@ export async function runChangeGuardTests() {
       );
     });
 
-    await check("shrink-only-baselines-rules", async () => {
+    await s.checkAsync("shrink-only-baselines-rules", async () => {
       const baseBaselines = {
         "scripts/audit-code.mjs": [
           'export const WAIT_BASELINE = Object.freeze({ "tests/e2e/app.spec.mjs": 2 });',
@@ -1018,7 +1021,7 @@ export async function runChangeGuardTests() {
       );
     });
 
-    await check("behaviour-snapshot-diff-and-confinement", async () => {
+    await s.checkAsync("behaviour-snapshot-diff-and-confinement", async () => {
       const next = nextPatch(appVersion);
       // Inert HTML lacks #kazohe-core -> returns unavailable without crashing.
       assert.deepEqual(behaviourSnapshot("<p>no core</p>"), {
@@ -1205,7 +1208,7 @@ export async function runChangeGuardTests() {
       ]);
     });
 
-    await check("changed-script-lines-and-errors", async () => {
+    await s.checkAsync("changed-script-lines-and-errors", async () => {
       const a =
         '<script id="kazohe-core">\nconst x = "a b";\nconst y = 1;\n</script>';
       const b =
@@ -1227,7 +1230,7 @@ export async function runChangeGuardTests() {
         /no merge base/,
       );
 
-      // Broken syntax in scripts/manifest.mjs fails with error.
+      // Broken syntax in scripts/manifest.mjs fails with SyntaxError.
       assertFail(
         "broken-manifest-syntax",
         await guard(
@@ -1238,7 +1241,7 @@ export async function runChangeGuardTests() {
           }),
         ),
         "errors",
-        /failed \(exit/,
+        /SyntaxError/,
       );
 
       // CLI entry writes report JSON and sets exit code 0 on PASS.
@@ -1266,12 +1269,7 @@ export async function runChangeGuardTests() {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 
-  const result = writeSuiteReport("change-guard", cases);
-  console.log(
-    `change-guard: ${cases.filter((c) => c.status === "PASS").length}/${cases.length} PASS`,
-  );
-  if (result.status !== "PASS") process.exitCode = 1;
-  return result;
+  return s.done();
 }
 
 if (

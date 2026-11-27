@@ -30,7 +30,10 @@ export function registerGateCheck(s) {
     try {
       process.env.GITHUB_ACTIONS = "true";
       process.env.GITHUB_SHA = "0".repeat(40);
-      assert.throws(() => expectedExecution(), /Checked-out commit differs/);
+      assert.throws(
+        () => expectedExecution(),
+        refusedWith({ message: /Checked-out commit differs/ }),
+      );
       process.env.GITHUB_SHA = execution.runCommit;
       process.env.AUDIT_HEAD_SHA = "0".repeat(40);
       assert.throws(
@@ -44,7 +47,7 @@ export function registerGateCheck(s) {
             ],
             { stdio: "pipe" },
           ),
-        refusedWith({ message: /Command failed/ }),
+        refusedWith({ message: /git show 0{40}:package\.json/ }),
       );
     } finally {
       for (const [key, value] of Object.entries(environment))
@@ -68,6 +71,7 @@ export function registerGateCheck(s) {
       "coverage",
       "property",
       "pedagogy",
+      "change-guard-unit",
       "single-html",
       "e2e",
       "visual-diff",
