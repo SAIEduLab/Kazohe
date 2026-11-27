@@ -1,6 +1,6 @@
 {
   "name": "kazohe",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +20,11 @@
     "test:pedagogy": "node tests/unit/pedagogy.mjs",
     "test:change-guard": "node tests/unit/change-guard.mjs",
     "test:ts-build": "node tests/unit/ts-build.mjs",
+    "test:source-audit": "node tests/unit/source-audit.mjs",
+    "test:format-compat": "node tests/unit/format-compatibility.mjs",
+    "test:renumber": "node tests/unit/renumber-release.mjs",
+    "renumber-release": "node scripts/renumber-release.mjs",
+    "test-map": "node scripts/test-map.mjs",
     "audit:visual-diff": "node scripts/visual-diff.mjs"
   },
   "devDependencies": {
@@ -30,6 +35,7 @@
     "css-tree": "3.1.0",
     "eslint": "10.13.0",
     "eslint-plugin-sonarjs": "4.2.2",
+    "eslint-plugin-unicorn": "79.0.0",
     "globals": "17.14.0",
     "jsdom": "26.1.0",
     "mdast-util-from-markdown": "2.0.2",

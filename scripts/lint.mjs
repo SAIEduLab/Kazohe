@@ -36,6 +36,31 @@ import {
   verifyDataContracts,
 } from "./data-contracts.mjs";
 import { runTsBuildTests } from "../tests/unit/ts-build.mjs";
+import {
+  dispatchValueIssues,
+  domReferenceIssues,
+  platformNames,
+  jsonObjectKeys,
+  unwrittenReads,
+  unwrittenIssues,
+  shownTextReads,
+  shownTextIssues,
+  productCodes,
+  namedCodes,
+  diagnosticCodeIssues,
+  childGlossaryIssues,
+} from "./source-consistency.mjs";
+import {
+  lintCoreScript,
+  lintAppScript,
+  lintFindings,
+  verifyLintProbes,
+} from "./source-lint.mjs";
+import { sourceClones, cloneIssues } from "./source-clones.mjs";
+import { assertReleasePolicy } from "./release-policy.mjs";
+import { runAllSourceAuditControls } from "../tests/unit/source-audit.mjs";
+import { runFormatCompatibilityChecks } from "../tests/unit/format-compatibility.mjs";
+import { runRenumberReleaseChecks } from "../tests/unit/renumber-release.mjs";
 const s = suite("lint");
 s.check("html-js-syntax", () => {
   const errors = [];
@@ -315,4 +340,82 @@ s.check("source-size", () => {
   );
 });
 runTsBuildTests((id, fn) => s.check(id, fn));
+const ps = productScript();
+const shellHtml = readSource("src/shell.html");
+const dataKeys = jsonObjectKeys(
+  JSON.parse(readSource("src/catalog.json")),
+  JSON.parse(readSource("src/language.json")),
+);
+const pieceFile = (offset) =>
+  ps.pieces.find((p) => p.start <= offset && offset < p.end)?.label ?? "?";
+s.check("SOURCE-DISPATCH-VALUES", () => {
+  const issues = dispatchValueIssues(ps.text);
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("SOURCE-DOM-REFERENCES", () => {
+  const issues = domReferenceIssues(ps.text, shellHtml);
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("SOURCE-UNWRITTEN-PROPERTIES", () => {
+  const issues = unwrittenIssues(
+    unwrittenReads(ps.text, dataKeys),
+    platformNames(),
+  );
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("SOURCE-SHOWN-TEXT", () => {
+  const issues = shownTextIssues(shownTextReads(ps.text, pieceFile));
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("SOURCE-DIAGNOSTIC-CODES-NAMED", () => {
+  const testTexts = trackedFiles()
+    .filter(
+      (f) =>
+        f.startsWith("tests/") &&
+        (f.endsWith(".mjs") ||
+          (f.startsWith("tests/fixtures/") && f.endsWith(".json"))),
+    )
+    .map((f) => readFileSync(f, "utf8"));
+  const codes = productCodes(ps.text);
+  const issues = diagnosticCodeIssues(codes, namedCodes(codes, testTexts));
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("CHILD-GLOSSARY-ONE-WORD", () => {
+  const issues = childGlossaryIssues([
+    { file: htmlName, kind: "product", text: html },
+  ]);
+  assert.deepEqual(issues, [], JSON.stringify(issues));
+});
+await s.checkAsync("SOURCE-LINT", async () => {
+  const root = process.cwd();
+  const findings = [
+    ...lintFindings(await lintCoreScript(root, ps.core.text), ps.core),
+    ...lintFindings(await lintAppScript(root, ps.app.text), ps.app),
+  ];
+  assert.deepEqual(findings, [], findings.join("\n"));
+});
+await s.checkAsync("REJECT-LINT-PROBES", async () => {
+  const issues = await verifyLintProbes(process.cwd());
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("SOURCE-CLONES", () => {
+  const issues = cloneIssues(sourceClones(ps));
+  assert.deepEqual(issues, [], issues.join("\n"));
+});
+s.check("RELEASE-POLICY", () => {
+  const tracked = trackedFiles();
+  const auditSources = tracked
+    .filter((f) => /^(?:scripts|tests)\/.*\.mjs$/.test(f))
+    .map((file) => ({ file, source: readFileSync(file, "utf8") }));
+  assertReleasePolicy(html, {
+    auditSources,
+    tcIds,
+    gateIds: s.cases.map((c) => c.id),
+    trackedFiles: tracked,
+    productLabel: htmlName,
+  });
+});
+await s.checkAsync("SOURCE-AUDIT-CONTROLS", () => runAllSourceAuditControls());
+s.check("FORMAT-COMPATIBILITY", () => runFormatCompatibilityChecks());
+s.check("RENUMBER-RELEASE", () => runRenumberReleaseChecks());
 s.done();

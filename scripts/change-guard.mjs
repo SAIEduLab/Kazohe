@@ -317,7 +317,15 @@ export function treeAllowances(dir) {
       ) {
         for (const decl of stmt.declaration.declarations) {
           if (decl.id.type === "Identifier" && wanted.has(decl.id.name)) {
-            exportsByName.set(decl.id.name, literalValue(decl.init));
+            const val = literalValue(decl.init);
+            const prev = exportsByName.get(decl.id.name);
+            if (Array.isArray(val)) {
+              exportsByName.set(decl.id.name, [...(prev || []), ...val]);
+            } else if (val && typeof val === "object") {
+              exportsByName.set(decl.id.name, { ...(prev || {}), ...val });
+            } else {
+              exportsByName.set(decl.id.name, val);
+            }
           }
         }
       }

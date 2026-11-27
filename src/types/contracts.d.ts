@@ -356,7 +356,7 @@ export interface SolutionCheck {
 }
 
 export interface SolutionStep {
-  kind: "text" | "answer" | "counters" | "dots" | "digits" | "borrow";
+  kind: "text" | "answer" | "counters" | "digits" | "borrow";
   text: string;
   value?: Rational | string;
   check?: SolutionCheck;
@@ -426,7 +426,7 @@ export interface WrittenBoard {
 }
 
 export interface TeachingStep {
-  kind: "text" | "answer" | "counters" | "dots";
+  kind: "text" | "answer" | "counters";
   text: string;
   board?: WrittenBoard;
   check?: {

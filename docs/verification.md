@@ -1,6 +1,6 @@
-# v<!-- APP_VERSION -->0.2.7<!-- /APP_VERSION --> 検証ガイド
+# v<!-- APP_VERSION -->0.2.8<!-- /APP_VERSION --> 検証ガイド
 
-配布候補は `Kazohe_0_2_7.html` の1ファイルです。生成元の `src/catalog.json` と独立検証用の `tests/fixtures/catalog.json` は別の役割を持ち、両者と配布HTMLの整合を確認します。目視・実機・児童の利用観察は所有者が担当し、自動検証はその代わりにしません（[所有者の確認](#所有者の確認)）。
+配布候補は `Kazohe_0_2_8.html` の1ファイルです。生成元の `src/catalog.json` と独立検証用の `tests/fixtures/catalog.json` は別の役割を持ち、両者と配布HTMLの整合を確認します。目視・実機・児童の利用観察は所有者が担当し、自動検証はその代わりにしません（[所有者の確認](#所有者の確認)）。
 
 ## 自動検証
 
@@ -8,8 +8,13 @@
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `npm run build:check`                     | TypeScript型消去ビルドの生成結果と配布HTMLの完全一致                                                                                                                                                                     |
 | `npm run type-check`                      | `tsconfig.json` 固定オプション、厳格ゼロ`any`・回避キャスト・グローバル隠蔽・`#kazohe-core`のDOM非依存検査                                                                                                               |
-| `npm run lint`                            | HTML/JS構文、公開文書のASTリンク・版整合、TC登録・仕様対応、カタログの生成元・独立期待値・配布HTMLの一致（101 ID）、許可されたPublic構成、TypeScript型・ページ型・データ契約・モジュール行数・ビルド負例、監査コード検査（拒否理由・待機・raw読込・ESLint）、到達性インベントリ、workflow契約とCODEOWNERS、監査ゲートの負例 |
+| `npm run lint`                            | HTML/JS構文、公開文書のASTリンク・版整合、TC登録・仕様対応、カタログの生成元・独立期待値・配布HTMLの一致（101 ID）、許可されたPublic構成、TypeScript型・ページ型・データ契約・モジュール行数・ビルド負例、製品ソース整合性（ディスパッチ値・DOM参照・未書込みプロパティ・表示文言分岐・診断コード・児童向け語彙）・製品ESLintと全ルール負例・トークンクローン検出・リリースポリシーAST検査・形式互換・安全再採番テスト、監査コード検査（拒否理由・待機・raw読込・ESLint）、到達性インベントリ、workflow契約とCODEOWNERS、監査ゲートの負例 |
 | `npm run test:ts-build`                   | TypeScript型消去（Node 24 `stripTypeScriptTypes`一致）、逆行マップ、ゼロ`any`型検査、`page-types`、`data-contracts`の正例・負例                                                                                           |
+| `npm run test:source-audit`               | 製品ソース整合性・製品ESLintプローブ・クローン検出・リリースポリシー・`test-map`・診断エラーパスの正例・負例                                                                                                               |
+| `npm run test:format-compat`              | 製品版を変えた候補ビルド間でのバックアップ往復・練習途中再開・保存済みバックアップフィクスチャ受理・旧版/破損JSON拒否・既存`localStorage`非破壊の検査                                                                  |
+| `npm run test:renumber`                   | 合成Gitリポジトリによる並列PR向け安全再採番（`scripts/renumber-release.mjs`）と異常系拒否・ロールバックの検査                                                                                                             |
+| `npm run test-map`                        | Node V8精密カバレッジと逆行マップにより、指定した `src/ts/*.ts`（または `--changed <base>`）を実行するテスト群を一覧表示                                                                                                 |
+| `npm run renumber-release`                | ベースブランチ取り込み後の安全な版再採番（`package.json`・`package-lock.json`・TS版定数・製品HTML・文書）と検証・ロールバック                                                                                             |
 | `npm run audit:catalog`                   | 根拠コードの形式、前提関係の非循環と学年順、全技能の生成・ヒント・解説の接続                                                                                                                                              |
 | `npm run test:unit`                       | 固定例、数値・入力・得点・時計・評価・保存。対象純粋関数の行・分岐カバレッジ各90%以上                                                                                                                                     |
 | `npm run test:property`                   | 101技能×1,000問、独立オラクル、途中式、有限集合の一巡、seed、配分、範囲境界                                                                                                                                               |

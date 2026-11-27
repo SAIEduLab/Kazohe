@@ -139,6 +139,30 @@ export const coefficient = (value: NumericInput, scale: number): bigint => {
   return (BigInt(v.n) * 10n ** BigInt(scale)) / BigInt(v.d);
 };
 
+export interface AlignedWrittenDigits {
+  scale: number;
+  a: bigint;
+  b: bigint;
+  size: number;
+  aa: number[];
+  bb: number[];
+}
+
+export function alignWrittenDigits(
+  av: Rational,
+  bv: Rational,
+  sa: number,
+  sb: number,
+): AlignedWrittenDigits {
+  const scale = Math.max(sa, sb);
+  const a = coefficient(av, scale);
+  const b = coefficient(bv, scale);
+  const size = Math.max(String(a).length, String(b).length, scale + 1);
+  const aa = String(a).padStart(size, "0").split("").map(Number);
+  const bb = String(b).padStart(size, "0").split("").map(Number);
+  return { scale, a, b, size, aa, bb };
+}
+
 export const placeName = (column: number, scale = 0): string =>
   column < scale
     ? `小数第${scale - column}位`
